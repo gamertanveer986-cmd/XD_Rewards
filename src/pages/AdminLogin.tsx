@@ -39,8 +39,23 @@ const AdminLogin = () => {
 
       if (error) throw error;
 
-      // TODO: Verify admin role from user_roles table when implemented
-      // For now, successful login redirects to dashboard
+      // Verify admin role from user_roles table
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (roleError) {
+        await supabase.auth.signOut();
+        throw new Error("Failed to verify admin access");
+      }
+
+      if (!roleData) {
+        await supabase.auth.signOut();
+        throw new Error("Unauthorized: Admin access required");
+      }
       
       toast.success("Admin access granted");
       navigate("/dashboard");
