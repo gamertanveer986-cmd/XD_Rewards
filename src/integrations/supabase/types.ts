@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_views: {
+        Row: {
+          ad_duration: number
+          completed: boolean
+          earnings: number
+          id: string
+          user_id: string
+          watched_at: string | null
+        }
+        Insert: {
+          ad_duration: number
+          completed?: boolean
+          earnings: number
+          id?: string
+          user_id: string
+          watched_at?: string | null
+        }
+        Update: {
+          ad_duration?: number
+          completed?: boolean
+          earnings?: number
+          id?: string
+          user_id?: string
+          watched_at?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          ads_watched: number
+          created_at: string | null
+          id: string
+          non_withdrawable_balance: number
+          referrals_count: number
+          total_earnings: number
+          updated_at: string | null
+          user_id: string
+          withdrawable_balance: number
+        }
+        Insert: {
+          ads_watched?: number
+          created_at?: string | null
+          id?: string
+          non_withdrawable_balance?: number
+          referrals_count?: number
+          total_earnings?: number
+          updated_at?: string | null
+          user_id: string
+          withdrawable_balance?: number
+        }
+        Update: {
+          ads_watched?: number
+          created_at?: string | null
+          id?: string
+          non_withdrawable_balance?: number
+          referrals_count?: number
+          total_earnings?: number
+          updated_at?: string | null
+          user_id?: string
+          withdrawable_balance?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
