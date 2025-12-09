@@ -4,11 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import WatchAdModal from "@/components/WatchAdModal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+    setProfile(data);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -18,6 +30,7 @@ const Dashboard = () => {
         return;
       }
       setUser(session.user);
+      await fetchProfile(session.user.id);
       setLoading(false);
     };
 
@@ -28,6 +41,7 @@ const Dashboard = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        fetchProfile(session.user.id);
       }
     });
 
@@ -38,6 +52,12 @@ const Dashboard = () => {
     await supabase.auth.signOut();
     toast.success("Logged out successfully");
     navigate("/auth");
+  };
+
+  const handleAdComplete = () => {
+    if (user) {
+      fetchProfile(user.id);
+    }
   };
 
   if (loading) {
@@ -69,25 +89,25 @@ const Dashboard = () => {
         <div className="grid md:grid-cols-4 gap-4">
           <Card className="p-6 card-glow border-primary/20 bg-card/90">
             <p className="text-sm text-muted-foreground mb-2">Total Earnings</p>
-            <p className="text-3xl font-bold text-success">₹10.00</p>
-            <p className="text-xs text-muted-foreground mt-1">Signup bonus</p>
+            <p className="text-3xl font-bold text-success">₹{profile?.total_earnings?.toFixed(2) || "0.00"}</p>
+            <p className="text-xs text-muted-foreground mt-1">Lifetime earnings</p>
           </Card>
           
           <Card className="p-6 card-glow border-primary/20 bg-card/90">
             <p className="text-sm text-muted-foreground mb-2">Withdrawable</p>
-            <p className="text-3xl font-bold">₹0.00</p>
+            <p className="text-3xl font-bold">₹{profile?.withdrawable_balance?.toFixed(2) || "0.00"}</p>
             <p className="text-xs text-muted-foreground mt-1">Min ₹50</p>
           </Card>
           
           <Card className="p-6 card-glow border-primary/20 bg-card/90">
             <p className="text-sm text-muted-foreground mb-2">Ads Watched</p>
-            <p className="text-3xl font-bold">0</p>
-            <p className="text-xs text-muted-foreground mt-1">Start earning</p>
+            <p className="text-3xl font-bold">{profile?.ads_watched || 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">Keep watching!</p>
           </Card>
           
           <Card className="p-6 card-glow border-primary/20 bg-card/90">
             <p className="text-sm text-muted-foreground mb-2">Referrals</p>
-            <p className="text-3xl font-bold text-primary">0</p>
+            <p className="text-3xl font-bold text-primary">{profile?.referrals_count || 0}</p>
             <p className="text-xs text-muted-foreground mt-1">₹5 per referral</p>
           </Card>
         </div>
@@ -101,7 +121,12 @@ const Dashboard = () => {
               </div>
               <h3 className="text-xl font-semibold">Watch Ads</h3>
               <p className="text-sm text-muted-foreground">Earn ₹0.05-₹0.10 per ad</p>
-              <Button className="w-full bg-primary hover:bg-primary/90">Start Watching</Button>
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={() => setShowAdModal(true)}
+              >
+                Start Watching
+              </Button>
             </div>
           </Card>
 
@@ -146,6 +171,16 @@ const Dashboard = () => {
           </div>
         </Card>
       </div>
+
+      {/* Ad Modal */}
+      {user && (
+        <WatchAdModal
+          isOpen={showAdModal}
+          onClose={() => setShowAdModal(false)}
+          userId={user.id}
+          onAdComplete={handleAdComplete}
+        />
+      )}
     </div>
   );
 };
