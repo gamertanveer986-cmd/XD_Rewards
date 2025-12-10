@@ -1,90 +1,136 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import AppLayout from "@/components/AppLayout";
+import { Mail, MessageCircle, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+
+const faqs = [
+  {
+    question: "How do I withdraw my earnings?",
+    answer: "You can withdraw your earnings once you reach the minimum threshold of ₹50. Withdrawals are processed via UPI within 1-5 minutes."
+  },
+  {
+    question: "How much can I earn per ad?",
+    answer: "You earn between ₹0.05 to ₹0.10 per ad watched. The exact amount depends on the advertiser and ad length."
+  },
+  {
+    question: "What is the referral bonus?",
+    answer: "Earn ₹5 for every friend you refer who signs up and watches their first ad. Your referral code is in your dashboard."
+  },
+  {
+    question: "Is there a limit to daily earnings?",
+    answer: "There's no daily limit! Watch as many ads as you want and earn without restrictions."
+  }
+];
 
 const Support = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
+        return;
       }
+      setLoading(false);
     };
     checkAuth();
   }, [navigate]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-gradient-red glow-red">Support</h1>
-            <p className="text-muted-foreground">We're here to help</p>
+    <AppLayout title="Support">
+      <div className="px-4 py-4 space-y-4">
+        {/* Header */}
+        <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+            <HelpCircle className="w-8 h-8 text-primary" />
           </div>
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
-          </Button>
-        </div>
+          <h2 className="text-xl font-bold mb-1">How can we help?</h2>
+          <p className="text-sm text-muted-foreground">Get in touch with our support team</p>
+        </Card>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <Card className="p-6 card-glow border-primary/20 bg-card/90">
-            <h3 className="text-xl font-semibold mb-4">📧 Email Support</h3>
-            <p className="text-muted-foreground mb-4">Get help via email</p>
-            <Button className="w-full bg-primary hover:bg-primary/90">
-              support@xdrewards.com
-            </Button>
+        {/* Contact Options */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="p-4 bg-card border-border/50">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                <Mail className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Email</p>
+                <p className="text-xs text-muted-foreground">Get help via email</p>
+              </div>
+              <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-xs h-9">
+                Contact
+              </Button>
+            </div>
           </Card>
 
-          <Card className="p-6 card-glow border-primary/20 bg-card/90">
-            <h3 className="text-xl font-semibold mb-4">💬 Live Chat</h3>
-            <p className="text-muted-foreground mb-4">Chat with our team</p>
-            <Button className="w-full" variant="outline">
-              Start Chat (Coming Soon)
-            </Button>
+          <Card className="p-4 bg-card border-border/50">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                <MessageCircle className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Live Chat</p>
+                <p className="text-xs text-muted-foreground">Coming soon</p>
+              </div>
+              <Button size="sm" variant="outline" className="w-full text-xs h-9" disabled>
+                Unavailable
+              </Button>
+            </div>
           </Card>
         </div>
 
-        <Card className="p-6 card-glow border-primary/20 bg-card/90">
-          <h3 className="text-xl font-semibold mb-4">Frequently Asked Questions</h3>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold mb-2">How do I withdraw my earnings?</h4>
-              <p className="text-sm text-muted-foreground">
-                You can withdraw your earnings once you reach the minimum threshold of ₹50. 
-                Withdrawals are processed via UPI within 1-5 minutes.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-2">How much can I earn per ad?</h4>
-              <p className="text-sm text-muted-foreground">
-                You earn between ₹0.05 to ₹0.10 per ad watched. The exact amount depends 
-                on the advertiser and ad length.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-2">What is the referral bonus?</h4>
-              <p className="text-sm text-muted-foreground">
-                Earn ₹5 for every friend you refer who signs up and watches their first ad. 
-                Your referral code is in your dashboard.
-              </p>
-            </div>
+        {/* FAQs */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground px-1">Frequently Asked Questions</h2>
+          
+          <Card className="bg-card border-border/50 divide-y divide-border/50 overflow-hidden">
+            {faqs.map((faq, index) => (
+              <div key={index}>
+                <button
+                  onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
+                  className="w-full p-4 text-left flex items-center justify-between gap-3 hover:bg-muted/50 transition-colors"
+                >
+                  <span className="font-medium text-sm">{faq.question}</span>
+                  {expandedFaq === index ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                  )}
+                </button>
+                {expandedFaq === index && (
+                  <div className="px-4 pb-4">
+                    <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </Card>
+        </div>
 
-            <div>
-              <h4 className="font-semibold mb-2">Is there a limit to daily earnings?</h4>
-              <p className="text-sm text-muted-foreground">
-                There's no daily limit! Watch as many ads as you want and earn without restrictions.
-              </p>
-            </div>
-          </div>
+        {/* Contact Info */}
+        <Card className="p-4 bg-card border-border/50">
+          <p className="text-sm text-center text-muted-foreground">
+            Email us at <span className="text-primary font-medium">support@xdrewards.com</span>
+          </p>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
