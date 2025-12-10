@@ -1,13 +1,12 @@
-import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, AdOptions, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents } from '@capacitor-community/admob';
+import { AdMob, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents } from '@capacitor-community/admob';
 
-// Your AdMob IDs
-const AD_UNIT_ID = 'ca-app-pub-3940256099942544/6300978111';
-const REWARDED_AD_UNIT_ID = 'ca-app-pub-3940256099942544/5224354917'; // Test rewarded ad
+// Production AdMob IDs
+const REWARDED_AD_UNIT_ID = 'ca-app-pub-3054032487800382/2547473951';
 
 export async function initializeAdMob(): Promise<void> {
   try {
     await AdMob.initialize({
-      initializeForTesting: true, // Set to false in production
+      initializeForTesting: false,
     });
     console.log('AdMob initialized successfully');
   } catch (error) {
@@ -15,51 +14,10 @@ export async function initializeAdMob(): Promise<void> {
   }
 }
 
-export async function showBannerAd(): Promise<void> {
-  const options: BannerAdOptions = {
-    adId: AD_UNIT_ID,
-    adSize: BannerAdSize.BANNER,
-    position: BannerAdPosition.BOTTOM_CENTER,
-    margin: 0,
-    isTesting: true, // Set to false in production
-  };
-
-  try {
-    await AdMob.showBanner(options);
-    console.log('Banner ad shown');
-  } catch (error) {
-    console.error('Failed to show banner ad:', error);
-  }
-}
-
-export async function hideBannerAd(): Promise<void> {
-  try {
-    await AdMob.hideBanner();
-    console.log('Banner ad hidden');
-  } catch (error) {
-    console.error('Failed to hide banner ad:', error);
-  }
-}
-
-export async function showInterstitialAd(): Promise<void> {
-  const options: AdOptions = {
-    adId: AD_UNIT_ID,
-    isTesting: true, // Set to false in production
-  };
-
-  try {
-    await AdMob.prepareInterstitial(options);
-    await AdMob.showInterstitial();
-    console.log('Interstitial ad shown');
-  } catch (error) {
-    console.error('Failed to show interstitial ad:', error);
-  }
-}
-
 export async function prepareRewardedAd(): Promise<AdLoadInfo | null> {
   const options: RewardAdOptions = {
     adId: REWARDED_AD_UNIT_ID,
-    isTesting: true, // Set to false in production
+    isTesting: false,
   };
 
   try {
