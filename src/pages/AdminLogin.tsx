@@ -19,9 +19,17 @@ const AdminLogin = () => {
     const checkAdminSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // TODO: Check admin role from database when roles table is created
-        // For now, just redirect to dashboard
-        navigate("/dashboard");
+        // Check if user has admin role
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (roleData) {
+          navigate("/admin/dashboard");
+        }
       }
     };
     checkAdminSession();
@@ -58,7 +66,7 @@ const AdminLogin = () => {
       }
       
       toast.success("Admin access granted");
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Admin authentication failed");
     } finally {
