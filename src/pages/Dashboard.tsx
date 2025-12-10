@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import WatchAdModal from "@/components/WatchAdModal";
+import { Shield } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showAdModal, setShowAdModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -20,6 +22,16 @@ const Dashboard = () => {
       .eq("user_id", userId)
       .single();
     setProfile(data);
+  };
+
+  const checkAdminRole = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    setIsAdmin(!!data);
   };
 
   useEffect(() => {
@@ -31,6 +43,7 @@ const Dashboard = () => {
       }
       setUser(session.user);
       await fetchProfile(session.user.id);
+      await checkAdminRole(session.user.id);
       setLoading(false);
     };
 
@@ -42,6 +55,7 @@ const Dashboard = () => {
       } else {
         setUser(session.user);
         fetchProfile(session.user.id);
+        checkAdminRole(session.user.id);
       }
     });
 
@@ -80,9 +94,21 @@ const Dashboard = () => {
             <h1 className="text-4xl font-bold text-gradient-red glow-red">XD REWARDS</h1>
             <p className="text-muted-foreground">Welcome back, {user?.email}</p>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/admin/dashboard")}
+                className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
+              >
+                <Shield className="h-4 w-4" />
+                Admin Panel
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
