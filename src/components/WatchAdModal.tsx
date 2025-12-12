@@ -60,44 +60,27 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
   };
 
   const recordAdView = async () => {
-    const earnings = Math.random() < 0.5 ? 0.05 : 0.10;
-    
-    // Record ad view
-    await supabase.from("ad_views").insert({
-      user_id: userId,
-      ad_duration: 15,
-      earnings: earnings,
-      completed: true,
-    });
+    try {
+      // Call the secure server-side function to record ad completion
+      // Earnings are calculated server-side to prevent manipulation
+      const { data, error } = await supabase.rpc('record_ad_completion', {
+        p_user_id: userId,
+        p_ad_duration: 15
+      });
 
-    // Update user profile
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+      if (error) {
+        console.error('Error recording ad view:', error);
+        toast.error("Failed to record earnings. Please try again.");
+        return;
+      }
 
-    if (profile) {
-      await supabase
-        .from("user_profiles")
-        .update({
-          ads_watched: profile.ads_watched + 1,
-          total_earnings: profile.total_earnings + earnings,
-          withdrawable_balance: profile.withdrawable_balance + earnings,
-        })
-        .eq("user_id", userId);
+      const result = data as { earnings: number; success: boolean };
+      toast.success(`You earned ₹${result.earnings.toFixed(2)}!`);
+      onAdComplete();
+    } catch (err) {
+      console.error('Error in recordAdView:', err);
+      toast.error("An error occurred. Please try again.");
     }
-
-    // Record transaction
-    await supabase.from("transactions").insert({
-      user_id: userId,
-      amount: earnings,
-      transaction_type: "earning",
-      description: "Ad watch reward",
-    });
-
-    toast.success(`You earned ₹${earnings.toFixed(2)}!`);
-    onAdComplete();
   };
 
   const handleClose = () => {
