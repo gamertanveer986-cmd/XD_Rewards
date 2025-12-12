@@ -141,6 +141,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_ad_completion: {
+        Args: { p_ad_duration?: number; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
