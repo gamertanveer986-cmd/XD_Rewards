@@ -29,6 +29,8 @@ const Auth = () => {
     checkSession();
   }, [navigate]);
 
+  const [signupSuccess, setSignupSuccess] = useState(false);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -51,7 +53,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast.success("Account created! Check your email to verify.");
+        setSignupSuccess(true);
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
@@ -76,6 +78,58 @@ const Auth = () => {
 
   if (showSplash || checkingSession) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
+  // Show signup success screen
+  if (signupSuccess) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col safe-area-top safe-area-bottom">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-success/20 rounded-full blur-[80px]"></div>
+        </div>
+        
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative z-10">
+          <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mb-6">
+            <svg className="w-10 h-10 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+          </div>
+          
+          <h1 className="text-2xl font-bold text-center mb-2">Check Your Email</h1>
+          <p className="text-muted-foreground text-center text-sm mb-6 max-w-xs">
+            We've sent a verification link to <span className="text-foreground font-medium">{email}</span>
+          </p>
+          
+          <div className="bg-card/90 border border-border/50 rounded-xl p-4 mb-6 max-w-xs">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <polyline points="3 7 12 13 21 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Verify to Start Earning</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click the link in your email to verify and unlock all features.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSignupSuccess(false);
+              setIsLogin(true);
+            }}
+            className="border-border"
+          >
+            Back to Login
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import WatchAdModal from "@/components/WatchAdModal";
 import AppLayout from "@/components/AppLayout";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { Play, TrendingUp, Users, Eye } from "lucide-react";
 
 const Dashboard = () => {
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [showAdModal, setShowAdModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -43,6 +45,7 @@ const Dashboard = () => {
         return;
       }
       setUser(session.user);
+      setIsEmailVerified(session.user.email_confirmed_at != null);
       await fetchProfile(session.user.id);
       await checkAdminRole(session.user.id);
       setLoading(false);
@@ -55,6 +58,7 @@ const Dashboard = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        setIsEmailVerified(session.user.email_confirmed_at != null);
         fetchProfile(session.user.id);
         checkAdminRole(session.user.id);
       }
@@ -93,6 +97,9 @@ const Dashboard = () => {
       showLogout={true}
       onLogout={handleLogout}
     >
+      {/* Email Verification Banner */}
+      <EmailVerificationBanner />
+      
       <div className="px-4 py-4 space-y-4">
         {/* Balance Card - Hero */}
         <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 relative overflow-hidden">
@@ -152,9 +159,16 @@ const Dashboard = () => {
             <Button 
               size="sm"
               className="bg-primary hover:bg-primary/90 shrink-0 px-6"
-              onClick={() => setShowAdModal(true)}
+              onClick={() => {
+                if (!isEmailVerified) {
+                  toast.error("Please verify your email to start earning");
+                  return;
+                }
+                setShowAdModal(true);
+              }}
+              disabled={!isEmailVerified}
             >
-              Start
+              {isEmailVerified ? "Start" : "Verify Email"}
             </Button>
           </div>
         </Card>
