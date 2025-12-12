@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import SplashScreen from "@/components/SplashScreen";
+import { loginSchema, signupSchema } from "@/lib/validations/auth";
+import { z } from "zod";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -16,6 +18,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   // Check if user is already logged in
   useEffect(() => {
@@ -31,14 +34,41 @@ const Auth = () => {
 
   const [signupSuccess, setSignupSuccess] = useState(false);
 
+  const validateForm = (): boolean => {
+    setErrors({});
+    const schema = isLogin ? loginSchema : signupSchema;
+    
+    try {
+      schema.parse({ email, password });
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: { email?: string; password?: string } = {};
+        error.errors.forEach((err) => {
+          const field = err.path[0] as 'email' | 'password';
+          if (!fieldErrors[field]) {
+            fieldErrors[field] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
 
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
         if (error) throw error;
@@ -46,7 +76,7 @@ const Auth = () => {
         navigate("/dashboard");
       } else {
         const { error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
@@ -189,10 +219,15 @@ const Auth = () => {
                   type="email"
                   placeholder="your@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="bg-muted border-border h-12"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
+                  }}
+                  className={`bg-muted border-border h-12 ${errors.email ? 'border-destructive' : ''}`}
                 />
+                {errors.email && (
+                  <p className="text-xs text-destructive">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -202,10 +237,20 @@ const Auth = () => {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="bg-muted border-border h-12"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                  }}
+                  className={`bg-muted border-border h-12 ${errors.password ? 'border-destructive' : ''}`}
                 />
+                {errors.password && (
+                  <p className="text-xs text-destructive">{errors.password}</p>
+                )}
+                {!isLogin && !errors.password && (
+                  <p className="text-xs text-muted-foreground">
+                    Min 8 chars with uppercase, lowercase & number
+                  </p>
+                )}
               </div>
 
               <Button
@@ -255,7 +300,10 @@ const Auth = () => {
 
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setErrors({});
+              }}
               className="w-full text-sm text-muted-foreground hover:text-primary transition-colors py-2"
             >
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
