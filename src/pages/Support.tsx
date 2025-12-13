@@ -73,8 +73,12 @@ const Support = () => {
                 <p className="font-medium text-sm">Email</p>
                 <p className="text-xs text-muted-foreground">Get help via email</p>
               </div>
-              <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-xs h-9">
-                Contact
+              <Button 
+                size="sm" 
+                className="w-full bg-primary hover:bg-primary/90 text-xs h-9"
+                asChild
+              >
+                <a href="mailto:dxreward@gmail.com?subject=Support%20Request">Contact</a>
               </Button>
             </div>
           </Card>
