@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Eye, Trash2, Search, DollarSign, Activity } from "lucide-react";
+import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -20,6 +21,8 @@ interface UserProfile {
   ads_watched: number;
   referrals_count: number;
   created_at: string;
+  upi_id?: string;
+  payment_status?: string;
 }
 
 interface UserRole {
@@ -57,12 +60,19 @@ const AdminDashboard = () => {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Notification state
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [sendingNotification, setSendingNotification] = useState(false);
+
   // Stats
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalEarnings: 0,
     totalWithdrawals: 0,
-    totalAdsWatched: 0
+    totalAdsWatched: 0,
+    pendingPayments: 0,
+    totalPayable: 0
   });
 
   useEffect(() => {
@@ -134,12 +144,16 @@ const AdminDashboard = () => {
       const totalEarnings = profilesData?.reduce((sum, p) => sum + Number(p.total_earnings), 0) || 0;
       const totalWithdrawals = txData?.filter(t => t.transaction_type === 'withdrawal').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
       const totalAdsWatched = profilesData?.reduce((sum, p) => sum + p.ads_watched, 0) || 0;
+      const pendingPayments = profilesData?.filter(p => (p as any).payment_status === 'pending' && Number(p.withdrawable_balance) >= 50).length || 0;
+      const totalPayable = profilesData?.filter(p => Number(p.withdrawable_balance) >= 50).reduce((sum, p) => sum + Number(p.withdrawable_balance), 0) || 0;
 
       setStats({
         totalUsers: profilesData?.length || 0,
         totalEarnings,
         totalWithdrawals,
-        totalAdsWatched
+        totalAdsWatched,
+        pendingPayments,
+        totalPayable
       });
 
       // Create user list from profiles
@@ -262,6 +276,85 @@ const AdminDashboard = () => {
     p.user_id.toLowerCase().includes(searchEmail.toLowerCase())
   );
 
+  // Send notification to all users
+  const handleSendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationMessage.trim()) {
+      toast.error("Please enter title and message");
+      return;
+    }
+
+    try {
+      setSendingNotification(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Create notification
+      const { data: notification, error: notifError } = await supabase
+        .from("notifications")
+        .insert({
+          title: notificationTitle,
+          message: notificationMessage,
+          sent_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (notifError) throw notifError;
+
+      // Create user_notifications for all users
+      const userNotifications = userProfiles.map(profile => ({
+        user_id: profile.user_id,
+        notification_id: notification.id
+      }));
+
+      const { error: userNotifError } = await supabase
+        .from("user_notifications")
+        .insert(userNotifications);
+
+      if (userNotifError) throw userNotifError;
+
+      toast.success(`Notification sent to ${userProfiles.length} users`);
+      setNotificationTitle("");
+      setNotificationMessage("");
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error("Failed to send notification");
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
+  // Update payment status
+  const handleUpdatePaymentStatus = async (userId: string, status: string) => {
+    try {
+      setActionLoading(true);
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ payment_status: status })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast.success(`Payment status updated to ${status}`);
+      await loadData();
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      toast.error("Failed to update payment status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "default";
+      case "processing":
+        return "secondary";
+      default:
+        return "destructive";
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -350,8 +443,9 @@ const AdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="notifications">Notify</TabsTrigger>
             <TabsTrigger value="roles">Roles</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
@@ -380,50 +474,100 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Total Earnings</TableHead>
-                      <TableHead>Withdrawable</TableHead>
-                      <TableHead>Non-Withdrawable</TableHead>
-                      <TableHead>Ads Watched</TableHead>
-                      <TableHead>Referrals</TableHead>
-                      <TableHead>Joined</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProfiles.length === 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">
-                          No users found
-                        </TableCell>
+                        <TableHead>User ID</TableHead>
+                        <TableHead>UPI ID</TableHead>
+                        <TableHead>Total Earnings</TableHead>
+                        <TableHead>Payable Amount</TableHead>
+                        <TableHead>Payment Status</TableHead>
+                        <TableHead>Ads Watched</TableHead>
+                        <TableHead>Joined</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredProfiles.map((profile) => (
-                        <TableRow key={profile.id}>
-                          <TableCell className="font-mono text-sm">
-                            {profile.user_id.slice(0, 12)}...
-                          </TableCell>
-                          <TableCell className="text-success font-medium">
-                            ₹{Number(profile.total_earnings).toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            ₹{Number(profile.withdrawable_balance).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            ₹{Number(profile.non_withdrawable_balance).toFixed(2)}
-                          </TableCell>
-                          <TableCell>{profile.ads_watched}</TableCell>
-                          <TableCell>{profile.referrals_count}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProfiles.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                            No users found
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filteredProfiles.map((profile) => (
+                          <TableRow key={profile.id}>
+                            <TableCell className="font-mono text-sm">
+                              {profile.user_id.slice(0, 12)}...
+                            </TableCell>
+                            <TableCell className="font-medium text-primary">
+                              {profile.upi_id || <span className="text-muted-foreground">Not set</span>}
+                            </TableCell>
+                            <TableCell className="text-success font-medium">
+                              ₹{Number(profile.total_earnings).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="font-bold text-warning">
+                              ₹{Number(profile.withdrawable_balance).toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getPaymentStatusBadge(profile.payment_status || 'pending')}>
+                                {profile.payment_status || 'pending'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{profile.ads_watched}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-4">
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  Send Notification to All Users
+                </CardTitle>
+                <CardDescription>Broadcast a notification to all registered users</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    placeholder="Notification title..."
+                    value={notificationTitle}
+                    onChange={(e) => setNotificationTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Message</label>
+                  <Textarea
+                    placeholder="Write your notification message..."
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <Button 
+                  onClick={handleSendNotification}
+                  disabled={sendingNotification || !notificationTitle.trim() || !notificationMessage.trim()}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  {sendingNotification ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  Send to All Users ({userProfiles.length})
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -549,12 +693,12 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  Payment Overview
+                  Payment Management
                 </CardTitle>
-                <CardDescription>Track all withdrawals and payouts</CardDescription>
+                <CardDescription>Manage user payments with UPI details and status</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="grid md:grid-cols-4 gap-4 mb-6">
                   <Card className="bg-muted/50">
                     <CardContent className="pt-4">
                       <p className="text-sm text-muted-foreground">Total Paid Out</p>
@@ -563,8 +707,17 @@ const AdminDashboard = () => {
                   </Card>
                   <Card className="bg-muted/50">
                     <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Pending Withdrawals</p>
-                      <p className="text-2xl font-bold text-warning">₹0.00</p>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-warning" />
+                        <p className="text-sm text-muted-foreground">Pending</p>
+                      </div>
+                      <p className="text-2xl font-bold text-warning">{stats.pendingPayments}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Total Payable</p>
+                      <p className="text-2xl font-bold text-destructive">₹{stats.totalPayable.toFixed(2)}</p>
                     </CardContent>
                   </Card>
                   <Card className="bg-muted/50">
@@ -575,44 +728,74 @@ const AdminDashboard = () => {
                   </Card>
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Withdrawable Balance</TableHead>
-                      <TableHead>Total Earned</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).length === 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          No users eligible for withdrawal (min ₹50)
-                        </TableCell>
+                        <TableHead>User ID</TableHead>
+                        <TableHead>UPI ID</TableHead>
+                        <TableHead>Payable Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ) : (
-                      userProfiles
-                        .filter(p => Number(p.withdrawable_balance) >= 50)
-                        .map((profile) => (
-                          <TableRow key={profile.id}>
-                            <TableCell className="font-mono text-sm">
-                              {profile.user_id.slice(0, 12)}...
-                            </TableCell>
-                            <TableCell className="text-success font-medium">
-                              ₹{Number(profile.withdrawable_balance).toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              ₹{Number(profile.total_earnings).toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">Eligible</Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">
+                            No users eligible for payment (min ₹50)
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        userProfiles
+                          .filter(p => Number(p.withdrawable_balance) >= 50)
+                          .map((profile) => (
+                            <TableRow key={profile.id}>
+                              <TableCell className="font-mono text-sm">
+                                {profile.user_id.slice(0, 12)}...
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {profile.upi_id ? (
+                                  <span className="text-primary">{profile.upi_id}</span>
+                                ) : (
+                                  <span className="text-muted-foreground italic">Not provided</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-success font-bold">
+                                ₹{Number(profile.withdrawable_balance).toFixed(2)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={getPaymentStatusBadge(profile.payment_status || 'pending')}>
+                                  {profile.payment_status || 'pending'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUpdatePaymentStatus(profile.user_id, 'processing')}
+                                    disabled={actionLoading || profile.payment_status === 'processing'}
+                                  >
+                                    <Clock className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => handleUpdatePaymentStatus(profile.user_id, 'paid')}
+                                    disabled={actionLoading || profile.payment_status === 'paid'}
+                                    className="bg-success hover:bg-success/90"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

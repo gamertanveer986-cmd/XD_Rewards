@@ -3,13 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import AppLayout from "@/components/AppLayout";
-import { ArrowDownToLine, Wallet as WalletIcon, Gift, Video, Users } from "lucide-react";
+import { ArrowDownToLine, Wallet as WalletIcon, Gift, Video, Users, Edit2, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Wallet = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [editingUpi, setEditingUpi] = useState(false);
+  const [upiId, setUpiId] = useState("");
+  const [savingUpi, setSavingUpi] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -25,10 +30,46 @@ const Wallet = () => {
         .eq("user_id", session.user.id)
         .single();
       setProfile(data);
+      setUpiId(data?.upi_id || "");
       setLoading(false);
     };
     checkAuth();
   }, [navigate]);
+
+  const handleSaveUpi = async () => {
+    if (!upiId.trim()) {
+      toast.error("Please enter a valid UPI ID");
+      return;
+    }
+
+    // Basic UPI ID validation
+    const upiRegex = /^[\w.-]+@[\w.-]+$/;
+    if (!upiRegex.test(upiId.trim())) {
+      toast.error("Invalid UPI ID format (e.g., name@upi)");
+      return;
+    }
+
+    try {
+      setSavingUpi(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ upi_id: upiId.trim() })
+        .eq("user_id", session?.user.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, upi_id: upiId.trim() });
+      setEditingUpi(false);
+      toast.success("UPI ID saved successfully");
+    } catch (error) {
+      console.error("Error saving UPI ID:", error);
+      toast.error("Failed to save UPI ID");
+    } finally {
+      setSavingUpi(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -63,6 +104,53 @@ const Wallet = () => {
               {canWithdraw ? "Withdraw Now" : `Min ₹50 Required`}
             </Button>
           </div>
+        </Card>
+
+        {/* UPI ID Card */}
+        <Card className="p-4 bg-card border-primary/30">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm">Payment UPI ID</h3>
+            {!editingUpi && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setEditingUpi(true)}
+                className="h-8 px-2"
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          
+          {editingUpi ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter UPI ID (e.g., name@paytm)"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value)}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSaveUpi} 
+                disabled={savingUpi}
+                size="sm"
+                className="h-10"
+              >
+                {savingUpi ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          ) : (
+            <p className={`text-sm ${profile?.upi_id ? 'text-primary font-medium' : 'text-muted-foreground italic'}`}>
+              {profile?.upi_id || "Not set - tap edit to add your UPI ID"}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            Your withdrawals will be sent to this UPI ID
+          </p>
         </Card>
 
         {/* Earnings Breakdown */}
