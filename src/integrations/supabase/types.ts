@@ -41,6 +41,30 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          sent_by: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          sent_by?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          sent_by?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -68,15 +92,49 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          notification_id: string
+          read: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notification_id: string
+          read?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notification_id?: string
+          read?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           ads_watched: number
           created_at: string | null
           id: string
           non_withdrawable_balance: number
+          payment_status: string | null
           referrals_count: number
           total_earnings: number
           updated_at: string | null
+          upi_id: string | null
           user_id: string
           withdrawable_balance: number
         }
@@ -85,9 +143,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           non_withdrawable_balance?: number
+          payment_status?: string | null
           referrals_count?: number
           total_earnings?: number
           updated_at?: string | null
+          upi_id?: string | null
           user_id: string
           withdrawable_balance?: number
         }
@@ -96,9 +156,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           non_withdrawable_balance?: number
+          payment_status?: string | null
           referrals_count?: number
           total_earnings?: number
           updated_at?: string | null
+          upi_id?: string | null
           user_id?: string
           withdrawable_balance?: number
         }
