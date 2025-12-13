@@ -126,7 +126,13 @@ const Support = () => {
         {/* Contact Info */}
         <Card className="p-4 bg-card border-border/50">
           <p className="text-sm text-center text-muted-foreground">
-            Email us at <span className="text-primary font-medium">dxreward@gmail.com</span>
+            Email us at{" "}
+            <a 
+              href="mailto:dxreward@gmail.com?subject=Support%20Request" 
+              className="text-primary font-medium underline"
+            >
+              dxreward@gmail.com
+            </a>
           </p>
         </Card>
       </div>
