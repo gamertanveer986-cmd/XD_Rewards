@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Shield, LogOut } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 interface AppHeaderProps {
   title: string;
@@ -34,6 +35,7 @@ const AppHeader = ({ title, showBack = false, showAdmin = false, showLogout = fa
 
         {/* Right side */}
         <div className="flex items-center gap-1 min-w-[60px] justify-end">
+          <NotificationBell />
           {showAdmin && (
             <button
               onClick={() => navigate("/admin/dashboard")}
