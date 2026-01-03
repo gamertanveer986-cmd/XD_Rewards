@@ -3,11 +3,28 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Trophy, Medal, Crown, TrendingUp, Users, Target } from "lucide-react";
+import { Trophy, Medal, Crown, TrendingUp, Users, Target, Share2, Copy } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface LeaderboardUser {
+  user_id: string;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  referrals_count: number;
+  total_earnings: number;
+}
 
 const Leaderboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [myProfile, setMyProfile] = useState<any>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -16,10 +33,74 @@ const Leaderboard = () => {
         navigate("/auth");
         return;
       }
+      setCurrentUser(session.user);
+      await fetchLeaderboard(session.user.id);
       setLoading(false);
     };
     checkAuth();
   }, [navigate]);
+
+  const fetchLeaderboard = async (userId: string) => {
+    // Fetch top referrers
+    const { data: topUsers } = await supabase
+      .from("user_profiles")
+      .select("user_id, display_name, username, avatar_url, referrals_count, total_earnings")
+      .order("referrals_count", { ascending: false })
+      .limit(50);
+
+    if (topUsers) {
+      setLeaderboard(topUsers);
+      
+      // Find current user's rank
+      const userIndex = topUsers.findIndex(u => u.user_id === userId);
+      if (userIndex !== -1) {
+        setMyRank(userIndex + 1);
+        setMyProfile(topUsers[userIndex]);
+      } else {
+        // User not in top 50, fetch their profile
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .single();
+        
+        if (profile) {
+          setMyProfile(profile);
+          // Calculate actual rank
+          const { count } = await supabase
+            .from("user_profiles")
+            .select("*", { count: "exact", head: true })
+            .gt("referrals_count", profile.referrals_count);
+          
+          setMyRank((count || 0) + 1);
+        }
+      }
+    }
+  };
+
+  const getInitials = (name: string | null) => {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const copyReferralCode = () => {
+    if (myProfile?.referral_code) {
+      navigator.clipboard.writeText(myProfile.referral_code);
+      toast.success("Referral code copied!");
+    }
+  };
+
+  const shareReferralCode = () => {
+    if (myProfile?.referral_code) {
+      const shareText = `Join XD Rewards and start earning! Use my referral code: ${myProfile.referral_code}`;
+      if (navigator.share) {
+        navigator.share({ text: shareText });
+      } else {
+        navigator.clipboard.writeText(shareText);
+        toast.success("Share text copied!");
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -29,80 +110,197 @@ const Leaderboard = () => {
     );
   }
 
+  const topThree = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
+
   return (
     <AppLayout title="Leaderboard">
       <div className="px-4 py-4 space-y-4">
-        {/* Header Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="p-3 bg-gradient-to-br from-yellow-500/20 to-card border-yellow-500/30">
-            <div className="flex flex-col items-center text-center">
-              <Crown className="w-6 h-6 text-yellow-500 mb-1" />
-              <p className="text-xs text-muted-foreground">Top Earner</p>
-              <p className="text-sm font-bold text-yellow-500 mt-1">Soon</p>
-            </div>
-          </Card>
-          
-          <Card className="p-3 bg-card border-border/50">
-            <div className="flex flex-col items-center text-center">
-              <Target className="w-6 h-6 text-primary mb-1" />
-              <p className="text-xs text-muted-foreground">Your Rank</p>
-              <p className="text-sm font-bold mt-1">—</p>
-            </div>
-          </Card>
-          
-          <Card className="p-3 bg-card border-border/50">
-            <div className="flex flex-col items-center text-center">
-              <Users className="w-6 h-6 text-success mb-1" />
-              <p className="text-xs text-muted-foreground">Total Users</p>
-              <p className="text-sm font-bold mt-1">Growing</p>
-            </div>
-          </Card>
-        </div>
-
-        {/* Coming Soon Card */}
-        <Card className="p-8 bg-card border-border/50">
-          <div className="text-center space-y-4">
-            <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-              <Trophy className="w-10 h-10 text-primary" />
-            </div>
+        {/* My Referral Card */}
+        <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="text-xl font-bold mb-2">Coming Soon</h3>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                The leaderboard will show top earners once more users join the platform.
+              <p className="text-xs text-muted-foreground">Your Referral Code</p>
+              <p className="text-2xl font-bold tracking-widest text-primary">
+                {myProfile?.referral_code || "—"}
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <TrendingUp className="w-4 h-4" />
-              <span>Auto-refreshes every 24 hours</span>
+            <div className="flex gap-2">
+              <Button size="icon" variant="outline" onClick={copyReferralCode} className="h-9 w-9">
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button size="icon" variant="default" onClick={shareReferralCode} className="h-9 w-9">
+                <Share2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-background/50 rounded-lg p-2 text-center">
+              <p className="text-lg font-bold">{myProfile?.referrals_count || 0}</p>
+              <p className="text-[10px] text-muted-foreground">Referrals</p>
+            </div>
+            <div className="bg-background/50 rounded-lg p-2 text-center">
+              <p className="text-lg font-bold">#{myRank || "—"}</p>
+              <p className="text-[10px] text-muted-foreground">Your Rank</p>
             </div>
           </div>
         </Card>
 
-        {/* Placeholder Rankings */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground px-1">Top Earners</h2>
-          
-          {[1, 2, 3].map((rank) => (
-            <Card key={rank} className="p-4 bg-card border-border/50 opacity-50">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  rank === 1 ? "bg-yellow-500/20" : 
-                  rank === 2 ? "bg-gray-400/20" : 
-                  "bg-amber-700/20"
-                }`}>
-                  {rank === 1 && <Crown className="w-5 h-5 text-yellow-500" />}
-                  {rank === 2 && <Medal className="w-5 h-5 text-gray-400" />}
-                  {rank === 3 && <Medal className="w-5 h-5 text-amber-700" />}
+        <Tabs defaultValue="referrals" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="referrals">Top Referrers</TabsTrigger>
+            <TabsTrigger value="earners">Top Earners</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="referrals" className="space-y-4 mt-4">
+            {/* Top 3 Podium */}
+            {topThree.length >= 3 && (
+              <div className="flex justify-center items-end gap-2 py-4">
+                {/* 2nd Place */}
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-14 h-14 border-2 border-gray-400">
+                    <AvatarImage src={topThree[1]?.avatar_url || ""} />
+                    <AvatarFallback className="bg-gray-400/20">
+                      {getInitials(topThree[1]?.display_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Medal className="w-5 h-5 text-gray-400 -mt-2" />
+                  <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
+                    {topThree[1]?.display_name || topThree[1]?.username || "User"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{topThree[1]?.referrals_count} refs</p>
+                  <div className="w-16 h-16 bg-gray-400/20 rounded-t-lg mt-1"></div>
                 </div>
-                <div className="flex-1">
-                  <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-                  <div className="h-3 w-16 bg-muted rounded mt-1.5 animate-pulse" />
+
+                {/* 1st Place */}
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-18 h-18 border-2 border-yellow-500">
+                    <AvatarImage src={topThree[0]?.avatar_url || ""} />
+                    <AvatarFallback className="bg-yellow-500/20">
+                      {getInitials(topThree[0]?.display_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Crown className="w-6 h-6 text-yellow-500 -mt-2" />
+                  <p className="text-sm font-bold mt-1 truncate max-w-[80px]">
+                    {topThree[0]?.display_name || topThree[0]?.username || "User"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{topThree[0]?.referrals_count} refs</p>
+                  <div className="w-18 h-24 bg-yellow-500/20 rounded-t-lg mt-1"></div>
                 </div>
-                <div className="h-5 w-14 bg-muted rounded animate-pulse" />
+
+                {/* 3rd Place */}
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-12 h-12 border-2 border-amber-700">
+                    <AvatarImage src={topThree[2]?.avatar_url || ""} />
+                    <AvatarFallback className="bg-amber-700/20">
+                      {getInitials(topThree[2]?.display_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Medal className="w-5 h-5 text-amber-700 -mt-2" />
+                  <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
+                    {topThree[2]?.display_name || topThree[2]?.username || "User"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">{topThree[2]?.referrals_count} refs</p>
+                  <div className="w-14 h-12 bg-amber-700/20 rounded-t-lg mt-1"></div>
+                </div>
               </div>
-            </Card>
-          ))}
-        </div>
+            )}
+
+            {/* Rest of leaderboard */}
+            <div className="space-y-2">
+              {rest.map((user, index) => (
+                <Card 
+                  key={user.user_id} 
+                  className={`p-3 bg-card border-border/50 ${user.user_id === currentUser?.id ? "border-primary/50 bg-primary/5" : ""}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
+                      {index + 4}
+                    </div>
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={user.avatar_url || ""} />
+                      <AvatarFallback className="bg-primary/20">
+                        {getInitials(user.display_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {user.display_name || user.username || "User"}
+                      </p>
+                      {user.username && (
+                        <p className="text-[10px] text-muted-foreground">@{user.username}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm">{user.referrals_count}</p>
+                      <p className="text-[10px] text-muted-foreground">referrals</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {leaderboard.length === 0 && (
+              <Card className="p-8 bg-card border-border/50">
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold mb-1">Be the first!</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Share your referral code and climb the leaderboard
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="earners" className="space-y-2 mt-4">
+            {leaderboard
+              .sort((a, b) => b.total_earnings - a.total_earnings)
+              .slice(0, 20)
+              .map((user, index) => (
+                <Card 
+                  key={user.user_id} 
+                  className={`p-3 bg-card border-border/50 ${user.user_id === currentUser?.id ? "border-primary/50 bg-primary/5" : ""}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                      index === 1 ? "bg-gray-400/20 text-gray-400" :
+                      index === 2 ? "bg-amber-700/20 text-amber-700" :
+                      "bg-muted text-muted-foreground"
+                    }`}>
+                      {index === 0 && <Crown className="w-4 h-4" />}
+                      {index === 1 && <Medal className="w-4 h-4" />}
+                      {index === 2 && <Medal className="w-4 h-4" />}
+                      {index > 2 && index + 1}
+                    </div>
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={user.avatar_url || ""} />
+                      <AvatarFallback className="bg-primary/20">
+                        {getInitials(user.display_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {user.display_name || user.username || "User"}
+                      </p>
+                      {user.username && (
+                        <p className="text-[10px] text-muted-foreground">@{user.username}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm text-success">₹{user.total_earnings.toFixed(0)}</p>
+                      <p className="text-[10px] text-muted-foreground">earned</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+          </TabsContent>
+        </Tabs>
 
         {/* Info Card */}
         <Card className="p-4 bg-primary/10 border-primary/20">
@@ -111,9 +309,9 @@ const Leaderboard = () => {
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">Climb the ranks!</h4>
+              <h4 className="font-medium text-sm">Earn ₹5 per referral!</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Watch more ads and refer friends to appear on the leaderboard
+                Share your code and earn when friends join
               </p>
             </div>
           </div>
