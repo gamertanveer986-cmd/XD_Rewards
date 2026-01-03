@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import WatchAdModal from "@/components/WatchAdModal";
 import AppLayout from "@/components/AppLayout";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
-import { Play, TrendingUp, Users, Eye } from "lucide-react";
+import ProfileSetup from "@/components/ProfileSetup";
+import { Play, TrendingUp, Users, Eye, Copy, Share2 } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -25,6 +27,11 @@ const Dashboard = () => {
       .eq("user_id", userId)
       .single();
     setProfile(data);
+    
+    // Check if profile setup is needed
+    if (data && !data.profile_completed) {
+      setShowProfileSetup(true);
+    }
   };
 
   const checkAdminRole = async (userId: string) => {
@@ -79,6 +86,32 @@ const Dashboard = () => {
     }
   };
 
+  const handleProfileSetupComplete = () => {
+    setShowProfileSetup(false);
+    if (user) {
+      fetchProfile(user.id);
+    }
+  };
+
+  const copyReferralCode = () => {
+    if (profile?.referral_code) {
+      navigator.clipboard.writeText(profile.referral_code);
+      toast.success("Referral code copied!");
+    }
+  };
+
+  const shareReferralCode = () => {
+    if (profile?.referral_code) {
+      const shareText = `Join XD Rewards and start earning! Use my referral code: ${profile.referral_code}`;
+      if (navigator.share) {
+        navigator.share({ text: shareText });
+      } else {
+        navigator.clipboard.writeText(shareText);
+        toast.success("Share text copied!");
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -87,6 +120,17 @@ const Dashboard = () => {
           <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show profile setup for new users
+  if (showProfileSetup && user) {
+    return (
+      <ProfileSetup 
+        userId={user.id} 
+        onComplete={handleProfileSetupComplete}
+        existingProfile={profile}
+      />
     );
   }
 
@@ -145,6 +189,29 @@ const Dashboard = () => {
             </div>
           </Card>
         </div>
+
+        {/* Referral Code Card */}
+        <Card className="p-4 bg-gradient-to-r from-accent/10 to-transparent border-accent/30">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Your Referral Code</p>
+              <p className="text-xl font-bold tracking-widest text-accent">
+                {profile?.referral_code || "—"}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="icon" variant="outline" onClick={copyReferralCode} className="h-8 w-8">
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button size="icon" variant="default" onClick={shareReferralCode} className="h-8 w-8 bg-accent hover:bg-accent/90">
+                <Share2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Share and earn ₹5 for every friend who joins!
+          </p>
+        </Card>
 
         {/* Watch Ads CTA */}
         <Card className="p-4 bg-gradient-to-r from-primary/10 to-transparent border-primary/30">

@@ -127,44 +127,73 @@ export type Database = {
       user_profiles: {
         Row: {
           ads_watched: number
+          avatar_url: string | null
+          birthday: string | null
           created_at: string | null
+          display_name: string | null
           id: string
           non_withdrawable_balance: number
           payment_status: string | null
+          profile_completed: boolean | null
+          referral_code: string | null
           referrals_count: number
+          referred_by: string | null
           total_earnings: number
           updated_at: string | null
           upi_id: string | null
           user_id: string
+          username: string | null
           withdrawable_balance: number
         }
         Insert: {
           ads_watched?: number
+          avatar_url?: string | null
+          birthday?: string | null
           created_at?: string | null
+          display_name?: string | null
           id?: string
           non_withdrawable_balance?: number
           payment_status?: string | null
+          profile_completed?: boolean | null
+          referral_code?: string | null
           referrals_count?: number
+          referred_by?: string | null
           total_earnings?: number
           updated_at?: string | null
           upi_id?: string | null
           user_id: string
+          username?: string | null
           withdrawable_balance?: number
         }
         Update: {
           ads_watched?: number
+          avatar_url?: string | null
+          birthday?: string | null
           created_at?: string | null
+          display_name?: string | null
           id?: string
           non_withdrawable_balance?: number
           payment_status?: string | null
+          profile_completed?: boolean | null
+          referral_code?: string | null
           referrals_count?: number
+          referred_by?: string | null
           total_earnings?: number
           updated_at?: string | null
           upi_id?: string | null
           user_id?: string
+          username?: string | null
           withdrawable_balance?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -192,6 +221,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_referral_code: {
+        Args: { p_referral_code: string; p_user_id: string }
+        Returns: Json
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
