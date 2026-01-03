@@ -1,12 +1,55 @@
 import { AdMob, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents } from '@capacitor-community/admob';
+import { supabase } from '@/integrations/supabase/client';
 
-// Production AdMob IDs
-const REWARDED_AD_UNIT_ID = 'ca-app-pub-3054032487800382/2547473951';
+// Cached config
+let cachedConfig: { rewardedAdUnitId: string; isTesting: boolean } | null = null;
+
+// Fetch AdMob config from database
+export async function getAdmobConfig(): Promise<{ rewardedAdUnitId: string; isTesting: boolean }> {
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('admob_config')
+      .select('rewarded_ad_unit_id, is_testing')
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      console.warn('Using fallback AdMob config');
+      return {
+        rewardedAdUnitId: 'ca-app-pub-3054032487800382/2547473951',
+        isTesting: false
+      };
+    }
+
+    cachedConfig = {
+      rewardedAdUnitId: data.rewarded_ad_unit_id,
+      isTesting: data.is_testing || false
+    };
+
+    return cachedConfig;
+  } catch (error) {
+    console.error('Error fetching AdMob config:', error);
+    return {
+      rewardedAdUnitId: 'ca-app-pub-3054032487800382/2547473951',
+      isTesting: false
+    };
+  }
+}
+
+// Clear cached config (call when admin updates settings)
+export function clearAdmobConfigCache(): void {
+  cachedConfig = null;
+}
 
 export async function initializeAdMob(): Promise<void> {
   try {
+    const config = await getAdmobConfig();
     await AdMob.initialize({
-      initializeForTesting: false,
+      initializeForTesting: config.isTesting,
     });
     console.log('AdMob initialized successfully');
   } catch (error) {
@@ -15,9 +58,11 @@ export async function initializeAdMob(): Promise<void> {
 }
 
 export async function prepareRewardedAd(): Promise<AdLoadInfo | null> {
+  const config = await getAdmobConfig();
+  
   const options: RewardAdOptions = {
-    adId: REWARDED_AD_UNIT_ID,
-    isTesting: false,
+    adId: config.rewardedAdUnitId,
+    isTesting: config.isTesting,
   };
 
   try {

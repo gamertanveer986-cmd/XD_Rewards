@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock } from "lucide-react";
+import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock, Smartphone, Save } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -65,6 +65,14 @@ const AdminDashboard = () => {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [sendingNotification, setSendingNotification] = useState(false);
 
+  // AdMob config state
+  const [admobAppId, setAdmobAppId] = useState("");
+  const [admobRewardedAdUnitId, setAdmobRewardedAdUnitId] = useState("");
+  const [admobBannerAdUnitId, setAdmobBannerAdUnitId] = useState("");
+  const [admobInterstitialAdUnitId, setAdmobInterstitialAdUnitId] = useState("");
+  const [admobIsTesting, setAdmobIsTesting] = useState(false);
+  const [savingAdmob, setSavingAdmob] = useState(false);
+
   // Stats
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -102,9 +110,90 @@ const AdminDashboard = () => {
       }
 
       await loadData();
+      await loadAdmobConfig();
     } catch (error) {
       console.error("Error checking admin access:", error);
       navigate("/admin/login");
+    }
+  };
+
+  const loadAdmobConfig = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("admob_config")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+
+      if (data) {
+        setAdmobAppId(data.app_id || "");
+        setAdmobRewardedAdUnitId(data.rewarded_ad_unit_id || "");
+        setAdmobBannerAdUnitId(data.banner_ad_unit_id || "");
+        setAdmobInterstitialAdUnitId(data.interstitial_ad_unit_id || "");
+        setAdmobIsTesting(data.is_testing || false);
+      }
+    } catch (error) {
+      console.error("Error loading AdMob config:", error);
+    }
+  };
+
+  const handleSaveAdmobConfig = async () => {
+    if (!admobAppId.trim() || !admobRewardedAdUnitId.trim()) {
+      toast.error("App ID and Rewarded Ad Unit ID are required");
+      return;
+    }
+
+    try {
+      setSavingAdmob(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Check if config exists
+      const { data: existing } = await supabase
+        .from("admob_config")
+        .select("id")
+        .limit(1)
+        .single();
+
+      if (existing) {
+        // Update existing config
+        const { error } = await supabase
+          .from("admob_config")
+          .update({
+            app_id: admobAppId,
+            rewarded_ad_unit_id: admobRewardedAdUnitId,
+            banner_ad_unit_id: admobBannerAdUnitId || null,
+            interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
+            is_testing: admobIsTesting,
+            updated_at: new Date().toISOString(),
+            updated_by: user?.id
+          })
+          .eq("id", existing.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new config
+        const { error } = await supabase
+          .from("admob_config")
+          .insert({
+            app_id: admobAppId,
+            rewarded_ad_unit_id: admobRewardedAdUnitId,
+            banner_ad_unit_id: admobBannerAdUnitId || null,
+            interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
+            is_testing: admobIsTesting,
+            updated_by: user?.id
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success("AdMob configuration saved successfully");
+    } catch (error) {
+      console.error("Error saving AdMob config:", error);
+      toast.error("Failed to save AdMob configuration");
+    } finally {
+      setSavingAdmob(false);
     }
   };
 
@@ -443,12 +532,13 @@ const AdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="notifications">Notify</TabsTrigger>
             <TabsTrigger value="roles">Roles</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="transactions">Txns</TabsTrigger>
+            <TabsTrigger value="admob">AdMob</TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
@@ -853,6 +943,92 @@ const AdminDashboard = () => {
                     )}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* AdMob Tab */}
+          <TabsContent value="admob" className="space-y-4">
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Smartphone className="h-5 w-5 text-primary" />
+                  AdMob Configuration
+                </CardTitle>
+                <CardDescription>
+                  Manage AdMob settings. Changes apply without app rebuild.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">App ID *</label>
+                    <Input
+                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"
+                      value={admobAppId}
+                      onChange={(e) => setAdmobAppId(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your AdMob App ID from the AdMob console
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Rewarded Ad Unit ID *</label>
+                    <Input
+                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
+                      value={admobRewardedAdUnitId}
+                      onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Ad unit ID for rewarded video ads (required for earning)
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Banner Ad Unit ID (Optional)</label>
+                    <Input
+                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
+                      value={admobBannerAdUnitId}
+                      onChange={(e) => setAdmobBannerAdUnitId(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Interstitial Ad Unit ID (Optional)</label>
+                    <Input
+                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
+                      value={admobInterstitialAdUnitId}
+                      onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <input
+                      type="checkbox"
+                      id="admob-testing"
+                      checked={admobIsTesting}
+                      onChange={(e) => setAdmobIsTesting(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="admob-testing" className="text-sm">
+                      Enable Test Mode (use test ads)
+                    </label>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleSaveAdmobConfig}
+                  disabled={savingAdmob}
+                  className="gap-2"
+                >
+                  {savingAdmob ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Save Configuration
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

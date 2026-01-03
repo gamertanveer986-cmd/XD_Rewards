@@ -41,6 +41,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admob_config: {
+        Row: {
+          app_id: string
+          banner_ad_unit_id: string | null
+          id: string
+          interstitial_ad_unit_id: string | null
+          is_testing: boolean | null
+          rewarded_ad_unit_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          app_id: string
+          banner_ad_unit_id?: string | null
+          id?: string
+          interstitial_ad_unit_id?: string | null
+          is_testing?: boolean | null
+          rewarded_ad_unit_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          app_id?: string
+          banner_ad_unit_id?: string | null
+          id?: string
+          interstitial_ad_unit_id?: string | null
+          is_testing?: boolean | null
+          rewarded_ad_unit_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
