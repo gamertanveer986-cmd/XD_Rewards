@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_rewards: {
+        Row: {
+          created_at: string | null
+          current_streak: number
+          id: string
+          last_claim_date: string | null
+          total_claimed: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_streak?: number
+          id?: string
+          last_claim_date?: string | null
+          total_claimed?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_streak?: number
+          id?: string
+          last_claim_date?: string | null
+          total_claimed?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -258,6 +288,7 @@ export type Database = {
         Args: { p_referral_code: string; p_user_id: string }
         Returns: Json
       }
+      claim_daily_reward: { Args: { p_user_id: string }; Returns: Json }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
