@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Wallet, Trophy, HelpCircle } from "lucide-react";
+import { Home, Wallet, Trophy, Gift } from "lucide-react";
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -8,8 +8,8 @@ const BottomNav = () => {
   const navItems = [
     { path: "/dashboard", icon: Home, label: "Home" },
     { path: "/wallet", icon: Wallet, label: "Wallet" },
+    { path: "/gift-cards", icon: Gift, label: "Gifts" },
     { path: "/leaderboard", icon: Trophy, label: "Ranks" },
-    { path: "/support", icon: HelpCircle, label: "Help" },
   ];
 
   const isActive = (path: string) => location.pathname === path;

@@ -104,6 +104,119 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_card_products: {
+        Row: {
+          brand: string
+          created_at: string
+          denomination: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          denomination: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          denomination?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gift_card_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          id: string
+          processed_at: string | null
+          product_id: string
+          redemption_code: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          product_id: string
+          redemption_code?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          product_id?: string
+          redemption_code?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "gift_card_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_cards: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_redeemed: boolean
+          redeemed_at: string | null
+          redeemed_by: string | null
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          value: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -300,8 +413,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      purchase_gift_card: {
+        Args: { p_product_id: string; p_user_id: string }
+        Returns: Json
+      }
       record_ad_completion: {
         Args: { p_ad_duration?: number; p_user_id: string }
+        Returns: Json
+      }
+      redeem_gift_card: {
+        Args: { p_code: string; p_user_id: string }
         Returns: Json
       }
     }
