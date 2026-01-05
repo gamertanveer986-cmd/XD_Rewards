@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock, Smartphone, Save, Gift } from "lucide-react";
+import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock, Smartphone, Save, Gift, Plus, Ticket } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -56,6 +56,37 @@ interface AuthUser {
   created_at: string;
 }
 
+interface GiftCard {
+  id: string;
+  code: string;
+  value: number;
+  is_redeemed: boolean;
+  redeemed_by: string | null;
+  redeemed_at: string | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
+interface GiftCardProduct {
+  id: string;
+  name: string;
+  brand: string;
+  denomination: number;
+  price: number;
+  is_active: boolean;
+}
+
+interface GiftCardPurchase {
+  id: string;
+  user_id: string;
+  product_id: string;
+  amount_paid: number;
+  status: string;
+  redemption_code: string | null;
+  created_at: string;
+  product?: GiftCardProduct;
+}
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -84,6 +115,18 @@ const AdminDashboard = () => {
 
   // Daily rewards state
   const [dailyRewards, setDailyRewards] = useState<DailyReward[]>([]);
+
+  // Gift cards state
+  const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
+  const [giftCardProducts, setGiftCardProducts] = useState<GiftCardProduct[]>([]);
+  const [giftCardPurchases, setGiftCardPurchases] = useState<GiftCardPurchase[]>([]);
+  const [newGiftCardCode, setNewGiftCardCode] = useState("");
+  const [newGiftCardValue, setNewGiftCardValue] = useState("");
+  const [newProductName, setNewProductName] = useState("");
+  const [newProductBrand, setNewProductBrand] = useState("");
+  const [newProductDenomination, setNewProductDenomination] = useState("");
+  const [newProductPrice, setNewProductPrice] = useState("");
+  const [savingGiftCard, setSavingGiftCard] = useState(false);
 
   // Stats
   const [stats, setStats] = useState({
@@ -124,6 +167,7 @@ const AdminDashboard = () => {
       await loadData();
       await loadAdmobConfig();
       await loadDailyRewards();
+      await loadGiftCardsData();
     } catch (error) {
       console.error("Error checking admin access:", error);
       navigate("/admin/login");
@@ -163,6 +207,131 @@ const AdminDashboard = () => {
       setDailyRewards(data || []);
     } catch (error) {
       console.error("Error loading daily rewards:", error);
+    }
+  };
+
+  const loadGiftCardsData = async () => {
+    try {
+      const [cardsRes, productsRes, purchasesRes] = await Promise.all([
+        supabase.from("gift_cards").select("*").order("created_at", { ascending: false }),
+        supabase.from("gift_card_products").select("*").order("brand", { ascending: true }),
+        supabase.from("gift_card_purchases").select("*, product:gift_card_products(*)").order("created_at", { ascending: false })
+      ]);
+
+      if (cardsRes.data) setGiftCards(cardsRes.data);
+      if (productsRes.data) setGiftCardProducts(productsRes.data);
+      if (purchasesRes.data) setGiftCardPurchases(purchasesRes.data);
+    } catch (error) {
+      console.error("Error loading gift cards data:", error);
+    }
+  };
+
+  const handleCreateGiftCard = async () => {
+    if (!newGiftCardCode.trim() || !newGiftCardValue) {
+      toast.error("Please enter code and value");
+      return;
+    }
+
+    try {
+      setSavingGiftCard(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase.from("gift_cards").insert({
+        code: newGiftCardCode.toUpperCase(),
+        value: parseFloat(newGiftCardValue),
+        created_by: user?.id
+      });
+
+      if (error) throw error;
+
+      toast.success("Gift card created successfully");
+      setNewGiftCardCode("");
+      setNewGiftCardValue("");
+      await loadGiftCardsData();
+    } catch (error: any) {
+      console.error("Error creating gift card:", error);
+      if (error.code === "23505") {
+        toast.error("Gift card code already exists");
+      } else {
+        toast.error("Failed to create gift card");
+      }
+    } finally {
+      setSavingGiftCard(false);
+    }
+  };
+
+  const handleCreateProduct = async () => {
+    if (!newProductName.trim() || !newProductBrand.trim() || !newProductDenomination || !newProductPrice) {
+      toast.error("Please fill all fields");
+      return;
+    }
+
+    try {
+      setSavingGiftCard(true);
+
+      const { error } = await supabase.from("gift_card_products").insert({
+        name: newProductName,
+        brand: newProductBrand,
+        denomination: parseFloat(newProductDenomination),
+        price: parseFloat(newProductPrice)
+      });
+
+      if (error) throw error;
+
+      toast.success("Product created successfully");
+      setNewProductName("");
+      setNewProductBrand("");
+      setNewProductDenomination("");
+      setNewProductPrice("");
+      await loadGiftCardsData();
+    } catch (error) {
+      console.error("Error creating product:", error);
+      toast.error("Failed to create product");
+    } finally {
+      setSavingGiftCard(false);
+    }
+  };
+
+  const handleDeleteGiftCard = async (id: string) => {
+    try {
+      const { error } = await supabase.from("gift_cards").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Gift card deleted");
+      await loadGiftCardsData();
+    } catch (error) {
+      console.error("Error deleting gift card:", error);
+      toast.error("Failed to delete gift card");
+    }
+  };
+
+  const handleToggleProductStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("gift_card_products")
+        .update({ is_active: !currentStatus })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success(`Product ${!currentStatus ? "activated" : "deactivated"}`);
+      await loadGiftCardsData();
+    } catch (error) {
+      console.error("Error toggling product status:", error);
+      toast.error("Failed to update product");
+    }
+  };
+
+  const handleUpdatePurchaseStatus = async (id: string, status: string, code?: string) => {
+    try {
+      const updateData: any = { status, processed_at: new Date().toISOString() };
+      if (code) updateData.redemption_code = code;
+
+      const { error } = await supabase.from("gift_card_purchases").update(updateData).eq("id", id);
+      if (error) throw error;
+
+      toast.success(`Purchase status updated to ${status}`);
+      await loadGiftCardsData();
+    } catch (error) {
+      console.error("Error updating purchase:", error);
+      toast.error("Failed to update purchase");
     }
   };
 
@@ -559,11 +728,12 @@ const AdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="notifications">Notify</TabsTrigger>
             <TabsTrigger value="roles">Roles</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="giftcards">Gifts</TabsTrigger>
             <TabsTrigger value="daily">Daily</TabsTrigger>
             <TabsTrigger value="transactions">Txns</TabsTrigger>
             <TabsTrigger value="admob">AdMob</TabsTrigger>
@@ -1139,6 +1309,258 @@ const AdminDashboard = () => {
                   )}
                   Save Configuration
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Gift Cards Tab */}
+          <TabsContent value="giftcards" className="space-y-4">
+            {/* Create Gift Card Code */}
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ticket className="h-5 w-5 text-primary" />
+                  Create Gift Card Code
+                </CardTitle>
+                <CardDescription>Create redeemable gift card codes for users</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Code</label>
+                    <Input
+                      placeholder="GIFT2024"
+                      value={newGiftCardCode}
+                      onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Value (₹)</label>
+                    <Input
+                      type="number"
+                      placeholder="100"
+                      value={newGiftCardValue}
+                      onChange={(e) => setNewGiftCardValue(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      onClick={handleCreateGiftCard}
+                      disabled={savingGiftCard}
+                      className="w-full"
+                    >
+                      {savingGiftCard ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+                      Create
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Gift Card Codes List */}
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-warning" />
+                  Gift Card Codes ({giftCards.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Redeemed By</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {giftCards.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          No gift cards created yet
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      giftCards.map((card) => (
+                        <TableRow key={card.id}>
+                          <TableCell className="font-mono font-bold">{card.code}</TableCell>
+                          <TableCell className="text-success font-medium">₹{Number(card.value).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge variant={card.is_redeemed ? "secondary" : "default"}>
+                              {card.is_redeemed ? "Redeemed" : "Active"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {card.redeemed_by ? `${card.redeemed_by.slice(0, 8)}...` : "-"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(card.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {!card.is_redeemed && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteGiftCard(card.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Gift Card Products */}
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  Gift Card Products
+                </CardTitle>
+                <CardDescription>Manage purchasable gift cards</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-5 gap-4">
+                  <Input
+                    placeholder="Name"
+                    value={newProductName}
+                    onChange={(e) => setNewProductName(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Brand"
+                    value={newProductBrand}
+                    onChange={(e) => setNewProductBrand(e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Value ₹"
+                    value={newProductDenomination}
+                    onChange={(e) => setNewProductDenomination(e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Price ₹"
+                    value={newProductPrice}
+                    onChange={(e) => setNewProductPrice(e.target.value)}
+                  />
+                  <Button onClick={handleCreateProduct} disabled={savingGiftCard}>
+                    <Plus className="h-4 w-4 mr-2" />Add
+                  </Button>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Brand</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {giftCardProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>{product.brand}</TableCell>
+                        <TableCell>₹{Number(product.denomination).toFixed(0)}</TableCell>
+                        <TableCell className="text-success">₹{Number(product.price).toFixed(0)}</TableCell>
+                        <TableCell>
+                          <Badge variant={product.is_active ? "default" : "secondary"}>
+                            {product.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleProductStatus(product.id, product.is_active)}
+                          >
+                            {product.is_active ? "Disable" : "Enable"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Purchase Requests */}
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-warning" />
+                  Purchase Requests ({giftCardPurchases.filter(p => p.status === 'pending').length} pending)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {giftCardPurchases.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          No purchase requests yet
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      giftCardPurchases.map((purchase) => (
+                        <TableRow key={purchase.id}>
+                          <TableCell className="font-mono text-sm">{purchase.user_id.slice(0, 8)}...</TableCell>
+                          <TableCell>{(purchase.product as GiftCardProduct)?.name || 'N/A'}</TableCell>
+                          <TableCell className="text-success">₹{Number(purchase.amount_paid).toFixed(0)}</TableCell>
+                          <TableCell>
+                            <Badge variant={purchase.status === 'completed' ? 'default' : purchase.status === 'pending' ? 'destructive' : 'secondary'}>
+                              {purchase.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(purchase.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {purchase.status === 'pending' && (
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const code = prompt("Enter gift card code to send to user:");
+                                    if (code) handleUpdatePurchaseStatus(purchase.id, 'completed', code);
+                                  }}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                            {purchase.redemption_code && (
+                              <span className="text-xs font-mono text-primary">{purchase.redemption_code}</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
