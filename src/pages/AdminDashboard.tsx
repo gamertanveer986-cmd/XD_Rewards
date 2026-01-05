@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock, Smartphone, Save } from "lucide-react";
+import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock, Smartphone, Save, Gift } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -38,6 +38,15 @@ interface Transaction {
   amount: number;
   transaction_type: string;
   description: string;
+  created_at: string;
+}
+
+interface DailyReward {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  last_claim_date: string | null;
+  total_claimed: number;
   created_at: string;
 }
 
@@ -72,6 +81,9 @@ const AdminDashboard = () => {
   const [admobInterstitialAdUnitId, setAdmobInterstitialAdUnitId] = useState("");
   const [admobIsTesting, setAdmobIsTesting] = useState(false);
   const [savingAdmob, setSavingAdmob] = useState(false);
+
+  // Daily rewards state
+  const [dailyRewards, setDailyRewards] = useState<DailyReward[]>([]);
 
   // Stats
   const [stats, setStats] = useState({
@@ -111,6 +123,7 @@ const AdminDashboard = () => {
 
       await loadData();
       await loadAdmobConfig();
+      await loadDailyRewards();
     } catch (error) {
       console.error("Error checking admin access:", error);
       navigate("/admin/login");
@@ -136,6 +149,20 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error("Error loading AdMob config:", error);
+    }
+  };
+
+  const loadDailyRewards = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("daily_rewards")
+        .select("*")
+        .order("total_claimed", { ascending: false });
+
+      if (error) throw error;
+      setDailyRewards(data || []);
+    } catch (error) {
+      console.error("Error loading daily rewards:", error);
     }
   };
 
@@ -532,11 +559,12 @@ const AdminDashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="notifications">Notify</TabsTrigger>
             <TabsTrigger value="roles">Roles</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="daily">Daily</TabsTrigger>
             <TabsTrigger value="transactions">Txns</TabsTrigger>
             <TabsTrigger value="admob">AdMob</TabsTrigger>
           </TabsList>
@@ -886,6 +914,88 @@ const AdminDashboard = () => {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Daily Rewards Tab */}
+          <TabsContent value="daily" className="space-y-4">
+            <Card className="card-glow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-warning" />
+                  Daily Rewards Data
+                </CardTitle>
+                <CardDescription>View all user daily reward streaks and claims</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-4 mb-6">
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Total Users Claimed</p>
+                      <p className="text-2xl font-bold text-warning">{dailyRewards.length}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Total Rewards Given</p>
+                      <p className="text-2xl font-bold text-success">
+                        ₹{dailyRewards.reduce((sum, d) => sum + Number(d.total_claimed), 0).toFixed(2)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4">
+                      <p className="text-sm text-muted-foreground">Active Streaks (7 days)</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {dailyRewards.filter(d => d.current_streak >= 7).length}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User ID</TableHead>
+                      <TableHead>Current Streak</TableHead>
+                      <TableHead>Last Claim</TableHead>
+                      <TableHead>Total Claimed</TableHead>
+                      <TableHead>Started</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyRewards.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          No daily reward claims yet
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      dailyRewards.map((reward) => (
+                        <TableRow key={reward.id}>
+                          <TableCell className="font-mono text-sm">
+                            {reward.user_id.slice(0, 12)}...
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={reward.current_streak >= 7 ? "default" : "secondary"}>
+                              Day {reward.current_streak}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {reward.last_claim_date || 'Never'}
+                          </TableCell>
+                          <TableCell className="text-success font-medium">
+                            ₹{Number(reward.total_claimed).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>

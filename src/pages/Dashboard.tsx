@@ -8,6 +8,7 @@ import WatchAdModal from "@/components/WatchAdModal";
 import AppLayout from "@/components/AppLayout";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import ProfileSetup from "@/components/ProfileSetup";
+import DailyRewards from "@/components/DailyRewards";
 import { Play, TrendingUp, Users, Eye, Copy, Share2 } from "lucide-react";
 
 const Dashboard = () => {
@@ -212,6 +213,11 @@ const Dashboard = () => {
             Share and earn ₹5 for every friend who joins!
           </p>
         </Card>
+
+        {/* Daily Rewards */}
+        {user && (
+          <DailyRewards userId={user.id} onClaim={() => fetchProfile(user.id)} />
+        )}
 
         {/* Watch Ads CTA */}
         <Card className="p-4 bg-gradient-to-r from-primary/10 to-transparent border-primary/30">
