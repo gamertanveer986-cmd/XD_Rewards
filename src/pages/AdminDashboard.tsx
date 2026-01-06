@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -87,7 +87,6 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Form states
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
   const [admobAppId, setAdmobAppId] = useState("");
@@ -394,7 +393,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const filteredProfiles = userProfiles.filter(p => p.user_id.toLowerCase().includes(searchTerm.toLowerCase()) || (p.upi_id && p.upi_id.toLowerCase().includes(searchTerm.toLowerCase())));
+  const filteredProfiles = userProfiles.filter(p => 
+    p.user_id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (p.upi_id && p.upi_id.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const tabs: { key: TabType; label: string }[] = [
     { key: "overview", label: "Overview" },
@@ -403,7 +405,7 @@ const AdminDashboard = () => {
     { key: "transactions", label: "Transactions" },
     { key: "payments", label: "Payments" },
     { key: "daily", label: "Daily" },
-    { key: "giftcards", label: "Gift Cards" },
+    { key: "giftcards", label: "Cards" },
     { key: "roles", label: "Roles" },
     { key: "notifications", label: "Notify" },
     { key: "admob", label: "AdMob" }
@@ -412,96 +414,125 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
       </div>
     );
   }
 
+  const StatCard = ({ label, value, color = "text-foreground" }: { label: string; value: string | number; color?: string }) => (
+    <div className="bg-card border border-border rounded-lg p-3">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className={`text-lg font-bold ${color}`}>{value}</p>
+    </div>
+  );
+
+  const SectionHeader = ({ title, count }: { title: string; count?: number }) => (
+    <div className="flex items-center justify-between mb-3">
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      {count !== undefined && <span className="text-xs text-muted-foreground">({count})</span>}
+    </div>
+  );
+
+  const ActionBtn = ({ onClick, label, color = "text-primary", disabled = false }: { onClick: () => void; label: string; color?: string; disabled?: boolean }) => (
+    <button 
+      onClick={onClick} 
+      disabled={disabled || actionLoading}
+      className={`text-xs ${color} hover:opacity-80 disabled:opacity-50 transition-opacity`}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">Admin Panel</h1>
-          <button onClick={() => navigate("/dashboard")} className="text-sm text-primary hover:underline">← Back</button>
-        </div>
-      </div>
-
-      {/* Navigation - Single Line */}
-      <div className="border-b border-border px-4 py-2 overflow-x-auto">
-        <div className="flex gap-4 min-w-max">
-          {tabs.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`text-sm whitespace-nowrap ${activeTab === tab.key ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
+      <header className="sticky top-0 z-10 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <h1 className="text-base font-bold text-foreground">DXRewards Admin</h1>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={loadAllData} 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              disabled={loading}
             >
-              {tab.label}
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-          ))}
+            <button onClick={() => navigate("/dashboard")} className="text-xs text-primary hover:opacity-80">
+              ← Exit
+            </button>
+          </div>
         </div>
-      </div>
+
+        {/* Navigation */}
+        <nav className="px-4 pb-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 min-w-max">
+            {tabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                  activeTab === tab.key 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+      </header>
 
       {/* Content */}
-      <div className="p-4 space-y-4">
+      <main className="p-4 pb-20 max-w-4xl mx-auto">
+        
         {/* Overview */}
         {activeTab === "overview" && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="p-3 bg-muted/50 rounded">
-                <p className="text-muted-foreground">Users</p>
-                <p className="text-xl font-bold">{stats.totalUsers}</p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded">
-                <p className="text-muted-foreground">Total Earnings</p>
-                <p className="text-xl font-bold text-green-500">₹{stats.totalEarnings.toFixed(2)}</p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded">
-                <p className="text-muted-foreground">Ads Watched</p>
-                <p className="text-xl font-bold">{stats.totalAdsWatched}</p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded">
-                <p className="text-muted-foreground">Pending Payments</p>
-                <p className="text-xl font-bold text-yellow-500">{stats.pendingPayments}</p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded">
-                <p className="text-muted-foreground">Total Payable</p>
-                <p className="text-xl font-bold text-red-500">₹{stats.totalPayable.toFixed(2)}</p>
-              </div>
-              <div className="p-3 bg-muted/50 rounded">
-                <p className="text-muted-foreground">Withdrawals</p>
-                <p className="text-xl font-bold">₹{stats.totalWithdrawals.toFixed(2)}</p>
-              </div>
+            <SectionHeader title="Dashboard Overview" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <StatCard label="Total Users" value={stats.totalUsers} />
+              <StatCard label="Total Earnings" value={`₹${stats.totalEarnings.toFixed(2)}`} color="text-green-500" />
+              <StatCard label="Ads Watched" value={stats.totalAdsWatched} />
+              <StatCard label="Pending Payments" value={stats.pendingPayments} color="text-yellow-500" />
+              <StatCard label="Total Payable" value={`₹${stats.totalPayable.toFixed(2)}`} color="text-primary" />
+              <StatCard label="Total Withdrawals" value={`₹${stats.totalWithdrawals.toFixed(2)}`} />
             </div>
           </div>
         )}
 
         {/* Users */}
         {activeTab === "users" && (
-          <div className="space-y-3">
-            <Input placeholder="Search user ID or UPI..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="text-sm" />
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">User ID</th>
-                    <th className="pb-2 pr-4">UPI</th>
-                    <th className="pb-2 pr-4">Earnings</th>
-                    <th className="pb-2 pr-4">Balance</th>
-                    <th className="pb-2 pr-4">Ads</th>
-                    <th className="pb-2">Status</th>
+          <div className="space-y-4">
+            <SectionHeader title="User Management" count={userProfiles.length} />
+            <Input 
+              placeholder="Search by User ID or UPI..." 
+              value={searchTerm} 
+              onChange={(e) => setSearchTerm(e.target.value)} 
+              className="h-9 text-sm"
+            />
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium">User</th>
+                    <th className="px-3 py-2 font-medium">UPI</th>
+                    <th className="px-3 py-2 font-medium">Earnings</th>
+                    <th className="px-3 py-2 font-medium">Balance</th>
+                    <th className="px-3 py-2 font-medium">Ads</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {filteredProfiles.map(p => (
-                    <tr key={p.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
-                      <td className="py-2 pr-4 text-primary">{p.upi_id || "-"}</td>
-                      <td className="py-2 pr-4 text-green-500">₹{Number(p.total_earnings).toFixed(2)}</td>
-                      <td className="py-2 pr-4">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
-                      <td className="py-2 pr-4">{p.ads_watched}</td>
-                      <td className="py-2">
-                        <span className={`text-xs ${p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-red-500'}`}>
+                <tbody className="divide-y divide-border">
+                  {filteredProfiles.slice(0, 50).map(p => (
+                    <tr key={p.id} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                      <td className="px-3 py-2 text-primary">{p.upi_id || "-"}</td>
+                      <td className="px-3 py-2 text-green-500">₹{Number(p.total_earnings).toFixed(2)}</td>
+                      <td className="px-3 py-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="px-3 py-2">{p.ads_watched}</td>
+                      <td className="px-3 py-2">
+                        <span className={p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}>
                           {p.payment_status || 'pending'}
                         </span>
                       </td>
@@ -515,27 +546,32 @@ const AdminDashboard = () => {
 
         {/* Leaderboard */}
         {activeTab === "leaderboard" && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Top earners</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">#</th>
-                    <th className="pb-2 pr-4">User</th>
-                    <th className="pb-2 pr-4">Earnings</th>
-                    <th className="pb-2">Ads</th>
+          <div className="space-y-4">
+            <SectionHeader title="Leaderboard Management" count={20} />
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium w-10">#</th>
+                    <th className="px-3 py-2 font-medium">User</th>
+                    <th className="px-3 py-2 font-medium">Earnings</th>
+                    <th className="px-3 py-2 font-medium">Referrals</th>
+                    <th className="px-3 py-2 font-medium">Ads</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {[...userProfiles].sort((a, b) => Number(b.total_earnings) - Number(a.total_earnings)).slice(0, 20).map((p, i) => (
-                    <tr key={p.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-bold">{i + 1}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
-                      <td className="py-2 pr-4 text-green-500">₹{Number(p.total_earnings).toFixed(2)}</td>
-                      <td className="py-2">{p.ads_watched}</td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-border">
+                  {[...userProfiles]
+                    .sort((a, b) => Number(b.total_earnings) - Number(a.total_earnings))
+                    .slice(0, 20)
+                    .map((p, i) => (
+                      <tr key={p.id} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 font-bold text-primary">{i + 1}</td>
+                        <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="px-3 py-2 text-green-500 font-medium">₹{Number(p.total_earnings).toFixed(2)}</td>
+                        <td className="px-3 py-2">{p.referrals_count}</td>
+                        <td className="px-3 py-2">{p.ads_watched}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -544,32 +580,33 @@ const AdminDashboard = () => {
 
         {/* Transactions */}
         {activeTab === "transactions" && (
-          <div className="space-y-3">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">User</th>
-                    <th className="pb-2 pr-4">Type</th>
-                    <th className="pb-2 pr-4">Amount</th>
-                    <th className="pb-2 pr-4">Description</th>
-                    <th className="pb-2">Date</th>
+          <div className="space-y-4">
+            <SectionHeader title="Transactions Monitor" count={transactions.length} />
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium">User</th>
+                    <th className="px-3 py-2 font-medium">Type</th>
+                    <th className="px-3 py-2 font-medium">Amount</th>
+                    <th className="px-3 py-2 font-medium">Description</th>
+                    <th className="px-3 py-2 font-medium">Date</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {transactions.map(tx => (
-                    <tr key={tx.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-mono text-xs">{tx.user_id.slice(0, 8)}...</td>
-                      <td className="py-2 pr-4">
-                        <span className={`text-xs ${tx.transaction_type === 'withdrawal' ? 'text-red-500' : 'text-green-500'}`}>
+                    <tr key={tx.id} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 font-mono">{tx.user_id.slice(0, 8)}</td>
+                      <td className="px-3 py-2">
+                        <span className={tx.transaction_type === 'withdrawal' ? 'text-primary' : 'text-green-500'}>
                           {tx.transaction_type}
                         </span>
                       </td>
-                      <td className={`py-2 pr-4 ${tx.transaction_type === 'withdrawal' ? 'text-red-500' : 'text-green-500'}`}>
-                        {tx.transaction_type === 'withdrawal' ? '-' : '+'}₹{Number(tx.amount).toFixed(2)}
+                      <td className={`px-3 py-2 font-medium ${tx.transaction_type === 'withdrawal' ? 'text-primary' : 'text-green-500'}`}>
+                        {tx.transaction_type === 'withdrawal' ? '-' : '+'}₹{Math.abs(Number(tx.amount)).toFixed(2)}
                       </td>
-                      <td className="py-2 pr-4 text-muted-foreground truncate max-w-[150px]">{tx.description || '-'}</td>
-                      <td className="py-2 text-muted-foreground text-xs">{new Date(tx.created_at).toLocaleDateString()}</td>
+                      <td className="px-3 py-2 text-muted-foreground max-w-[120px] truncate">{tx.description || '-'}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -578,50 +615,42 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Payments */}
+        {/* Payments / Wallet Control */}
         {activeTab === "payments" && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="p-2 bg-muted/50 rounded text-center">
-                <p className="text-muted-foreground text-xs">Pending</p>
-                <p className="font-bold text-yellow-500">{stats.pendingPayments}</p>
-              </div>
-              <div className="p-2 bg-muted/50 rounded text-center">
-                <p className="text-muted-foreground text-xs">Payable</p>
-                <p className="font-bold text-red-500">₹{stats.totalPayable.toFixed(0)}</p>
-              </div>
-              <div className="p-2 bg-muted/50 rounded text-center">
-                <p className="text-muted-foreground text-xs">Earnings</p>
-                <p className="font-bold text-green-500">₹{stats.totalEarnings.toFixed(0)}</p>
-              </div>
+          <div className="space-y-4">
+            <SectionHeader title="Wallet Control & Payments" />
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard label="Pending" value={stats.pendingPayments} color="text-yellow-500" />
+              <StatCard label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} color="text-primary" />
+              <StatCard label="Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} color="text-green-500" />
             </div>
-            <p className="text-xs text-muted-foreground">Users with ≥₹50 balance</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">User</th>
-                    <th className="pb-2 pr-4">UPI</th>
-                    <th className="pb-2 pr-4">Amount</th>
-                    <th className="pb-2 pr-4">Status</th>
-                    <th className="pb-2">Actions</th>
+            <p className="text-[10px] text-muted-foreground">Users with withdrawable balance ≥ ₹50</p>
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium">User</th>
+                    <th className="px-3 py-2 font-medium">UPI</th>
+                    <th className="px-3 py-2 font-medium">Amount</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).map(p => (
-                    <tr key={p.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
-                      <td className="py-2 pr-4 text-primary">{p.upi_id || "-"}</td>
-                      <td className="py-2 pr-4 text-green-500 font-medium">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
-                      <td className="py-2 pr-4">
-                        <span className={`text-xs ${p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-red-500'}`}>
+                    <tr key={p.id} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                      <td className="px-3 py-2 text-primary">{p.upi_id || "-"}</td>
+                      <td className="px-3 py-2 text-green-500 font-medium">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="px-3 py-2">
+                        <span className={p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}>
                           {p.payment_status || 'pending'}
                         </span>
                       </td>
-                      <td className="py-2">
+                      <td className="px-3 py-2">
                         <div className="flex gap-2">
-                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, 'processing')} className="text-xs text-yellow-500 hover:underline" disabled={actionLoading}>Process</button>
-                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, 'paid')} className="text-xs text-green-500 hover:underline" disabled={actionLoading}>Paid</button>
+                          <ActionBtn onClick={() => handleUpdatePaymentStatus(p.user_id, 'processing')} label="Process" color="text-yellow-500" />
+                          <ActionBtn onClick={() => handleUpdatePaymentStatus(p.user_id, 'paid')} label="Paid" color="text-green-500" />
                         </div>
                       </td>
                     </tr>
@@ -634,38 +663,30 @@ const AdminDashboard = () => {
 
         {/* Daily Rewards */}
         {activeTab === "daily" && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="p-2 bg-muted/50 rounded text-center">
-                <p className="text-muted-foreground text-xs">Claimed</p>
-                <p className="font-bold">{dailyRewards.length}</p>
-              </div>
-              <div className="p-2 bg-muted/50 rounded text-center">
-                <p className="text-muted-foreground text-xs">Total Given</p>
-                <p className="font-bold text-green-500">₹{dailyRewards.reduce((sum, d) => sum + Number(d.total_claimed), 0).toFixed(2)}</p>
-              </div>
-              <div className="p-2 bg-muted/50 rounded text-center">
-                <p className="text-muted-foreground text-xs">7-Day Streaks</p>
-                <p className="font-bold text-primary">{dailyRewards.filter(d => d.current_streak >= 7).length}</p>
-              </div>
+          <div className="space-y-4">
+            <SectionHeader title="Daily Rewards Tracker" count={dailyRewards.length} />
+            <div className="grid grid-cols-3 gap-3">
+              <StatCard label="Claimers" value={dailyRewards.length} />
+              <StatCard label="Total Given" value={`₹${dailyRewards.reduce((sum, d) => sum + Number(d.total_claimed), 0).toFixed(2)}`} color="text-green-500" />
+              <StatCard label="7-Day Streaks" value={dailyRewards.filter(d => d.current_streak >= 7).length} color="text-primary" />
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">User</th>
-                    <th className="pb-2 pr-4">Streak</th>
-                    <th className="pb-2 pr-4">Last Claim</th>
-                    <th className="pb-2">Total</th>
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium">User</th>
+                    <th className="px-3 py-2 font-medium">Streak</th>
+                    <th className="px-3 py-2 font-medium">Last Claim</th>
+                    <th className="px-3 py-2 font-medium">Total</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {dailyRewards.map(d => (
-                    <tr key={d.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-mono text-xs">{d.user_id.slice(0, 8)}...</td>
-                      <td className="py-2 pr-4">Day {d.current_streak}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{d.last_claim_date || '-'}</td>
-                      <td className="py-2 text-green-500">₹{Number(d.total_claimed).toFixed(2)}</td>
+                    <tr key={d.id} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 font-mono">{d.user_id.slice(0, 8)}</td>
+                      <td className="px-3 py-2">Day {d.current_streak}</td>
+                      <td className="px-3 py-2 text-muted-foreground">{d.last_claim_date || '-'}</td>
+                      <td className="px-3 py-2 text-green-500">₹{Number(d.total_claimed).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -676,40 +697,61 @@ const AdminDashboard = () => {
 
         {/* Gift Cards */}
         {activeTab === "giftcards" && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Create Code */}
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Create Code</p>
+            <div className="space-y-3">
+              <SectionHeader title="Create Gift Card Code" />
               <div className="flex gap-2">
-                <Input placeholder="CODE" value={newGiftCardCode} onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())} className="text-sm flex-1" />
-                <Input type="number" placeholder="₹" value={newGiftCardValue} onChange={(e) => setNewGiftCardValue(e.target.value)} className="text-sm w-20" />
-                <button onClick={handleCreateGiftCard} className="text-sm text-primary hover:underline px-2" disabled={actionLoading}>Add</button>
+                <Input 
+                  placeholder="CODE" 
+                  value={newGiftCardCode} 
+                  onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())} 
+                  className="h-9 text-sm flex-1 font-mono"
+                />
+                <Input 
+                  type="number" 
+                  placeholder="₹ Value" 
+                  value={newGiftCardValue} 
+                  onChange={(e) => setNewGiftCardValue(e.target.value)} 
+                  className="h-9 text-sm w-24"
+                />
+                <button 
+                  onClick={handleCreateGiftCard} 
+                  disabled={actionLoading}
+                  className="px-4 h-9 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50"
+                >
+                  Add
+                </button>
               </div>
             </div>
 
             {/* Codes List */}
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Codes ({giftCards.length})</p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-muted-foreground">
-                      <th className="pb-2 pr-4">Code</th>
-                      <th className="pb-2 pr-4">Value</th>
-                      <th className="pb-2 pr-4">Status</th>
-                      <th className="pb-2">Action</th>
+            <div className="space-y-3">
+              <SectionHeader title="Gift Card Codes" count={giftCards.length} />
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">Code</th>
+                      <th className="px-3 py-2 font-medium">Value</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border">
                     {giftCards.map(gc => (
-                      <tr key={gc.id} className="border-b border-border/50">
-                        <td className="py-2 pr-4 font-mono">{gc.code}</td>
-                        <td className="py-2 pr-4">₹{Number(gc.value).toFixed(0)}</td>
-                        <td className="py-2 pr-4">
-                          <span className={gc.is_redeemed ? 'text-green-500' : 'text-yellow-500'}>{gc.is_redeemed ? 'Used' : 'Active'}</span>
+                      <tr key={gc.id} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 font-mono font-medium">{gc.code}</td>
+                        <td className="px-3 py-2">₹{Number(gc.value).toFixed(0)}</td>
+                        <td className="px-3 py-2">
+                          <span className={gc.is_redeemed ? 'text-green-500' : 'text-yellow-500'}>
+                            {gc.is_redeemed ? 'Redeemed' : 'Active'}
+                          </span>
                         </td>
-                        <td className="py-2">
-                          {!gc.is_redeemed && <button onClick={() => handleDeleteGiftCard(gc.id)} className="text-xs text-red-500 hover:underline">Delete</button>}
+                        <td className="px-3 py-2">
+                          {!gc.is_redeemed && (
+                            <ActionBtn onClick={() => handleDeleteGiftCard(gc.id)} label="Delete" color="text-primary" />
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -719,42 +761,50 @@ const AdminDashboard = () => {
             </div>
 
             {/* Create Product */}
-            <div className="space-y-2 pt-4 border-t border-border">
-              <p className="text-sm font-medium">Add Product</p>
+            <div className="space-y-3 pt-4 border-t border-border">
+              <SectionHeader title="Create Product for Purchase" />
               <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Name" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="text-sm" />
-                <Input placeholder="Brand" value={newProductBrand} onChange={(e) => setNewProductBrand(e.target.value)} className="text-sm" />
-                <Input type="number" placeholder="Denomination" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="text-sm" />
-                <Input type="number" placeholder="Price" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="text-sm" />
+                <Input placeholder="Product Name" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="h-9 text-sm" />
+                <Input placeholder="Brand (Amazon, Flipkart)" value={newProductBrand} onChange={(e) => setNewProductBrand(e.target.value)} className="h-9 text-sm" />
+                <Input type="number" placeholder="Denomination (₹)" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="h-9 text-sm" />
+                <Input type="number" placeholder="Price (₹)" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="h-9 text-sm" />
               </div>
-              <button onClick={handleCreateProduct} className="text-sm text-primary hover:underline" disabled={actionLoading}>Create Product</button>
+              <button 
+                onClick={handleCreateProduct} 
+                disabled={actionLoading}
+                className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50"
+              >
+                Create Product
+              </button>
             </div>
 
             {/* Products */}
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Products ({giftCardProducts.length})</p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-muted-foreground">
-                      <th className="pb-2 pr-4">Name</th>
-                      <th className="pb-2 pr-4">Brand</th>
-                      <th className="pb-2 pr-4">Value</th>
-                      <th className="pb-2 pr-4">Price</th>
-                      <th className="pb-2">Status</th>
+            <div className="space-y-3">
+              <SectionHeader title="Products" count={giftCardProducts.length} />
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Brand</th>
+                      <th className="px-3 py-2 font-medium">Value</th>
+                      <th className="px-3 py-2 font-medium">Price</th>
+                      <th className="px-3 py-2 font-medium">Toggle</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border">
                     {giftCardProducts.map(p => (
-                      <tr key={p.id} className="border-b border-border/50">
-                        <td className="py-2 pr-4">{p.name}</td>
-                        <td className="py-2 pr-4">{p.brand}</td>
-                        <td className="py-2 pr-4">₹{Number(p.denomination).toFixed(0)}</td>
-                        <td className="py-2 pr-4">₹{Number(p.price).toFixed(0)}</td>
-                        <td className="py-2">
-                          <button onClick={() => handleToggleProductStatus(p.id, p.is_active)} className={`text-xs hover:underline ${p.is_active ? 'text-green-500' : 'text-red-500'}`}>
-                            {p.is_active ? 'Active' : 'Inactive'}
-                          </button>
+                      <tr key={p.id} className="hover:bg-muted/30">
+                        <td className="px-3 py-2">{p.name}</td>
+                        <td className="px-3 py-2">{p.brand}</td>
+                        <td className="px-3 py-2">₹{Number(p.denomination).toFixed(0)}</td>
+                        <td className="px-3 py-2">₹{Number(p.price).toFixed(0)}</td>
+                        <td className="px-3 py-2">
+                          <ActionBtn 
+                            onClick={() => handleToggleProductStatus(p.id, p.is_active)} 
+                            label={p.is_active ? 'Deactivate' : 'Activate'}
+                            color={p.is_active ? 'text-green-500' : 'text-muted-foreground'}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -763,36 +813,36 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Purchases */}
-            <div className="space-y-2 pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground">Purchases ({giftCardPurchases.length})</p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-muted-foreground">
-                      <th className="pb-2 pr-4">User</th>
-                      <th className="pb-2 pr-4">Product</th>
-                      <th className="pb-2 pr-4">Paid</th>
-                      <th className="pb-2 pr-4">Status</th>
-                      <th className="pb-2">Actions</th>
+            {/* Purchase Requests */}
+            <div className="space-y-3 pt-4 border-t border-border">
+              <SectionHeader title="Purchase Requests" count={giftCardPurchases.length} />
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium">User</th>
+                      <th className="px-3 py-2 font-medium">Product</th>
+                      <th className="px-3 py-2 font-medium">Paid</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border">
                     {giftCardPurchases.map(p => (
-                      <tr key={p.id} className="border-b border-border/50">
-                        <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
-                        <td className="py-2 pr-4">{p.product?.name || '-'}</td>
-                        <td className="py-2 pr-4">₹{Number(p.amount_paid).toFixed(0)}</td>
-                        <td className="py-2 pr-4">
-                          <span className={`text-xs ${p.status === 'completed' ? 'text-green-500' : p.status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                      <tr key={p.id} className="hover:bg-muted/30">
+                        <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="px-3 py-2">{p.product?.name || '-'}</td>
+                        <td className="px-3 py-2">₹{Number(p.amount_paid).toFixed(0)}</td>
+                        <td className="px-3 py-2">
+                          <span className={p.status === 'completed' ? 'text-green-500' : p.status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}>
                             {p.status}
                           </span>
                         </td>
-                        <td className="py-2">
+                        <td className="px-3 py-2">
                           {p.status === 'pending' && (
                             <div className="flex gap-2">
-                              <button onClick={() => handleUpdatePurchaseStatus(p.id, 'processing')} className="text-xs text-yellow-500 hover:underline">Process</button>
-                              <button onClick={() => handleUpdatePurchaseStatus(p.id, 'completed', 'GENERATED_CODE')} className="text-xs text-green-500 hover:underline">Complete</button>
+                              <ActionBtn onClick={() => handleUpdatePurchaseStatus(p.id, 'processing')} label="Process" color="text-yellow-500" />
+                              <ActionBtn onClick={() => handleUpdatePurchaseStatus(p.id, 'completed', 'CODE_' + Date.now())} label="Complete" color="text-green-500" />
                             </div>
                           )}
                         </td>
@@ -808,44 +858,58 @@ const AdminDashboard = () => {
         {/* Roles */}
         {activeTab === "roles" && (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Assign Role</p>
-              <div className="flex gap-2">
-                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="flex-1 text-sm bg-background border border-border rounded px-2 py-1">
-                  <option value="">Select User</option>
-                  {userProfiles.map(p => (
-                    <option key={p.user_id} value={p.user_id}>{p.user_id.slice(0, 12)}...</option>
-                  ))}
-                </select>
-                <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} className="text-sm bg-background border border-border rounded px-2 py-1">
-                  <option value="">Role</option>
-                  <option value="admin">Admin</option>
-                  <option value="moderator">Moderator</option>
-                  <option value="user">User</option>
-                </select>
-                <button onClick={handleAssignRole} className="text-sm text-primary hover:underline px-2" disabled={actionLoading}>Assign</button>
-              </div>
+            <SectionHeader title="Role Management" />
+            <div className="flex gap-2 flex-wrap">
+              <select 
+                value={selectedUserId} 
+                onChange={(e) => setSelectedUserId(e.target.value)} 
+                className="flex-1 min-w-[140px] h-9 text-xs bg-background border border-border rounded-md px-2"
+              >
+                <option value="">Select User</option>
+                {userProfiles.map(p => (
+                  <option key={p.user_id} value={p.user_id}>{p.user_id.slice(0, 16)}...</option>
+                ))}
+              </select>
+              <select 
+                value={selectedRole} 
+                onChange={(e) => setSelectedRole(e.target.value)} 
+                className="h-9 text-xs bg-background border border-border rounded-md px-2"
+              >
+                <option value="">Role</option>
+                <option value="admin">Admin</option>
+                <option value="moderator">Moderator</option>
+                <option value="user">User</option>
+              </select>
+              <button 
+                onClick={handleAssignRole} 
+                disabled={actionLoading}
+                className="px-4 h-9 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50"
+              >
+                Assign
+              </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-4">User</th>
-                    <th className="pb-2 pr-4">Role</th>
-                    <th className="pb-2 pr-4">Date</th>
-                    <th className="pb-2">Action</th>
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/50">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2 font-medium">User</th>
+                    <th className="px-3 py-2 font-medium">Role</th>
+                    <th className="px-3 py-2 font-medium">Assigned</th>
+                    <th className="px-3 py-2 font-medium">Action</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {userRoles.map(r => (
-                    <tr key={r.id} className="border-b border-border/50">
-                      <td className="py-2 pr-4 font-mono text-xs">{r.user_id.slice(0, 8)}...</td>
-                      <td className="py-2 pr-4">
-                        <span className={`text-xs ${r.role === 'admin' ? 'text-red-500' : r.role === 'moderator' ? 'text-yellow-500' : 'text-muted-foreground'}`}>{r.role}</span>
+                    <tr key={r.id} className="hover:bg-muted/30">
+                      <td className="px-3 py-2 font-mono">{r.user_id.slice(0, 8)}</td>
+                      <td className="px-3 py-2">
+                        <span className={r.role === 'admin' ? 'text-primary font-medium' : r.role === 'moderator' ? 'text-yellow-500' : 'text-muted-foreground'}>
+                          {r.role}
+                        </span>
                       </td>
-                      <td className="py-2 pr-4 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                      <td className="py-2">
-                        <button onClick={() => handleRevokeRole(r.id)} className="text-xs text-red-500 hover:underline" disabled={actionLoading}>Revoke</button>
+                      <td className="px-3 py-2 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
+                      <td className="px-3 py-2">
+                        <ActionBtn onClick={() => handleRevokeRole(r.id)} label="Revoke" color="text-primary" />
                       </td>
                     </tr>
                   ))}
@@ -857,48 +921,94 @@ const AdminDashboard = () => {
 
         {/* Notifications */}
         {activeTab === "notifications" && (
-          <div className="space-y-3">
-            <p className="text-sm font-medium">Send to All Users ({userProfiles.length})</p>
-            <Input placeholder="Title" value={notificationTitle} onChange={(e) => setNotificationTitle(e.target.value)} className="text-sm" />
-            <Textarea placeholder="Message..." value={notificationMessage} onChange={(e) => setNotificationMessage(e.target.value)} rows={3} className="text-sm" />
-            <button onClick={handleSendNotification} className="text-sm text-primary hover:underline" disabled={actionLoading || !notificationTitle.trim() || !notificationMessage.trim()}>
-              {actionLoading ? 'Sending...' : 'Send Notification'}
+          <div className="space-y-4">
+            <SectionHeader title="Send Notification" count={userProfiles.length} />
+            <p className="text-[10px] text-muted-foreground -mt-2">Broadcast to all {userProfiles.length} users</p>
+            <Input 
+              placeholder="Notification Title" 
+              value={notificationTitle} 
+              onChange={(e) => setNotificationTitle(e.target.value)} 
+              className="h-9 text-sm"
+            />
+            <Textarea 
+              placeholder="Enter your message here..." 
+              value={notificationMessage} 
+              onChange={(e) => setNotificationMessage(e.target.value)} 
+              rows={4} 
+              className="text-sm resize-none"
+            />
+            <button 
+              onClick={handleSendNotification} 
+              disabled={actionLoading || !notificationTitle.trim() || !notificationMessage.trim()}
+              className="w-full py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 disabled:opacity-50"
+            >
+              {actionLoading ? 'Sending...' : 'Send to All Users'}
             </button>
           </div>
         )}
 
         {/* AdMob */}
         {activeTab === "admob" && (
-          <div className="space-y-3">
-            <p className="text-sm font-medium">AdMob Configuration</p>
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <SectionHeader title="AdMob Configuration" />
+            <div className="space-y-3">
               <div>
-                <label className="text-xs text-muted-foreground">App ID *</label>
-                <Input placeholder="ca-app-pub-xxx~xxx" value={admobAppId} onChange={(e) => setAdmobAppId(e.target.value)} className="text-sm" />
+                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">App ID *</label>
+                <Input 
+                  placeholder="ca-app-pub-xxxxxxxx~xxxxxxxxxx" 
+                  value={admobAppId} 
+                  onChange={(e) => setAdmobAppId(e.target.value)} 
+                  className="h-9 text-sm font-mono mt-1"
+                />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Rewarded Ad Unit ID *</label>
-                <Input placeholder="ca-app-pub-xxx/xxx" value={admobRewardedAdUnitId} onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)} className="text-sm" />
+                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">Rewarded Ad Unit ID *</label>
+                <Input 
+                  placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" 
+                  value={admobRewardedAdUnitId} 
+                  onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)} 
+                  className="h-9 text-sm font-mono mt-1"
+                />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Banner Ad Unit ID</label>
-                <Input placeholder="ca-app-pub-xxx/xxx" value={admobBannerAdUnitId} onChange={(e) => setAdmobBannerAdUnitId(e.target.value)} className="text-sm" />
+                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">Banner Ad Unit ID</label>
+                <Input 
+                  placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" 
+                  value={admobBannerAdUnitId} 
+                  onChange={(e) => setAdmobBannerAdUnitId(e.target.value)} 
+                  className="h-9 text-sm font-mono mt-1"
+                />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">Interstitial Ad Unit ID</label>
-                <Input placeholder="ca-app-pub-xxx/xxx" value={admobInterstitialAdUnitId} onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)} className="text-sm" />
+                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">Interstitial Ad Unit ID</label>
+                <Input 
+                  placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" 
+                  value={admobInterstitialAdUnitId} 
+                  onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)} 
+                  className="h-9 text-sm font-mono mt-1"
+                />
               </div>
-              <div className="flex items-center gap-2 pt-1">
-                <input type="checkbox" id="test-mode" checked={admobIsTesting} onChange={(e) => setAdmobIsTesting(e.target.checked)} />
-                <label htmlFor="test-mode" className="text-sm">Test Mode</label>
+              <div className="flex items-center gap-2 pt-2">
+                <input 
+                  type="checkbox" 
+                  id="test-mode" 
+                  checked={admobIsTesting} 
+                  onChange={(e) => setAdmobIsTesting(e.target.checked)}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <label htmlFor="test-mode" className="text-sm text-foreground">Enable Test Mode</label>
               </div>
             </div>
-            <button onClick={handleSaveAdmobConfig} className="text-sm text-primary hover:underline" disabled={actionLoading}>
-              {actionLoading ? 'Saving...' : 'Save Configuration'}
+            <button 
+              onClick={handleSaveAdmobConfig} 
+              disabled={actionLoading}
+              className="w-full py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 disabled:opacity-50"
+            >
+              {actionLoading ? 'Saving...' : 'Save AdMob Configuration'}
             </button>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
