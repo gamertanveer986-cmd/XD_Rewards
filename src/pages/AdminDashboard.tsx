@@ -1,16 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Shield, Users, UserCheck, Loader2, ArrowLeft, CreditCard, Trash2, Search, DollarSign, Activity, Bell, Send, CheckCircle, Clock, Smartphone, Save, Gift, Plus, Ticket } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface UserProfile {
   id: string;
@@ -50,12 +44,6 @@ interface DailyReward {
   created_at: string;
 }
 
-interface AuthUser {
-  id: string;
-  email: string;
-  created_at: string;
-}
-
 interface GiftCard {
   id: string;
   code: string;
@@ -87,36 +75,27 @@ interface GiftCardPurchase {
   product?: GiftCardProduct;
 }
 
+type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob";
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [authUsers, setAuthUsers] = useState<AuthUser[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [searchEmail, setSearchEmail] = useState("");
-  const [newUserEmail, setNewUserEmail] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Notification state
+  // Form states
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
-  const [sendingNotification, setSendingNotification] = useState(false);
-
-  // AdMob config state
   const [admobAppId, setAdmobAppId] = useState("");
   const [admobRewardedAdUnitId, setAdmobRewardedAdUnitId] = useState("");
   const [admobBannerAdUnitId, setAdmobBannerAdUnitId] = useState("");
   const [admobInterstitialAdUnitId, setAdmobInterstitialAdUnitId] = useState("");
   const [admobIsTesting, setAdmobIsTesting] = useState(false);
-  const [savingAdmob, setSavingAdmob] = useState(false);
-
-  // Daily rewards state
   const [dailyRewards, setDailyRewards] = useState<DailyReward[]>([]);
-
-  // Gift cards state
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [giftCardProducts, setGiftCardProducts] = useState<GiftCardProduct[]>([]);
   const [giftCardPurchases, setGiftCardPurchases] = useState<GiftCardPurchase[]>([]);
@@ -126,9 +105,9 @@ const AdminDashboard = () => {
   const [newProductBrand, setNewProductBrand] = useState("");
   const [newProductDenomination, setNewProductDenomination] = useState("");
   const [newProductPrice, setNewProductPrice] = useState("");
-  const [savingGiftCard, setSavingGiftCard] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
 
-  // Stats
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalEarnings: 0,
@@ -145,12 +124,10 @@ const AdminDashboard = () => {
   const checkAdminAccess = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         navigate("/admin/login");
         return;
       }
-
       const { data: roleData, error } = await supabase
         .from("user_roles")
         .select("role")
@@ -163,27 +140,48 @@ const AdminDashboard = () => {
         navigate("/admin/login");
         return;
       }
-
-      await loadData();
-      await loadAdmobConfig();
-      await loadDailyRewards();
-      await loadGiftCardsData();
+      await loadAllData();
     } catch (error) {
       console.error("Error checking admin access:", error);
       navigate("/admin/login");
     }
   };
 
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([loadData(), loadAdmobConfig(), loadDailyRewards(), loadGiftCardsData()]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      const { data: profilesData } = await supabase.from("user_profiles").select("*").order("created_at", { ascending: false });
+      setUserProfiles(profilesData || []);
+
+      const { data: rolesData } = await supabase.from("user_roles").select("*").order("created_at", { ascending: false });
+      setUserRoles(rolesData || []);
+
+      const { data: txData } = await supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(100);
+      setTransactions(txData || []);
+
+      const totalEarnings = profilesData?.reduce((sum, p) => sum + Number(p.total_earnings), 0) || 0;
+      const totalWithdrawals = txData?.filter(t => t.transaction_type === 'withdrawal').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      const totalAdsWatched = profilesData?.reduce((sum, p) => sum + p.ads_watched, 0) || 0;
+      const pendingPayments = profilesData?.filter(p => p.payment_status === 'pending' && Number(p.withdrawable_balance) >= 50).length || 0;
+      const totalPayable = profilesData?.filter(p => Number(p.withdrawable_balance) >= 50).reduce((sum, p) => sum + Number(p.withdrawable_balance), 0) || 0;
+
+      setStats({ totalUsers: profilesData?.length || 0, totalEarnings, totalWithdrawals, totalAdsWatched, pendingPayments, totalPayable });
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
+  };
+
   const loadAdmobConfig = async () => {
     try {
-      const { data, error } = await supabase
-        .from("admob_config")
-        .select("*")
-        .limit(1)
-        .single();
-
-      if (error && error.code !== "PGRST116") throw error;
-
+      const { data } = await supabase.from("admob_config").select("*").limit(1).single();
       if (data) {
         setAdmobAppId(data.app_id || "");
         setAdmobRewardedAdUnitId(data.rewarded_ad_unit_id || "");
@@ -198,12 +196,7 @@ const AdminDashboard = () => {
 
   const loadDailyRewards = async () => {
     try {
-      const { data, error } = await supabase
-        .from("daily_rewards")
-        .select("*")
-        .order("total_claimed", { ascending: false });
-
-      if (error) throw error;
+      const { data } = await supabase.from("daily_rewards").select("*").order("total_claimed", { ascending: false });
       setDailyRewards(data || []);
     } catch (error) {
       console.error("Error loading daily rewards:", error);
@@ -217,7 +210,6 @@ const AdminDashboard = () => {
         supabase.from("gift_card_products").select("*").order("brand", { ascending: true }),
         supabase.from("gift_card_purchases").select("*, product:gift_card_products(*)").order("created_at", { ascending: false })
       ]);
-
       if (cardsRes.data) setGiftCards(cardsRes.data);
       if (productsRes.data) setGiftCardProducts(productsRes.data);
       if (purchasesRes.data) setGiftCardPurchases(purchasesRes.data);
@@ -226,282 +218,86 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleCreateGiftCard = async () => {
-    if (!newGiftCardCode.trim() || !newGiftCardValue) {
-      toast.error("Please enter code and value");
+  const handleSendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationMessage.trim()) {
+      toast.error("Enter title and message");
       return;
     }
-
-    try {
-      setSavingGiftCard(true);
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const { error } = await supabase.from("gift_cards").insert({
-        code: newGiftCardCode.toUpperCase(),
-        value: parseFloat(newGiftCardValue),
-        created_by: user?.id
-      });
-
-      if (error) throw error;
-
-      toast.success("Gift card created successfully");
-      setNewGiftCardCode("");
-      setNewGiftCardValue("");
-      await loadGiftCardsData();
-    } catch (error: any) {
-      console.error("Error creating gift card:", error);
-      if (error.code === "23505") {
-        toast.error("Gift card code already exists");
-      } else {
-        toast.error("Failed to create gift card");
-      }
-    } finally {
-      setSavingGiftCard(false);
-    }
-  };
-
-  const handleCreateProduct = async () => {
-    if (!newProductName.trim() || !newProductBrand.trim() || !newProductDenomination || !newProductPrice) {
-      toast.error("Please fill all fields");
-      return;
-    }
-
-    try {
-      setSavingGiftCard(true);
-
-      const { error } = await supabase.from("gift_card_products").insert({
-        name: newProductName,
-        brand: newProductBrand,
-        denomination: parseFloat(newProductDenomination),
-        price: parseFloat(newProductPrice)
-      });
-
-      if (error) throw error;
-
-      toast.success("Product created successfully");
-      setNewProductName("");
-      setNewProductBrand("");
-      setNewProductDenomination("");
-      setNewProductPrice("");
-      await loadGiftCardsData();
-    } catch (error) {
-      console.error("Error creating product:", error);
-      toast.error("Failed to create product");
-    } finally {
-      setSavingGiftCard(false);
-    }
-  };
-
-  const handleDeleteGiftCard = async (id: string) => {
-    try {
-      const { error } = await supabase.from("gift_cards").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Gift card deleted");
-      await loadGiftCardsData();
-    } catch (error) {
-      console.error("Error deleting gift card:", error);
-      toast.error("Failed to delete gift card");
-    }
-  };
-
-  const handleToggleProductStatus = async (id: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("gift_card_products")
-        .update({ is_active: !currentStatus })
-        .eq("id", id);
-      if (error) throw error;
-      toast.success(`Product ${!currentStatus ? "activated" : "deactivated"}`);
-      await loadGiftCardsData();
-    } catch (error) {
-      console.error("Error toggling product status:", error);
-      toast.error("Failed to update product");
-    }
-  };
-
-  const handleUpdatePurchaseStatus = async (id: string, status: string, code?: string) => {
-    try {
-      const updateData: any = { status, processed_at: new Date().toISOString() };
-      if (code) updateData.redemption_code = code;
-
-      const { error } = await supabase.from("gift_card_purchases").update(updateData).eq("id", id);
-      if (error) throw error;
-
-      toast.success(`Purchase status updated to ${status}`);
-      await loadGiftCardsData();
-    } catch (error) {
-      console.error("Error updating purchase:", error);
-      toast.error("Failed to update purchase");
-    }
-  };
-
-  const handleSaveAdmobConfig = async () => {
-    if (!admobAppId.trim() || !admobRewardedAdUnitId.trim()) {
-      toast.error("App ID and Rewarded Ad Unit ID are required");
-      return;
-    }
-
-    try {
-      setSavingAdmob(true);
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Check if config exists
-      const { data: existing } = await supabase
-        .from("admob_config")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (existing) {
-        // Update existing config
-        const { error } = await supabase
-          .from("admob_config")
-          .update({
-            app_id: admobAppId,
-            rewarded_ad_unit_id: admobRewardedAdUnitId,
-            banner_ad_unit_id: admobBannerAdUnitId || null,
-            interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
-            is_testing: admobIsTesting,
-            updated_at: new Date().toISOString(),
-            updated_by: user?.id
-          })
-          .eq("id", existing.id);
-
-        if (error) throw error;
-      } else {
-        // Insert new config
-        const { error } = await supabase
-          .from("admob_config")
-          .insert({
-            app_id: admobAppId,
-            rewarded_ad_unit_id: admobRewardedAdUnitId,
-            banner_ad_unit_id: admobBannerAdUnitId || null,
-            interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
-            is_testing: admobIsTesting,
-            updated_by: user?.id
-          });
-
-        if (error) throw error;
-      }
-
-      toast.success("AdMob configuration saved successfully");
-    } catch (error) {
-      console.error("Error saving AdMob config:", error);
-      toast.error("Failed to save AdMob configuration");
-    } finally {
-      setSavingAdmob(false);
-    }
-  };
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch all user profiles
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (profilesError) throw profilesError;
-      setUserProfiles(profilesData || []);
-
-      // Fetch all user roles
-      const { data: rolesData, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (rolesError) throw rolesError;
-      setUserRoles(rolesData || []);
-
-      // Fetch all transactions
-      const { data: txData, error: txError } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (txError) throw txError;
-      setTransactions(txData || []);
-
-      // Calculate stats
-      const totalEarnings = profilesData?.reduce((sum, p) => sum + Number(p.total_earnings), 0) || 0;
-      const totalWithdrawals = txData?.filter(t => t.transaction_type === 'withdrawal').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-      const totalAdsWatched = profilesData?.reduce((sum, p) => sum + p.ads_watched, 0) || 0;
-      const pendingPayments = profilesData?.filter(p => (p as any).payment_status === 'pending' && Number(p.withdrawable_balance) >= 50).length || 0;
-      const totalPayable = profilesData?.filter(p => Number(p.withdrawable_balance) >= 50).reduce((sum, p) => sum + Number(p.withdrawable_balance), 0) || 0;
-
-      setStats({
-        totalUsers: profilesData?.length || 0,
-        totalEarnings,
-        totalWithdrawals,
-        totalAdsWatched,
-        pendingPayments,
-        totalPayable
-      });
-
-      // Create user list from profiles
-      const users = profilesData?.map(p => ({
-        id: p.user_id,
-        email: `User ${p.user_id.slice(0, 8)}...`,
-        created_at: p.created_at
-      })) || [];
-      
-      setAuthUsers(users);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAssignRole = async () => {
-    if (!selectedUserId || !selectedRole) {
-      toast.error("Please select both user and role");
-      return;
-    }
-
     try {
       setActionLoading(true);
-      const { error } = await supabase
-        .from("user_roles")
-        .insert({ user_id: selectedUserId, role: selectedRole as any });
-
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: notification, error } = await supabase.from("notifications").insert({ title: notificationTitle, message: notificationMessage, sent_by: user?.id }).select().single();
       if (error) throw error;
-
-      toast.success("Role assigned successfully");
-      setSelectedUserId("");
-      setSelectedRole("");
-      await loadData();
-    } catch (error: any) {
-      console.error("Error assigning role:", error);
-      if (error.code === "23505") {
-        toast.error("User already has this role");
-      } else {
-        toast.error("Failed to assign role");
-      }
+      const userNotifications = userProfiles.map(profile => ({ user_id: profile.user_id, notification_id: notification.id }));
+      await supabase.from("user_notifications").insert(userNotifications);
+      toast.success(`Sent to ${userProfiles.length} users`);
+      setNotificationTitle("");
+      setNotificationMessage("");
+    } catch (error) {
+      toast.error("Failed to send");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleAssignRoleByEmail = async () => {
-    if (!newUserEmail || !selectedRole) {
-      toast.error("Please enter email and select role");
+  const handleSaveAdmobConfig = async () => {
+    if (!admobAppId.trim() || !admobRewardedAdUnitId.trim()) {
+      toast.error("App ID and Rewarded Ad Unit ID required");
       return;
     }
-
     try {
       setActionLoading(true);
-      
-      // Note: In production, you'd need an edge function to look up user by email
-      toast.info("Use user ID from profiles to assign roles");
-      
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: existing } = await supabase.from("admob_config").select("id").limit(1).single();
+      const configData = {
+        app_id: admobAppId,
+        rewarded_ad_unit_id: admobRewardedAdUnitId,
+        banner_ad_unit_id: admobBannerAdUnitId || null,
+        interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
+        is_testing: admobIsTesting,
+        updated_at: new Date().toISOString(),
+        updated_by: user?.id
+      };
+      if (existing) {
+        await supabase.from("admob_config").update(configData).eq("id", existing.id);
+      } else {
+        await supabase.from("admob_config").insert(configData);
+      }
+      toast.success("AdMob config saved");
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to assign role");
+      toast.error("Failed to save");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (userId: string, status: string) => {
+    try {
+      setActionLoading(true);
+      await supabase.from("user_profiles").update({ payment_status: status }).eq("user_id", userId);
+      toast.success(`Status: ${status}`);
+      await loadData();
+    } catch (error) {
+      toast.error("Failed to update");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (!selectedUserId || !selectedRole) {
+      toast.error("Select user and role");
+      return;
+    }
+    try {
+      setActionLoading(true);
+      await supabase.from("user_roles").insert({ user_id: selectedUserId, role: selectedRole as any });
+      toast.success("Role assigned");
+      setSelectedUserId("");
+      setSelectedRole("");
+      await loadData();
+    } catch (error: any) {
+      toast.error(error.code === "23505" ? "Already has role" : "Failed");
     } finally {
       setActionLoading(false);
     }
@@ -510,1061 +306,598 @@ const AdminDashboard = () => {
   const handleRevokeRole = async (roleId: string) => {
     try {
       setActionLoading(true);
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("id", roleId);
-
-      if (error) throw error;
-
-      toast.success("Role revoked successfully");
+      await supabase.from("user_roles").delete().eq("id", roleId);
+      toast.success("Role revoked");
       await loadData();
     } catch (error) {
-      console.error("Error revoking role:", error);
-      toast.error("Failed to revoke role");
+      toast.error("Failed");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const getUserEmail = (userId: string) => {
-    return `${userId.slice(0, 8)}...`;
-  };
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "destructive";
-      case "moderator":
-        return "default";
-      default:
-        return "secondary";
-    }
-  };
-
-  const getTransactionBadge = (type: string) => {
-    switch (type) {
-      case "withdrawal":
-        return "destructive";
-      case "bonus":
-        return "default";
-      case "ad_earning":
-        return "secondary";
-      case "referral":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
-  const filteredProfiles = userProfiles.filter(p => 
-    p.user_id.toLowerCase().includes(searchEmail.toLowerCase())
-  );
-
-  // Send notification to all users
-  const handleSendNotification = async () => {
-    if (!notificationTitle.trim() || !notificationMessage.trim()) {
-      toast.error("Please enter title and message");
+  const handleCreateGiftCard = async () => {
+    if (!newGiftCardCode.trim() || !newGiftCardValue) {
+      toast.error("Enter code and value");
       return;
     }
-
-    try {
-      setSendingNotification(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Create notification
-      const { data: notification, error: notifError } = await supabase
-        .from("notifications")
-        .insert({
-          title: notificationTitle,
-          message: notificationMessage,
-          sent_by: user?.id
-        })
-        .select()
-        .single();
-
-      if (notifError) throw notifError;
-
-      // Create user_notifications for all users
-      const userNotifications = userProfiles.map(profile => ({
-        user_id: profile.user_id,
-        notification_id: notification.id
-      }));
-
-      const { error: userNotifError } = await supabase
-        .from("user_notifications")
-        .insert(userNotifications);
-
-      if (userNotifError) throw userNotifError;
-
-      toast.success(`Notification sent to ${userProfiles.length} users`);
-      setNotificationTitle("");
-      setNotificationMessage("");
-    } catch (error) {
-      console.error("Error sending notification:", error);
-      toast.error("Failed to send notification");
-    } finally {
-      setSendingNotification(false);
-    }
-  };
-
-  // Update payment status
-  const handleUpdatePaymentStatus = async (userId: string, status: string) => {
     try {
       setActionLoading(true);
-      const { error } = await supabase
-        .from("user_profiles")
-        .update({ payment_status: status })
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      toast.success(`Payment status updated to ${status}`);
-      await loadData();
-    } catch (error) {
-      console.error("Error updating payment status:", error);
-      toast.error("Failed to update payment status");
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from("gift_cards").insert({ code: newGiftCardCode.toUpperCase(), value: parseFloat(newGiftCardValue), created_by: user?.id });
+      toast.success("Gift card created");
+      setNewGiftCardCode("");
+      setNewGiftCardValue("");
+      await loadGiftCardsData();
+    } catch (error: any) {
+      toast.error(error.code === "23505" ? "Code exists" : "Failed");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "default";
-      case "processing":
-        return "secondary";
-      default:
-        return "destructive";
+  const handleDeleteGiftCard = async (id: string) => {
+    try {
+      await supabase.from("gift_cards").delete().eq("id", id);
+      toast.success("Deleted");
+      await loadGiftCardsData();
+    } catch (error) {
+      toast.error("Failed");
     }
   };
+
+  const handleCreateProduct = async () => {
+    if (!newProductName.trim() || !newProductBrand.trim() || !newProductDenomination || !newProductPrice) {
+      toast.error("Fill all fields");
+      return;
+    }
+    try {
+      setActionLoading(true);
+      await supabase.from("gift_card_products").insert({
+        name: newProductName,
+        brand: newProductBrand,
+        denomination: parseFloat(newProductDenomination),
+        price: parseFloat(newProductPrice)
+      });
+      toast.success("Product created");
+      setNewProductName("");
+      setNewProductBrand("");
+      setNewProductDenomination("");
+      setNewProductPrice("");
+      await loadGiftCardsData();
+    } catch (error) {
+      toast.error("Failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleToggleProductStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      await supabase.from("gift_card_products").update({ is_active: !currentStatus }).eq("id", id);
+      toast.success(!currentStatus ? "Activated" : "Deactivated");
+      await loadGiftCardsData();
+    } catch (error) {
+      toast.error("Failed");
+    }
+  };
+
+  const handleUpdatePurchaseStatus = async (id: string, status: string, code?: string) => {
+    try {
+      const updateData: any = { status, processed_at: new Date().toISOString() };
+      if (code) updateData.redemption_code = code;
+      await supabase.from("gift_card_purchases").update(updateData).eq("id", id);
+      toast.success(`Status: ${status}`);
+      await loadGiftCardsData();
+    } catch (error) {
+      toast.error("Failed");
+    }
+  };
+
+  const filteredProfiles = userProfiles.filter(p => p.user_id.toLowerCase().includes(searchTerm.toLowerCase()) || (p.upi_id && p.upi_id.toLowerCase().includes(searchTerm.toLowerCase())));
+
+  const tabs: { key: TabType; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "users", label: "Users" },
+    { key: "leaderboard", label: "Leaderboard" },
+    { key: "transactions", label: "Transactions" },
+    { key: "payments", label: "Payments" },
+    { key: "daily", label: "Daily" },
+    { key: "giftcards", label: "Gift Cards" },
+    { key: "roles", label: "Roles" },
+    { key: "notifications", label: "Notify" },
+    { key: "admob", label: "AdMob" }
+  ];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="border-b border-border bg-card/50">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/dashboard")}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </div>
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold text-gradient-red">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Complete admin control panel</p>
-            </div>
-          </div>
+      <div className="border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Admin Panel</h1>
+          <button onClick={() => navigate("/dashboard")} className="text-sm text-primary hover:underline">← Back</button>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="card-glow border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Users</p>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="card-glow border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-success" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Earnings</p>
-                  <p className="text-2xl font-bold text-success">₹{stats.totalEarnings.toFixed(2)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="card-glow border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <CreditCard className="h-8 w-8 text-warning" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Withdrawals</p>
-                  <p className="text-2xl font-bold">₹{stats.totalWithdrawals.toFixed(2)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="card-glow border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <Activity className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Ads Watched</p>
-                  <p className="text-2xl font-bold">{stats.totalAdsWatched}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Navigation - Single Line */}
+      <div className="border-b border-border px-4 py-2 overflow-x-auto">
+        <div className="flex gap-4 min-w-max">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`text-sm whitespace-nowrap ${activeTab === tab.key ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Main Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="notifications">Notify</TabsTrigger>
-            <TabsTrigger value="roles">Roles</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="giftcards">Gifts</TabsTrigger>
-            <TabsTrigger value="daily">Daily</TabsTrigger>
-            <TabsTrigger value="transactions">Txns</TabsTrigger>
-            <TabsTrigger value="admob">AdMob</TabsTrigger>
-          </TabsList>
+      {/* Content */}
+      <div className="p-4 space-y-4">
+        {/* Overview */}
+        {activeTab === "overview" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="p-3 bg-muted/50 rounded">
+                <p className="text-muted-foreground">Users</p>
+                <p className="text-xl font-bold">{stats.totalUsers}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded">
+                <p className="text-muted-foreground">Total Earnings</p>
+                <p className="text-xl font-bold text-green-500">₹{stats.totalEarnings.toFixed(2)}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded">
+                <p className="text-muted-foreground">Ads Watched</p>
+                <p className="text-xl font-bold">{stats.totalAdsWatched}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded">
+                <p className="text-muted-foreground">Pending Payments</p>
+                <p className="text-xl font-bold text-yellow-500">{stats.pendingPayments}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded">
+                <p className="text-muted-foreground">Total Payable</p>
+                <p className="text-xl font-bold text-red-500">₹{stats.totalPayable.toFixed(2)}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded">
+                <p className="text-muted-foreground">Withdrawals</p>
+                <p className="text-xl font-bold">₹{stats.totalWithdrawals.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  All Users
-                </CardTitle>
-                <CardDescription>Manage user accounts and balances</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by user ID..."
-                      value={searchEmail}
-                      onChange={(e) => setSearchEmail(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
+        {/* Users */}
+        {activeTab === "users" && (
+          <div className="space-y-3">
+            <Input placeholder="Search user ID or UPI..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="text-sm" />
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-4">User ID</th>
+                    <th className="pb-2 pr-4">UPI</th>
+                    <th className="pb-2 pr-4">Earnings</th>
+                    <th className="pb-2 pr-4">Balance</th>
+                    <th className="pb-2 pr-4">Ads</th>
+                    <th className="pb-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProfiles.map(p => (
+                    <tr key={p.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
+                      <td className="py-2 pr-4 text-primary">{p.upi_id || "-"}</td>
+                      <td className="py-2 pr-4 text-green-500">₹{Number(p.total_earnings).toFixed(2)}</td>
+                      <td className="py-2 pr-4">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="py-2 pr-4">{p.ads_watched}</td>
+                      <td className="py-2">
+                        <span className={`text-xs ${p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-red-500'}`}>
+                          {p.payment_status || 'pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User ID</TableHead>
-                        <TableHead>UPI ID</TableHead>
-                        <TableHead>Total Earnings</TableHead>
-                        <TableHead>Payable Amount</TableHead>
-                        <TableHead>Payment Status</TableHead>
-                        <TableHead>Ads Watched</TableHead>
-                        <TableHead>Joined</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredProfiles.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground">
-                            No users found
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredProfiles.map((profile) => (
-                          <TableRow key={profile.id}>
-                            <TableCell className="font-mono text-sm">
-                              {profile.user_id.slice(0, 12)}...
-                            </TableCell>
-                            <TableCell className="font-medium text-primary">
-                              {profile.upi_id || <span className="text-muted-foreground">Not set</span>}
-                            </TableCell>
-                            <TableCell className="text-success font-medium">
-                              ₹{Number(profile.total_earnings).toFixed(2)}
-                            </TableCell>
-                            <TableCell className="font-bold text-warning">
-                              ₹{Number(profile.withdrawable_balance).toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={getPaymentStatusBadge(profile.payment_status || 'pending')}>
-                                {profile.payment_status || 'pending'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{profile.ads_watched}</TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* Leaderboard */}
+        {activeTab === "leaderboard" && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Top earners</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-4">#</th>
+                    <th className="pb-2 pr-4">User</th>
+                    <th className="pb-2 pr-4">Earnings</th>
+                    <th className="pb-2">Ads</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...userProfiles].sort((a, b) => Number(b.total_earnings) - Number(a.total_earnings)).slice(0, 20).map((p, i) => (
+                    <tr key={p.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 font-bold">{i + 1}</td>
+                      <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
+                      <td className="py-2 pr-4 text-green-500">₹{Number(p.total_earnings).toFixed(2)}</td>
+                      <td className="py-2">{p.ads_watched}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5 text-primary" />
-                  Send Notification to All Users
-                </CardTitle>
-                <CardDescription>Broadcast a notification to all registered users</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    placeholder="Notification title..."
-                    value={notificationTitle}
-                    onChange={(e) => setNotificationTitle(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Message</label>
-                  <Textarea
-                    placeholder="Write your notification message..."
-                    value={notificationMessage}
-                    onChange={(e) => setNotificationMessage(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-                <Button 
-                  onClick={handleSendNotification}
-                  disabled={sendingNotification || !notificationTitle.trim() || !notificationMessage.trim()}
-                  className="w-full bg-primary hover:bg-primary/90"
-                >
-                  {sendingNotification ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  Send to All Users ({userProfiles.length})
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* Transactions */}
+        {activeTab === "transactions" && (
+          <div className="space-y-3">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-4">User</th>
+                    <th className="pb-2 pr-4">Type</th>
+                    <th className="pb-2 pr-4">Amount</th>
+                    <th className="pb-2 pr-4">Description</th>
+                    <th className="pb-2">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.map(tx => (
+                    <tr key={tx.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 font-mono text-xs">{tx.user_id.slice(0, 8)}...</td>
+                      <td className="py-2 pr-4">
+                        <span className={`text-xs ${tx.transaction_type === 'withdrawal' ? 'text-red-500' : 'text-green-500'}`}>
+                          {tx.transaction_type}
+                        </span>
+                      </td>
+                      <td className={`py-2 pr-4 ${tx.transaction_type === 'withdrawal' ? 'text-red-500' : 'text-green-500'}`}>
+                        {tx.transaction_type === 'withdrawal' ? '-' : '+'}₹{Number(tx.amount).toFixed(2)}
+                      </td>
+                      <td className="py-2 pr-4 text-muted-foreground truncate max-w-[150px]">{tx.description || '-'}</td>
+                      <td className="py-2 text-muted-foreground text-xs">{new Date(tx.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-          {/* Roles Tab */}
-          <TabsContent value="roles" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCheck className="h-5 w-5 text-primary" />
-                  Assign Role
-                </CardTitle>
-                <CardDescription>Grant admin, moderator, or user roles</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">User</label>
-                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select user" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {userProfiles.map((profile) => (
-                          <SelectItem key={profile.user_id} value={profile.user_id}>
-                            {profile.user_id.slice(0, 12)}...
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Role</label>
-                    <Select value={selectedRole} onValueChange={setSelectedRole}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="moderator">Moderator</SelectItem>
-                        <SelectItem value="user">User</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-end">
-                    <Button 
-                      onClick={handleAssignRole} 
-                      disabled={actionLoading}
-                      className="w-full bg-primary hover:bg-primary/90"
-                    >
-                      {actionLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Assign Role"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Payments */}
+        {activeTab === "payments" && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="p-2 bg-muted/50 rounded text-center">
+                <p className="text-muted-foreground text-xs">Pending</p>
+                <p className="font-bold text-yellow-500">{stats.pendingPayments}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded text-center">
+                <p className="text-muted-foreground text-xs">Payable</p>
+                <p className="font-bold text-red-500">₹{stats.totalPayable.toFixed(0)}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded text-center">
+                <p className="text-muted-foreground text-xs">Earnings</p>
+                <p className="font-bold text-green-500">₹{stats.totalEarnings.toFixed(0)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">Users with ≥₹50 balance</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-4">User</th>
+                    <th className="pb-2 pr-4">UPI</th>
+                    <th className="pb-2 pr-4">Amount</th>
+                    <th className="pb-2 pr-4">Status</th>
+                    <th className="pb-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).map(p => (
+                    <tr key={p.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
+                      <td className="py-2 pr-4 text-primary">{p.upi_id || "-"}</td>
+                      <td className="py-2 pr-4 text-green-500 font-medium">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`text-xs ${p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-red-500'}`}>
+                          {p.payment_status || 'pending'}
+                        </span>
+                      </td>
+                      <td className="py-2">
+                        <div className="flex gap-2">
+                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, 'processing')} className="text-xs text-yellow-500 hover:underline" disabled={actionLoading}>Process</button>
+                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, 'paid')} className="text-xs text-green-500 hover:underline" disabled={actionLoading}>Paid</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  All User Roles
-                </CardTitle>
-                <CardDescription>View and manage all assigned roles</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Assigned At</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {userRoles.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          No roles assigned yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      userRoles.map((userRole) => (
-                        <TableRow key={userRole.id}>
-                          <TableCell className="font-mono text-sm">
-                            {userRole.user_id.slice(0, 12)}...
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getRoleBadgeVariant(userRole.role)}>
-                              {userRole.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {userRole.created_at ? new Date(userRole.created_at).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleRevokeRole(userRole.id)}
-                              disabled={actionLoading}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        {/* Daily Rewards */}
+        {activeTab === "daily" && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="p-2 bg-muted/50 rounded text-center">
+                <p className="text-muted-foreground text-xs">Claimed</p>
+                <p className="font-bold">{dailyRewards.length}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded text-center">
+                <p className="text-muted-foreground text-xs">Total Given</p>
+                <p className="font-bold text-green-500">₹{dailyRewards.reduce((sum, d) => sum + Number(d.total_claimed), 0).toFixed(2)}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded text-center">
+                <p className="text-muted-foreground text-xs">7-Day Streaks</p>
+                <p className="font-bold text-primary">{dailyRewards.filter(d => d.current_streak >= 7).length}</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-4">User</th>
+                    <th className="pb-2 pr-4">Streak</th>
+                    <th className="pb-2 pr-4">Last Claim</th>
+                    <th className="pb-2">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailyRewards.map(d => (
+                    <tr key={d.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 font-mono text-xs">{d.user_id.slice(0, 8)}...</td>
+                      <td className="py-2 pr-4">Day {d.current_streak}</td>
+                      <td className="py-2 pr-4 text-muted-foreground">{d.last_claim_date || '-'}</td>
+                      <td className="py-2 text-green-500">₹{Number(d.total_claimed).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-          {/* Payments Tab */}
-          <TabsContent value="payments" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  Payment Management
-                </CardTitle>
-                <CardDescription>Manage user payments with UPI details and status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-4 gap-4 mb-6">
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Total Paid Out</p>
-                      <p className="text-2xl font-bold text-primary">₹{stats.totalWithdrawals.toFixed(2)}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-warning" />
-                        <p className="text-sm text-muted-foreground">Pending</p>
-                      </div>
-                      <p className="text-2xl font-bold text-warning">{stats.pendingPayments}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Total Payable</p>
-                      <p className="text-2xl font-bold text-destructive">₹{stats.totalPayable.toFixed(2)}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Platform Earnings</p>
-                      <p className="text-2xl font-bold text-success">₹{stats.totalEarnings.toFixed(2)}</p>
-                    </CardContent>
-                  </Card>
-                </div>
+        {/* Gift Cards */}
+        {activeTab === "giftcards" && (
+          <div className="space-y-4">
+            {/* Create Code */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Create Code</p>
+              <div className="flex gap-2">
+                <Input placeholder="CODE" value={newGiftCardCode} onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())} className="text-sm flex-1" />
+                <Input type="number" placeholder="₹" value={newGiftCardValue} onChange={(e) => setNewGiftCardValue(e.target.value)} className="text-sm w-20" />
+                <button onClick={handleCreateGiftCard} className="text-sm text-primary hover:underline px-2" disabled={actionLoading}>Add</button>
+              </div>
+            </div>
 
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User ID</TableHead>
-                        <TableHead>UPI ID</TableHead>
-                        <TableHead>Payable Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground">
-                            No users eligible for payment (min ₹50)
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        userProfiles
-                          .filter(p => Number(p.withdrawable_balance) >= 50)
-                          .map((profile) => (
-                            <TableRow key={profile.id}>
-                              <TableCell className="font-mono text-sm">
-                                {profile.user_id.slice(0, 12)}...
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {profile.upi_id ? (
-                                  <span className="text-primary">{profile.upi_id}</span>
-                                ) : (
-                                  <span className="text-muted-foreground italic">Not provided</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-success font-bold">
-                                ₹{Number(profile.withdrawable_balance).toFixed(2)}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={getPaymentStatusBadge(profile.payment_status || 'pending')}>
-                                  {profile.payment_status || 'pending'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex gap-2 justify-end">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleUpdatePaymentStatus(profile.user_id, 'processing')}
-                                    disabled={actionLoading || profile.payment_status === 'processing'}
-                                  >
-                                    <Clock className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => handleUpdatePaymentStatus(profile.user_id, 'paid')}
-                                    disabled={actionLoading || profile.payment_status === 'paid'}
-                                    className="bg-success hover:bg-success/90"
-                                  >
-                                    <CheckCircle className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Daily Rewards Tab */}
-          <TabsContent value="daily" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-warning" />
-                  Daily Rewards Data
-                </CardTitle>
-                <CardDescription>View all user daily reward streaks and claims</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Total Users Claimed</p>
-                      <p className="text-2xl font-bold text-warning">{dailyRewards.length}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Total Rewards Given</p>
-                      <p className="text-2xl font-bold text-success">
-                        ₹{dailyRewards.reduce((sum, d) => sum + Number(d.total_claimed), 0).toFixed(2)}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <p className="text-sm text-muted-foreground">Active Streaks (7 days)</p>
-                      <p className="text-2xl font-bold text-primary">
-                        {dailyRewards.filter(d => d.current_streak >= 7).length}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Current Streak</TableHead>
-                      <TableHead>Last Claim</TableHead>
-                      <TableHead>Total Claimed</TableHead>
-                      <TableHead>Started</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dailyRewards.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
-                          No daily reward claims yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      dailyRewards.map((reward) => (
-                        <TableRow key={reward.id}>
-                          <TableCell className="font-mono text-sm">
-                            {reward.user_id.slice(0, 12)}...
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={reward.current_streak >= 7 ? "default" : "secondary"}>
-                              Day {reward.current_streak}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {reward.last_claim_date || 'Never'}
-                          </TableCell>
-                          <TableCell className="text-success font-medium">
-                            ₹{Number(reward.total_claimed).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {reward.created_at ? new Date(reward.created_at).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Transactions Tab */}
-          <TabsContent value="transactions" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  Recent Transactions
-                </CardTitle>
-                <CardDescription>View all platform transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
-                          No transactions yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      transactions.map((tx) => (
-                        <TableRow key={tx.id}>
-                          <TableCell className="font-mono text-sm">
-                            {tx.user_id.slice(0, 12)}...
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getTransactionBadge(tx.transaction_type)}>
-                              {tx.transaction_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className={tx.transaction_type === 'withdrawal' ? 'text-destructive' : 'text-success'}>
-                            {tx.transaction_type === 'withdrawal' ? '-' : '+'}₹{Number(tx.amount).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                            {tx.description || '-'}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {tx.created_at ? new Date(tx.created_at).toLocaleString() : 'N/A'}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* AdMob Tab */}
-          <TabsContent value="admob" className="space-y-4">
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Smartphone className="h-5 w-5 text-primary" />
-                  AdMob Configuration
-                </CardTitle>
-                <CardDescription>
-                  Manage AdMob settings. Changes apply without app rebuild.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">App ID *</label>
-                    <Input
-                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"
-                      value={admobAppId}
-                      onChange={(e) => setAdmobAppId(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Your AdMob App ID from the AdMob console
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Rewarded Ad Unit ID *</label>
-                    <Input
-                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
-                      value={admobRewardedAdUnitId}
-                      onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Ad unit ID for rewarded video ads (required for earning)
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Banner Ad Unit ID (Optional)</label>
-                    <Input
-                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
-                      value={admobBannerAdUnitId}
-                      onChange={(e) => setAdmobBannerAdUnitId(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Interstitial Ad Unit ID (Optional)</label>
-                    <Input
-                      placeholder="ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
-                      value={admobInterstitialAdUnitId}
-                      onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <input
-                      type="checkbox"
-                      id="admob-testing"
-                      checked={admobIsTesting}
-                      onChange={(e) => setAdmobIsTesting(e.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    <label htmlFor="admob-testing" className="text-sm">
-                      Enable Test Mode (use test ads)
-                    </label>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleSaveAdmobConfig}
-                  disabled={savingAdmob}
-                  className="gap-2"
-                >
-                  {savingAdmob ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  Save Configuration
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Gift Cards Tab */}
-          <TabsContent value="giftcards" className="space-y-4">
-            {/* Create Gift Card Code */}
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Ticket className="h-5 w-5 text-primary" />
-                  Create Gift Card Code
-                </CardTitle>
-                <CardDescription>Create redeemable gift card codes for users</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Code</label>
-                    <Input
-                      placeholder="GIFT2024"
-                      value={newGiftCardCode}
-                      onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Value (₹)</label>
-                    <Input
-                      type="number"
-                      placeholder="100"
-                      value={newGiftCardValue}
-                      onChange={(e) => setNewGiftCardValue(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      onClick={handleCreateGiftCard}
-                      disabled={savingGiftCard}
-                      className="w-full"
-                    >
-                      {savingGiftCard ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-                      Create
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Gift Card Codes List */}
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-warning" />
-                  Gift Card Codes ({giftCards.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Redeemed By</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {giftCards.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                          No gift cards created yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      giftCards.map((card) => (
-                        <TableRow key={card.id}>
-                          <TableCell className="font-mono font-bold">{card.code}</TableCell>
-                          <TableCell className="text-success font-medium">₹{Number(card.value).toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge variant={card.is_redeemed ? "secondary" : "default"}>
-                              {card.is_redeemed ? "Redeemed" : "Active"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {card.redeemed_by ? `${card.redeemed_by.slice(0, 8)}...` : "-"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {new Date(card.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {!card.is_redeemed && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteGiftCard(card.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Gift Card Products */}
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-primary" />
-                  Gift Card Products
-                </CardTitle>
-                <CardDescription>Manage purchasable gift cards</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-5 gap-4">
-                  <Input
-                    placeholder="Name"
-                    value={newProductName}
-                    onChange={(e) => setNewProductName(e.target.value)}
-                  />
-                  <Input
-                    placeholder="Brand"
-                    value={newProductBrand}
-                    onChange={(e) => setNewProductBrand(e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Value ₹"
-                    value={newProductDenomination}
-                    onChange={(e) => setNewProductDenomination(e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Price ₹"
-                    value={newProductPrice}
-                    onChange={(e) => setNewProductPrice(e.target.value)}
-                  />
-                  <Button onClick={handleCreateProduct} disabled={savingGiftCard}>
-                    <Plus className="h-4 w-4 mr-2" />Add
-                  </Button>
-                </div>
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Brand</TableHead>
-                      <TableHead>Value</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {giftCardProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.brand}</TableCell>
-                        <TableCell>₹{Number(product.denomination).toFixed(0)}</TableCell>
-                        <TableCell className="text-success">₹{Number(product.price).toFixed(0)}</TableCell>
-                        <TableCell>
-                          <Badge variant={product.is_active ? "default" : "secondary"}>
-                            {product.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleProductStatus(product.id, product.is_active)}
-                          >
-                            {product.is_active ? "Disable" : "Enable"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+            {/* Codes List */}
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Codes ({giftCards.length})</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="pb-2 pr-4">Code</th>
+                      <th className="pb-2 pr-4">Value</th>
+                      <th className="pb-2 pr-4">Status</th>
+                      <th className="pb-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {giftCards.map(gc => (
+                      <tr key={gc.id} className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono">{gc.code}</td>
+                        <td className="py-2 pr-4">₹{Number(gc.value).toFixed(0)}</td>
+                        <td className="py-2 pr-4">
+                          <span className={gc.is_redeemed ? 'text-green-500' : 'text-yellow-500'}>{gc.is_redeemed ? 'Used' : 'Active'}</span>
+                        </td>
+                        <td className="py-2">
+                          {!gc.is_redeemed && <button onClick={() => handleDeleteGiftCard(gc.id)} className="text-xs text-red-500 hover:underline">Delete</button>}
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-            {/* Purchase Requests */}
-            <Card className="card-glow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-warning" />
-                  Purchase Requests ({giftCardPurchases.filter(p => p.status === 'pending').length} pending)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {giftCardPurchases.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                          No purchase requests yet
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      giftCardPurchases.map((purchase) => (
-                        <TableRow key={purchase.id}>
-                          <TableCell className="font-mono text-sm">{purchase.user_id.slice(0, 8)}...</TableCell>
-                          <TableCell>{(purchase.product as GiftCardProduct)?.name || 'N/A'}</TableCell>
-                          <TableCell className="text-success">₹{Number(purchase.amount_paid).toFixed(0)}</TableCell>
-                          <TableCell>
-                            <Badge variant={purchase.status === 'completed' ? 'default' : purchase.status === 'pending' ? 'destructive' : 'secondary'}>
-                              {purchase.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {new Date(purchase.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {purchase.status === 'pending' && (
-                              <div className="flex gap-2 justify-end">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    const code = prompt("Enter gift card code to send to user:");
-                                    if (code) handleUpdatePurchaseStatus(purchase.id, 'completed', code);
-                                  }}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
-                            {purchase.redemption_code && (
-                              <span className="text-xs font-mono text-primary">{purchase.redemption_code}</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            {/* Create Product */}
+            <div className="space-y-2 pt-4 border-t border-border">
+              <p className="text-sm font-medium">Add Product</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder="Name" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="text-sm" />
+                <Input placeholder="Brand" value={newProductBrand} onChange={(e) => setNewProductBrand(e.target.value)} className="text-sm" />
+                <Input type="number" placeholder="Denomination" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="text-sm" />
+                <Input type="number" placeholder="Price" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="text-sm" />
+              </div>
+              <button onClick={handleCreateProduct} className="text-sm text-primary hover:underline" disabled={actionLoading}>Create Product</button>
+            </div>
+
+            {/* Products */}
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Products ({giftCardProducts.length})</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="pb-2 pr-4">Name</th>
+                      <th className="pb-2 pr-4">Brand</th>
+                      <th className="pb-2 pr-4">Value</th>
+                      <th className="pb-2 pr-4">Price</th>
+                      <th className="pb-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {giftCardProducts.map(p => (
+                      <tr key={p.id} className="border-b border-border/50">
+                        <td className="py-2 pr-4">{p.name}</td>
+                        <td className="py-2 pr-4">{p.brand}</td>
+                        <td className="py-2 pr-4">₹{Number(p.denomination).toFixed(0)}</td>
+                        <td className="py-2 pr-4">₹{Number(p.price).toFixed(0)}</td>
+                        <td className="py-2">
+                          <button onClick={() => handleToggleProductStatus(p.id, p.is_active)} className={`text-xs hover:underline ${p.is_active ? 'text-green-500' : 'text-red-500'}`}>
+                            {p.is_active ? 'Active' : 'Inactive'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Purchases */}
+            <div className="space-y-2 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">Purchases ({giftCardPurchases.length})</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="pb-2 pr-4">User</th>
+                      <th className="pb-2 pr-4">Product</th>
+                      <th className="pb-2 pr-4">Paid</th>
+                      <th className="pb-2 pr-4">Status</th>
+                      <th className="pb-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {giftCardPurchases.map(p => (
+                      <tr key={p.id} className="border-b border-border/50">
+                        <td className="py-2 pr-4 font-mono text-xs">{p.user_id.slice(0, 8)}...</td>
+                        <td className="py-2 pr-4">{p.product?.name || '-'}</td>
+                        <td className="py-2 pr-4">₹{Number(p.amount_paid).toFixed(0)}</td>
+                        <td className="py-2 pr-4">
+                          <span className={`text-xs ${p.status === 'completed' ? 'text-green-500' : p.status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          {p.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <button onClick={() => handleUpdatePurchaseStatus(p.id, 'processing')} className="text-xs text-yellow-500 hover:underline">Process</button>
+                              <button onClick={() => handleUpdatePurchaseStatus(p.id, 'completed', 'GENERATED_CODE')} className="text-xs text-green-500 hover:underline">Complete</button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Roles */}
+        {activeTab === "roles" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Assign Role</p>
+              <div className="flex gap-2">
+                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="flex-1 text-sm bg-background border border-border rounded px-2 py-1">
+                  <option value="">Select User</option>
+                  {userProfiles.map(p => (
+                    <option key={p.user_id} value={p.user_id}>{p.user_id.slice(0, 12)}...</option>
+                  ))}
+                </select>
+                <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} className="text-sm bg-background border border-border rounded px-2 py-1">
+                  <option value="">Role</option>
+                  <option value="admin">Admin</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="user">User</option>
+                </select>
+                <button onClick={handleAssignRole} className="text-sm text-primary hover:underline px-2" disabled={actionLoading}>Assign</button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-4">User</th>
+                    <th className="pb-2 pr-4">Role</th>
+                    <th className="pb-2 pr-4">Date</th>
+                    <th className="pb-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userRoles.map(r => (
+                    <tr key={r.id} className="border-b border-border/50">
+                      <td className="py-2 pr-4 font-mono text-xs">{r.user_id.slice(0, 8)}...</td>
+                      <td className="py-2 pr-4">
+                        <span className={`text-xs ${r.role === 'admin' ? 'text-red-500' : r.role === 'moderator' ? 'text-yellow-500' : 'text-muted-foreground'}`}>{r.role}</span>
+                      </td>
+                      <td className="py-2 pr-4 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
+                      <td className="py-2">
+                        <button onClick={() => handleRevokeRole(r.id)} className="text-xs text-red-500 hover:underline" disabled={actionLoading}>Revoke</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Notifications */}
+        {activeTab === "notifications" && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Send to All Users ({userProfiles.length})</p>
+            <Input placeholder="Title" value={notificationTitle} onChange={(e) => setNotificationTitle(e.target.value)} className="text-sm" />
+            <Textarea placeholder="Message..." value={notificationMessage} onChange={(e) => setNotificationMessage(e.target.value)} rows={3} className="text-sm" />
+            <button onClick={handleSendNotification} className="text-sm text-primary hover:underline" disabled={actionLoading || !notificationTitle.trim() || !notificationMessage.trim()}>
+              {actionLoading ? 'Sending...' : 'Send Notification'}
+            </button>
+          </div>
+        )}
+
+        {/* AdMob */}
+        {activeTab === "admob" && (
+          <div className="space-y-3">
+            <p className="text-sm font-medium">AdMob Configuration</p>
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-muted-foreground">App ID *</label>
+                <Input placeholder="ca-app-pub-xxx~xxx" value={admobAppId} onChange={(e) => setAdmobAppId(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Rewarded Ad Unit ID *</label>
+                <Input placeholder="ca-app-pub-xxx/xxx" value={admobRewardedAdUnitId} onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Banner Ad Unit ID</label>
+                <Input placeholder="ca-app-pub-xxx/xxx" value={admobBannerAdUnitId} onChange={(e) => setAdmobBannerAdUnitId(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Interstitial Ad Unit ID</label>
+                <Input placeholder="ca-app-pub-xxx/xxx" value={admobInterstitialAdUnitId} onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)} className="text-sm" />
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input type="checkbox" id="test-mode" checked={admobIsTesting} onChange={(e) => setAdmobIsTesting(e.target.checked)} />
+                <label htmlFor="test-mode" className="text-sm">Test Mode</label>
+              </div>
+            </div>
+            <button onClick={handleSaveAdmobConfig} className="text-sm text-primary hover:underline" disabled={actionLoading}>
+              {actionLoading ? 'Saving...' : 'Save Configuration'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
