@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, RefreshCw } from "lucide-react";
 
 interface UserProfile {
   id: string;
   user_id: string;
+  display_name: string | null;
   total_earnings: number;
   withdrawable_balance: number;
   non_withdrawable_balance: number;
@@ -41,7 +41,6 @@ interface DailyReward {
   current_streak: number;
   last_claim_date: string | null;
   total_claimed: number;
-  created_at: string;
 }
 
 interface GiftCard {
@@ -52,7 +51,6 @@ interface GiftCard {
   redeemed_by: string | null;
   redeemed_at: string | null;
   created_at: string;
-  expires_at: string | null;
 }
 
 interface GiftCardProduct {
@@ -75,7 +73,7 @@ interface GiftCardPurchase {
   product?: GiftCardProduct;
 }
 
-type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob";
+type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob" | "support";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -85,6 +83,7 @@ const AdminDashboard = () => {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [txFilter, setTxFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState(false);
 
   const [notificationTitle, setNotificationTitle] = useState("");
@@ -147,74 +146,55 @@ const AdminDashboard = () => {
   };
 
   const loadAllData = async () => {
-    try {
-      setLoading(true);
-      await Promise.all([loadData(), loadAdmobConfig(), loadDailyRewards(), loadGiftCardsData()]);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    await Promise.all([loadData(), loadAdmobConfig(), loadDailyRewards(), loadGiftCardsData()]);
+    setLoading(false);
   };
 
   const loadData = async () => {
-    try {
-      const { data: profilesData } = await supabase.from("user_profiles").select("*").order("created_at", { ascending: false });
-      setUserProfiles(profilesData || []);
+    const { data: profilesData } = await supabase.from("user_profiles").select("*").order("created_at", { ascending: false });
+    setUserProfiles(profilesData || []);
 
-      const { data: rolesData } = await supabase.from("user_roles").select("*").order("created_at", { ascending: false });
-      setUserRoles(rolesData || []);
+    const { data: rolesData } = await supabase.from("user_roles").select("*").order("created_at", { ascending: false });
+    setUserRoles(rolesData || []);
 
-      const { data: txData } = await supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(100);
-      setTransactions(txData || []);
+    const { data: txData } = await supabase.from("transactions").select("*").order("created_at", { ascending: false }).limit(200);
+    setTransactions(txData || []);
 
-      const totalEarnings = profilesData?.reduce((sum, p) => sum + Number(p.total_earnings), 0) || 0;
-      const totalWithdrawals = txData?.filter(t => t.transaction_type === 'withdrawal').reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-      const totalAdsWatched = profilesData?.reduce((sum, p) => sum + p.ads_watched, 0) || 0;
-      const pendingPayments = profilesData?.filter(p => p.payment_status === 'pending' && Number(p.withdrawable_balance) >= 50).length || 0;
-      const totalPayable = profilesData?.filter(p => Number(p.withdrawable_balance) >= 50).reduce((sum, p) => sum + Number(p.withdrawable_balance), 0) || 0;
+    const totalEarnings = profilesData?.reduce((sum, p) => sum + Number(p.total_earnings), 0) || 0;
+    const totalWithdrawals = txData?.filter(t => t.transaction_type === 'withdrawal').reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) || 0;
+    const totalAdsWatched = profilesData?.reduce((sum, p) => sum + p.ads_watched, 0) || 0;
+    const pendingPayments = profilesData?.filter(p => p.payment_status === 'pending' && Number(p.withdrawable_balance) >= 50).length || 0;
+    const totalPayable = profilesData?.filter(p => Number(p.withdrawable_balance) >= 50).reduce((sum, p) => sum + Number(p.withdrawable_balance), 0) || 0;
 
-      setStats({ totalUsers: profilesData?.length || 0, totalEarnings, totalWithdrawals, totalAdsWatched, pendingPayments, totalPayable });
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
+    setStats({ totalUsers: profilesData?.length || 0, totalEarnings, totalWithdrawals, totalAdsWatched, pendingPayments, totalPayable });
   };
 
   const loadAdmobConfig = async () => {
-    try {
-      const { data } = await supabase.from("admob_config").select("*").limit(1).single();
-      if (data) {
-        setAdmobAppId(data.app_id || "");
-        setAdmobRewardedAdUnitId(data.rewarded_ad_unit_id || "");
-        setAdmobBannerAdUnitId(data.banner_ad_unit_id || "");
-        setAdmobInterstitialAdUnitId(data.interstitial_ad_unit_id || "");
-        setAdmobIsTesting(data.is_testing || false);
-      }
-    } catch (error) {
-      console.error("Error loading AdMob config:", error);
+    const { data } = await supabase.from("admob_config").select("*").limit(1).maybeSingle();
+    if (data) {
+      setAdmobAppId(data.app_id || "");
+      setAdmobRewardedAdUnitId(data.rewarded_ad_unit_id || "");
+      setAdmobBannerAdUnitId(data.banner_ad_unit_id || "");
+      setAdmobInterstitialAdUnitId(data.interstitial_ad_unit_id || "");
+      setAdmobIsTesting(data.is_testing || false);
     }
   };
 
   const loadDailyRewards = async () => {
-    try {
-      const { data } = await supabase.from("daily_rewards").select("*").order("total_claimed", { ascending: false });
-      setDailyRewards(data || []);
-    } catch (error) {
-      console.error("Error loading daily rewards:", error);
-    }
+    const { data } = await supabase.from("daily_rewards").select("*").order("total_claimed", { ascending: false });
+    setDailyRewards(data || []);
   };
 
   const loadGiftCardsData = async () => {
-    try {
-      const [cardsRes, productsRes, purchasesRes] = await Promise.all([
-        supabase.from("gift_cards").select("*").order("created_at", { ascending: false }),
-        supabase.from("gift_card_products").select("*").order("brand", { ascending: true }),
-        supabase.from("gift_card_purchases").select("*, product:gift_card_products(*)").order("created_at", { ascending: false })
-      ]);
-      if (cardsRes.data) setGiftCards(cardsRes.data);
-      if (productsRes.data) setGiftCardProducts(productsRes.data);
-      if (purchasesRes.data) setGiftCardPurchases(purchasesRes.data);
-    } catch (error) {
-      console.error("Error loading gift cards data:", error);
-    }
+    const [cardsRes, productsRes, purchasesRes] = await Promise.all([
+      supabase.from("gift_cards").select("*").order("created_at", { ascending: false }),
+      supabase.from("gift_card_products").select("*").order("brand", { ascending: true }),
+      supabase.from("gift_card_purchases").select("*, product:gift_card_products(*)").order("created_at", { ascending: false })
+    ]);
+    if (cardsRes.data) setGiftCards(cardsRes.data);
+    if (productsRes.data) setGiftCardProducts(productsRes.data);
+    if (purchasesRes.data) setGiftCardPurchases(purchasesRes.data);
   };
 
   const handleSendNotification = async () => {
@@ -222,65 +202,54 @@ const AdminDashboard = () => {
       toast.error("Enter title and message");
       return;
     }
-    try {
-      setActionLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: notification, error } = await supabase.from("notifications").insert({ title: notificationTitle, message: notificationMessage, sent_by: user?.id }).select().single();
-      if (error) throw error;
-      const userNotifications = userProfiles.map(profile => ({ user_id: profile.user_id, notification_id: notification.id }));
-      await supabase.from("user_notifications").insert(userNotifications);
-      toast.success(`Sent to ${userProfiles.length} users`);
-      setNotificationTitle("");
-      setNotificationMessage("");
-    } catch (error) {
+    setActionLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: notification, error } = await supabase.from("notifications").insert({ title: notificationTitle, message: notificationMessage, sent_by: user?.id }).select().single();
+    if (error) {
       toast.error("Failed to send");
-    } finally {
       setActionLoading(false);
+      return;
     }
+    const userNotifications = userProfiles.map(profile => ({ user_id: profile.user_id, notification_id: notification.id }));
+    await supabase.from("user_notifications").insert(userNotifications);
+    toast.success(`Sent to ${userProfiles.length} users`);
+    setNotificationTitle("");
+    setNotificationMessage("");
+    setActionLoading(false);
   };
 
   const handleSaveAdmobConfig = async () => {
     if (!admobAppId.trim() || !admobRewardedAdUnitId.trim()) {
-      toast.error("App ID and Rewarded Ad Unit ID required");
+      toast.error("App ID and Rewarded Unit ID required");
       return;
     }
-    try {
-      setActionLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: existing } = await supabase.from("admob_config").select("id").limit(1).single();
-      const configData = {
-        app_id: admobAppId,
-        rewarded_ad_unit_id: admobRewardedAdUnitId,
-        banner_ad_unit_id: admobBannerAdUnitId || null,
-        interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
-        is_testing: admobIsTesting,
-        updated_at: new Date().toISOString(),
-        updated_by: user?.id
-      };
-      if (existing) {
-        await supabase.from("admob_config").update(configData).eq("id", existing.id);
-      } else {
-        await supabase.from("admob_config").insert(configData);
-      }
-      toast.success("AdMob config saved");
-    } catch (error) {
-      toast.error("Failed to save");
-    } finally {
-      setActionLoading(false);
+    setActionLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: existing } = await supabase.from("admob_config").select("id").limit(1).maybeSingle();
+    const configData = {
+      app_id: admobAppId,
+      rewarded_ad_unit_id: admobRewardedAdUnitId,
+      banner_ad_unit_id: admobBannerAdUnitId || null,
+      interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
+      is_testing: admobIsTesting,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id
+    };
+    if (existing) {
+      await supabase.from("admob_config").update(configData).eq("id", existing.id);
+    } else {
+      await supabase.from("admob_config").insert(configData);
     }
+    toast.success("AdMob config saved");
+    setActionLoading(false);
   };
 
   const handleUpdatePaymentStatus = async (userId: string, status: string) => {
-    try {
-      setActionLoading(true);
-      await supabase.from("user_profiles").update({ payment_status: status }).eq("user_id", userId);
-      toast.success(`Status: ${status}`);
-      await loadData();
-    } catch (error) {
-      toast.error("Failed to update");
-    } finally {
-      setActionLoading(false);
-    }
+    setActionLoading(true);
+    await supabase.from("user_profiles").update({ payment_status: status }).eq("user_id", userId);
+    toast.success(`Status updated: ${status}`);
+    await loadData();
+    setActionLoading(false);
   };
 
   const handleAssignRole = async () => {
@@ -288,31 +257,27 @@ const AdminDashboard = () => {
       toast.error("Select user and role");
       return;
     }
-    try {
-      setActionLoading(true);
-      await supabase.from("user_roles").insert({ user_id: selectedUserId, role: selectedRole as any });
+    setActionLoading(true);
+    const { error } = await supabase.from("user_roles").insert({ user_id: selectedUserId, role: selectedRole as "admin" | "moderator" | "user" });
+    if (error?.code === "23505") {
+      toast.error("User already has this role");
+    } else if (error) {
+      toast.error("Failed to assign role");
+    } else {
       toast.success("Role assigned");
       setSelectedUserId("");
       setSelectedRole("");
       await loadData();
-    } catch (error: any) {
-      toast.error(error.code === "23505" ? "Already has role" : "Failed");
-    } finally {
-      setActionLoading(false);
     }
+    setActionLoading(false);
   };
 
   const handleRevokeRole = async (roleId: string) => {
-    try {
-      setActionLoading(true);
-      await supabase.from("user_roles").delete().eq("id", roleId);
-      toast.success("Role revoked");
-      await loadData();
-    } catch (error) {
-      toast.error("Failed");
-    } finally {
-      setActionLoading(false);
-    }
+    setActionLoading(true);
+    await supabase.from("user_roles").delete().eq("id", roleId);
+    toast.success("Role revoked");
+    await loadData();
+    setActionLoading(false);
   };
 
   const handleCreateGiftCard = async () => {
@@ -320,29 +285,26 @@ const AdminDashboard = () => {
       toast.error("Enter code and value");
       return;
     }
-    try {
-      setActionLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from("gift_cards").insert({ code: newGiftCardCode.toUpperCase(), value: parseFloat(newGiftCardValue), created_by: user?.id });
+    setActionLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("gift_cards").insert({ code: newGiftCardCode.toUpperCase(), value: parseFloat(newGiftCardValue), created_by: user?.id });
+    if (error?.code === "23505") {
+      toast.error("Code already exists");
+    } else if (error) {
+      toast.error("Failed to create");
+    } else {
       toast.success("Gift card created");
       setNewGiftCardCode("");
       setNewGiftCardValue("");
       await loadGiftCardsData();
-    } catch (error: any) {
-      toast.error(error.code === "23505" ? "Code exists" : "Failed");
-    } finally {
-      setActionLoading(false);
     }
+    setActionLoading(false);
   };
 
   const handleDeleteGiftCard = async (id: string) => {
-    try {
-      await supabase.from("gift_cards").delete().eq("id", id);
-      toast.success("Deleted");
-      await loadGiftCardsData();
-    } catch (error) {
-      toast.error("Failed");
-    }
+    await supabase.from("gift_cards").delete().eq("id", id);
+    toast.success("Deleted");
+    await loadGiftCardsData();
   };
 
   const handleCreateProduct = async () => {
@@ -350,53 +312,46 @@ const AdminDashboard = () => {
       toast.error("Fill all fields");
       return;
     }
-    try {
-      setActionLoading(true);
-      await supabase.from("gift_card_products").insert({
-        name: newProductName,
-        brand: newProductBrand,
-        denomination: parseFloat(newProductDenomination),
-        price: parseFloat(newProductPrice)
-      });
-      toast.success("Product created");
-      setNewProductName("");
-      setNewProductBrand("");
-      setNewProductDenomination("");
-      setNewProductPrice("");
-      await loadGiftCardsData();
-    } catch (error) {
-      toast.error("Failed");
-    } finally {
-      setActionLoading(false);
-    }
+    setActionLoading(true);
+    await supabase.from("gift_card_products").insert({
+      name: newProductName,
+      brand: newProductBrand,
+      denomination: parseFloat(newProductDenomination),
+      price: parseFloat(newProductPrice)
+    });
+    toast.success("Product created");
+    setNewProductName("");
+    setNewProductBrand("");
+    setNewProductDenomination("");
+    setNewProductPrice("");
+    await loadGiftCardsData();
+    setActionLoading(false);
   };
 
   const handleToggleProductStatus = async (id: string, currentStatus: boolean) => {
-    try {
-      await supabase.from("gift_card_products").update({ is_active: !currentStatus }).eq("id", id);
-      toast.success(!currentStatus ? "Activated" : "Deactivated");
-      await loadGiftCardsData();
-    } catch (error) {
-      toast.error("Failed");
-    }
+    await supabase.from("gift_card_products").update({ is_active: !currentStatus }).eq("id", id);
+    toast.success(!currentStatus ? "Activated" : "Deactivated");
+    await loadGiftCardsData();
   };
 
   const handleUpdatePurchaseStatus = async (id: string, status: string, code?: string) => {
-    try {
-      const updateData: any = { status, processed_at: new Date().toISOString() };
-      if (code) updateData.redemption_code = code;
-      await supabase.from("gift_card_purchases").update(updateData).eq("id", id);
-      toast.success(`Status: ${status}`);
-      await loadGiftCardsData();
-    } catch (error) {
-      toast.error("Failed");
-    }
+    const updateData: { status: string; processed_at: string; redemption_code?: string } = { status, processed_at: new Date().toISOString() };
+    if (code) updateData.redemption_code = code;
+    await supabase.from("gift_card_purchases").update(updateData).eq("id", id);
+    toast.success(`Status: ${status}`);
+    await loadGiftCardsData();
   };
 
-  const filteredProfiles = userProfiles.filter(p => 
-    p.user_id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (p.upi_id && p.upi_id.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredProfiles = userProfiles.filter(p =>
+    p.user_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.upi_id && p.upi_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (p.display_name && p.display_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const filteredTransactions = transactions.filter(tx => {
+    if (txFilter === "all") return true;
+    return tx.transaction_type === txFilter;
+  });
 
   const tabs: { key: TabType; label: string }[] = [
     { key: "overview", label: "Overview" },
@@ -408,134 +363,91 @@ const AdminDashboard = () => {
     { key: "giftcards", label: "Cards" },
     { key: "roles", label: "Roles" },
     { key: "notifications", label: "Notify" },
+    { key: "support", label: "Support" },
     { key: "admob", label: "AdMob" }
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
-  const StatCard = ({ label, value, color = "text-foreground" }: { label: string; value: string | number; color?: string }) => (
-    <div className="bg-card border border-border rounded-lg p-3">
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className={`text-lg font-bold ${color}`}>{value}</p>
-    </div>
-  );
-
-  const SectionHeader = ({ title, count }: { title: string; count?: number }) => (
-    <div className="flex items-center justify-between mb-3">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-      {count !== undefined && <span className="text-xs text-muted-foreground">({count})</span>}
-    </div>
-  );
-
-  const ActionBtn = ({ onClick, label, color = "text-primary", disabled = false }: { onClick: () => void; label: string; color?: string; disabled?: boolean }) => (
-    <button 
-      onClick={onClick} 
-      disabled={disabled || actionLoading}
-      className={`text-xs ${color} hover:opacity-80 disabled:opacity-50 transition-opacity`}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-base font-bold text-foreground">DXRewards Admin</h1>
+      <div className="sticky top-0 z-20 bg-background border-b border-border">
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-sm font-semibold">DXRewards Admin</span>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={loadAllData} 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button onClick={() => navigate("/dashboard")} className="text-xs text-primary hover:opacity-80">
-              ← Exit
-            </button>
+            <button onClick={loadAllData} className="text-xs text-muted-foreground hover:text-foreground">Refresh</button>
+            <button onClick={() => navigate("/dashboard")} className="text-xs text-primary">Exit</button>
           </div>
         </div>
-
-        {/* Navigation */}
-        <nav className="px-4 pb-2 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-1 min-w-max">
+        {/* Tab Navigation */}
+        <div className="overflow-x-auto px-3 pb-2">
+          <div className="flex gap-4 min-w-max">
             {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
-                  activeTab === tab.key 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                className={`text-xs py-1 border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? "border-primary text-primary font-medium"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {tab.label}
               </button>
             ))}
           </div>
-        </nav>
-      </header>
+        </div>
+      </div>
 
       {/* Content */}
-      <main className="p-4 pb-20 max-w-4xl mx-auto">
-        
+      <div className="p-3 pb-20 max-w-3xl mx-auto">
+
         {/* Overview */}
         {activeTab === "overview" && (
-          <div className="space-y-4">
-            <SectionHeader title="Dashboard Overview" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <StatCard label="Total Users" value={stats.totalUsers} />
-              <StatCard label="Total Earnings" value={`₹${stats.totalEarnings.toFixed(2)}`} color="text-green-500" />
-              <StatCard label="Ads Watched" value={stats.totalAdsWatched} />
-              <StatCard label="Pending Payments" value={stats.pendingPayments} color="text-yellow-500" />
-              <StatCard label="Total Payable" value={`₹${stats.totalPayable.toFixed(2)}`} color="text-primary" />
-              <StatCard label="Total Withdrawals" value={`₹${stats.totalWithdrawals.toFixed(2)}`} />
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Dashboard Stats</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <StatBox label="Users" value={stats.totalUsers} />
+              <StatBox label="Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} highlight />
+              <StatBox label="Ads Watched" value={stats.totalAdsWatched} />
+              <StatBox label="Pending" value={stats.pendingPayments} />
+              <StatBox label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} highlight />
+              <StatBox label="Withdrawals" value={`₹${stats.totalWithdrawals.toFixed(0)}`} />
             </div>
           </div>
         )}
 
         {/* Users */}
         {activeTab === "users" && (
-          <div className="space-y-4">
-            <SectionHeader title="User Management" count={userProfiles.length} />
-            <Input 
-              placeholder="Search by User ID or UPI..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="h-9 text-sm"
-            />
-            <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Users ({userProfiles.length})</p>
+            <Input placeholder="Search user ID, UPI, name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-8 text-xs" />
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-medium">User</th>
-                    <th className="px-3 py-2 font-medium">UPI</th>
-                    <th className="px-3 py-2 font-medium">Earnings</th>
-                    <th className="px-3 py-2 font-medium">Balance</th>
-                    <th className="px-3 py-2 font-medium">Ads</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">User</th>
+                    <th className="py-2 pr-2 font-medium">UPI</th>
+                    <th className="py-2 pr-2 font-medium">Earnings</th>
+                    <th className="py-2 pr-2 font-medium">Balance</th>
+                    <th className="py-2 font-medium">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody>
                   {filteredProfiles.slice(0, 50).map(p => (
-                    <tr key={p.id} className="hover:bg-muted/30">
-                      <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                      <td className="px-3 py-2 text-primary">{p.upi_id || "-"}</td>
-                      <td className="px-3 py-2 text-green-500">₹{Number(p.total_earnings).toFixed(2)}</td>
-                      <td className="px-3 py-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
-                      <td className="px-3 py-2">{p.ads_watched}</td>
-                      <td className="px-3 py-2">
-                        <span className={p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}>
-                          {p.payment_status || 'pending'}
-                        </span>
-                      </td>
+                    <tr key={p.id} className="border-b border-border/50">
+                      <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                      <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
+                      <td className="py-2 pr-2">₹{Number(p.total_earnings).toFixed(2)}</td>
+                      <td className="py-2 pr-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="py-2">{p.payment_status || "pending"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -546,30 +458,30 @@ const AdminDashboard = () => {
 
         {/* Leaderboard */}
         {activeTab === "leaderboard" && (
-          <div className="space-y-4">
-            <SectionHeader title="Leaderboard Management" count={20} />
-            <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Top 20 Users</p>
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-medium w-10">#</th>
-                    <th className="px-3 py-2 font-medium">User</th>
-                    <th className="px-3 py-2 font-medium">Earnings</th>
-                    <th className="px-3 py-2 font-medium">Referrals</th>
-                    <th className="px-3 py-2 font-medium">Ads</th>
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium w-8">#</th>
+                    <th className="py-2 pr-2 font-medium">User</th>
+                    <th className="py-2 pr-2 font-medium">Earnings</th>
+                    <th className="py-2 pr-2 font-medium">Refs</th>
+                    <th className="py-2 font-medium">Ads</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody>
                   {[...userProfiles]
                     .sort((a, b) => Number(b.total_earnings) - Number(a.total_earnings))
                     .slice(0, 20)
                     .map((p, i) => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-bold text-primary">{i + 1}</td>
-                        <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                        <td className="px-3 py-2 text-green-500 font-medium">₹{Number(p.total_earnings).toFixed(2)}</td>
-                        <td className="px-3 py-2">{p.referrals_count}</td>
-                        <td className="px-3 py-2">{p.ads_watched}</td>
+                      <tr key={p.id} className="border-b border-border/50">
+                        <td className="py-2 pr-2 font-bold text-primary">{i + 1}</td>
+                        <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="py-2 pr-2">₹{Number(p.total_earnings).toFixed(2)}</td>
+                        <td className="py-2 pr-2">{p.referrals_count}</td>
+                        <td className="py-2">{p.ads_watched}</td>
                       </tr>
                     ))}
                 </tbody>
@@ -580,33 +492,38 @@ const AdminDashboard = () => {
 
         {/* Transactions */}
         {activeTab === "transactions" && (
-          <div className="space-y-4">
-            <SectionHeader title="Transactions Monitor" count={transactions.length} />
-            <div className="overflow-x-auto rounded-lg border border-border">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Transactions ({filteredTransactions.length})</p>
+            <div className="flex gap-2 flex-wrap">
+              {["all", "earning", "bonus", "referral", "daily_reward", "withdrawal", "gift_card"].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setTxFilter(f)}
+                  className={`text-xs px-2 py-1 rounded ${txFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                >
+                  {f === "all" ? "All" : f.replace("_", " ")}
+                </button>
+              ))}
+            </div>
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-medium">User</th>
-                    <th className="px-3 py-2 font-medium">Type</th>
-                    <th className="px-3 py-2 font-medium">Amount</th>
-                    <th className="px-3 py-2 font-medium">Description</th>
-                    <th className="px-3 py-2 font-medium">Date</th>
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">User</th>
+                    <th className="py-2 pr-2 font-medium">Type</th>
+                    <th className="py-2 pr-2 font-medium">Amount</th>
+                    <th className="py-2 pr-2 font-medium">Description</th>
+                    <th className="py-2 font-medium">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
-                  {transactions.map(tx => (
-                    <tr key={tx.id} className="hover:bg-muted/30">
-                      <td className="px-3 py-2 font-mono">{tx.user_id.slice(0, 8)}</td>
-                      <td className="px-3 py-2">
-                        <span className={tx.transaction_type === 'withdrawal' ? 'text-primary' : 'text-green-500'}>
-                          {tx.transaction_type}
-                        </span>
-                      </td>
-                      <td className={`px-3 py-2 font-medium ${tx.transaction_type === 'withdrawal' ? 'text-primary' : 'text-green-500'}`}>
-                        {tx.transaction_type === 'withdrawal' ? '-' : '+'}₹{Math.abs(Number(tx.amount)).toFixed(2)}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground max-w-[120px] truncate">{tx.description || '-'}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</td>
+                <tbody>
+                  {filteredTransactions.slice(0, 100).map(tx => (
+                    <tr key={tx.id} className="border-b border-border/50">
+                      <td className="py-2 pr-2 font-mono">{tx.user_id.slice(0, 8)}</td>
+                      <td className="py-2 pr-2">{tx.transaction_type}</td>
+                      <td className="py-2 pr-2">₹{Math.abs(Number(tx.amount)).toFixed(2)}</td>
+                      <td className="py-2 pr-2 max-w-[100px] truncate">{tx.description || "-"}</td>
+                      <td className="py-2 text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -615,43 +532,38 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* Payments / Wallet Control */}
+        {/* Payments */}
         {activeTab === "payments" && (
-          <div className="space-y-4">
-            <SectionHeader title="Wallet Control & Payments" />
-            <div className="grid grid-cols-3 gap-3">
-              <StatCard label="Pending" value={stats.pendingPayments} color="text-yellow-500" />
-              <StatCard label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} color="text-primary" />
-              <StatCard label="Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} color="text-green-500" />
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Withdrawal Requests (Balance ≥ ₹50)</p>
+            <div className="grid grid-cols-3 gap-2">
+              <StatBox label="Pending" value={stats.pendingPayments} />
+              <StatBox label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} highlight />
+              <StatBox label="Total Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} />
             </div>
-            <p className="text-[10px] text-muted-foreground">Users with withdrawable balance ≥ ₹50</p>
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-medium">User</th>
-                    <th className="px-3 py-2 font-medium">UPI</th>
-                    <th className="px-3 py-2 font-medium">Amount</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium">Actions</th>
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">User</th>
+                    <th className="py-2 pr-2 font-medium">UPI</th>
+                    <th className="py-2 pr-2 font-medium">Amount</th>
+                    <th className="py-2 pr-2 font-medium">Status</th>
+                    <th className="py-2 font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody>
                   {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).map(p => (
-                    <tr key={p.id} className="hover:bg-muted/30">
-                      <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                      <td className="px-3 py-2 text-primary">{p.upi_id || "-"}</td>
-                      <td className="px-3 py-2 text-green-500 font-medium">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
-                      <td className="px-3 py-2">
-                        <span className={p.payment_status === 'paid' ? 'text-green-500' : p.payment_status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}>
-                          {p.payment_status || 'pending'}
+                    <tr key={p.id} className="border-b border-border/50">
+                      <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                      <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
+                      <td className="py-2 pr-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="py-2 pr-2">{p.payment_status || "pending"}</td>
+                      <td className="py-2">
+                        <span className="flex gap-2">
+                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, "processing")} className="text-xs text-yellow-500 hover:underline" disabled={actionLoading}>Process</button>
+                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, "paid")} className="text-xs text-green-500 hover:underline" disabled={actionLoading}>Paid</button>
                         </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex gap-2">
-                          <ActionBtn onClick={() => handleUpdatePaymentStatus(p.user_id, 'processing')} label="Process" color="text-yellow-500" />
-                          <ActionBtn onClick={() => handleUpdatePaymentStatus(p.user_id, 'paid')} label="Paid" color="text-green-500" />
-                        </div>
                       </td>
                     </tr>
                   ))}
@@ -663,30 +575,30 @@ const AdminDashboard = () => {
 
         {/* Daily Rewards */}
         {activeTab === "daily" && (
-          <div className="space-y-4">
-            <SectionHeader title="Daily Rewards Tracker" count={dailyRewards.length} />
-            <div className="grid grid-cols-3 gap-3">
-              <StatCard label="Claimers" value={dailyRewards.length} />
-              <StatCard label="Total Given" value={`₹${dailyRewards.reduce((sum, d) => sum + Number(d.total_claimed), 0).toFixed(2)}`} color="text-green-500" />
-              <StatCard label="7-Day Streaks" value={dailyRewards.filter(d => d.current_streak >= 7).length} color="text-primary" />
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Daily Rewards ({dailyRewards.length})</p>
+            <div className="grid grid-cols-3 gap-2">
+              <StatBox label="Claimers" value={dailyRewards.length} />
+              <StatBox label="Total Given" value={`₹${dailyRewards.reduce((s, d) => s + Number(d.total_claimed), 0).toFixed(0)}`} highlight />
+              <StatBox label="7-Day Streaks" value={dailyRewards.filter(d => d.current_streak >= 7).length} />
             </div>
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-medium">User</th>
-                    <th className="px-3 py-2 font-medium">Streak</th>
-                    <th className="px-3 py-2 font-medium">Last Claim</th>
-                    <th className="px-3 py-2 font-medium">Total</th>
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">User</th>
+                    <th className="py-2 pr-2 font-medium">Streak</th>
+                    <th className="py-2 pr-2 font-medium">Last Claim</th>
+                    <th className="py-2 font-medium">Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody>
                   {dailyRewards.map(d => (
-                    <tr key={d.id} className="hover:bg-muted/30">
-                      <td className="px-3 py-2 font-mono">{d.user_id.slice(0, 8)}</td>
-                      <td className="px-3 py-2">Day {d.current_streak}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{d.last_claim_date || '-'}</td>
-                      <td className="px-3 py-2 text-green-500">₹{Number(d.total_claimed).toFixed(2)}</td>
+                    <tr key={d.id} className="border-b border-border/50">
+                      <td className="py-2 pr-2 font-mono">{d.user_id.slice(0, 8)}</td>
+                      <td className="py-2 pr-2">Day {d.current_streak}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{d.last_claim_date || "-"}</td>
+                      <td className="py-2">₹{Number(d.total_claimed).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -697,62 +609,35 @@ const AdminDashboard = () => {
 
         {/* Gift Cards */}
         {activeTab === "giftcards" && (
-          <div className="space-y-6">
-            {/* Create Code */}
-            <div className="space-y-3">
-              <SectionHeader title="Create Gift Card Code" />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase">Create Gift Card Code</p>
               <div className="flex gap-2">
-                <Input 
-                  placeholder="CODE" 
-                  value={newGiftCardCode} 
-                  onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())} 
-                  className="h-9 text-sm flex-1 font-mono"
-                />
-                <Input 
-                  type="number" 
-                  placeholder="₹ Value" 
-                  value={newGiftCardValue} 
-                  onChange={(e) => setNewGiftCardValue(e.target.value)} 
-                  className="h-9 text-sm w-24"
-                />
-                <button 
-                  onClick={handleCreateGiftCard} 
-                  disabled={actionLoading}
-                  className="px-4 h-9 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50"
-                >
-                  Add
-                </button>
+                <Input placeholder="CODE" value={newGiftCardCode} onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())} className="h-8 text-xs flex-1 font-mono" />
+                <Input type="number" placeholder="₹ Value" value={newGiftCardValue} onChange={(e) => setNewGiftCardValue(e.target.value)} className="h-8 text-xs w-20" />
+                <button onClick={handleCreateGiftCard} disabled={actionLoading} className="px-3 h-8 bg-primary text-primary-foreground text-xs rounded">Add</button>
               </div>
             </div>
 
-            {/* Codes List */}
-            <div className="space-y-3">
-              <SectionHeader title="Gift Card Codes" count={giftCards.length} />
-              <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase">Codes ({giftCards.length})</p>
+              <div className="overflow-x-auto">
                 <table className="w-full text-xs">
-                  <thead className="bg-muted/50">
-                    <tr className="text-left text-muted-foreground">
-                      <th className="px-3 py-2 font-medium">Code</th>
-                      <th className="px-3 py-2 font-medium">Value</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Action</th>
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="py-2 pr-2 font-medium">Code</th>
+                      <th className="py-2 pr-2 font-medium">Value</th>
+                      <th className="py-2 pr-2 font-medium">Status</th>
+                      <th className="py-2 font-medium">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {giftCards.map(gc => (
-                      <tr key={gc.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono font-medium">{gc.code}</td>
-                        <td className="px-3 py-2">₹{Number(gc.value).toFixed(0)}</td>
-                        <td className="px-3 py-2">
-                          <span className={gc.is_redeemed ? 'text-green-500' : 'text-yellow-500'}>
-                            {gc.is_redeemed ? 'Redeemed' : 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2">
-                          {!gc.is_redeemed && (
-                            <ActionBtn onClick={() => handleDeleteGiftCard(gc.id)} label="Delete" color="text-primary" />
-                          )}
-                        </td>
+                      <tr key={gc.id} className="border-b border-border/50">
+                        <td className="py-2 pr-2 font-mono">{gc.code}</td>
+                        <td className="py-2 pr-2">₹{Number(gc.value).toFixed(0)}</td>
+                        <td className="py-2 pr-2">{gc.is_redeemed ? "Redeemed" : "Active"}</td>
+                        <td className="py-2">{!gc.is_redeemed && <button onClick={() => handleDeleteGiftCard(gc.id)} className="text-xs text-primary hover:underline">Delete</button>}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -760,52 +645,38 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Create Product */}
-            <div className="space-y-3 pt-4 border-t border-border">
-              <SectionHeader title="Create Product for Purchase" />
+            <div className="border-t border-border pt-4 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase">Create Product</p>
               <div className="grid grid-cols-2 gap-2">
-                <Input placeholder="Product Name" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="h-9 text-sm" />
-                <Input placeholder="Brand (Amazon, Flipkart)" value={newProductBrand} onChange={(e) => setNewProductBrand(e.target.value)} className="h-9 text-sm" />
-                <Input type="number" placeholder="Denomination (₹)" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="h-9 text-sm" />
-                <Input type="number" placeholder="Price (₹)" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="h-9 text-sm" />
+                <Input placeholder="Product Name" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="h-8 text-xs" />
+                <Input placeholder="Brand" value={newProductBrand} onChange={(e) => setNewProductBrand(e.target.value)} className="h-8 text-xs" />
+                <Input type="number" placeholder="Denomination ₹" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="h-8 text-xs" />
+                <Input type="number" placeholder="Price ₹" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="h-8 text-xs" />
               </div>
-              <button 
-                onClick={handleCreateProduct} 
-                disabled={actionLoading}
-                className="px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50"
-              >
-                Create Product
-              </button>
+              <button onClick={handleCreateProduct} disabled={actionLoading} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded">Create</button>
             </div>
 
-            {/* Products */}
-            <div className="space-y-3">
-              <SectionHeader title="Products" count={giftCardProducts.length} />
-              <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase">Products ({giftCardProducts.length})</p>
+              <div className="overflow-x-auto">
                 <table className="w-full text-xs">
-                  <thead className="bg-muted/50">
-                    <tr className="text-left text-muted-foreground">
-                      <th className="px-3 py-2 font-medium">Name</th>
-                      <th className="px-3 py-2 font-medium">Brand</th>
-                      <th className="px-3 py-2 font-medium">Value</th>
-                      <th className="px-3 py-2 font-medium">Price</th>
-                      <th className="px-3 py-2 font-medium">Toggle</th>
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="py-2 pr-2 font-medium">Name</th>
+                      <th className="py-2 pr-2 font-medium">Brand</th>
+                      <th className="py-2 pr-2 font-medium">Value</th>
+                      <th className="py-2 pr-2 font-medium">Price</th>
+                      <th className="py-2 font-medium">Toggle</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {giftCardProducts.map(p => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2">{p.name}</td>
-                        <td className="px-3 py-2">{p.brand}</td>
-                        <td className="px-3 py-2">₹{Number(p.denomination).toFixed(0)}</td>
-                        <td className="px-3 py-2">₹{Number(p.price).toFixed(0)}</td>
-                        <td className="px-3 py-2">
-                          <ActionBtn 
-                            onClick={() => handleToggleProductStatus(p.id, p.is_active)} 
-                            label={p.is_active ? 'Deactivate' : 'Activate'}
-                            color={p.is_active ? 'text-green-500' : 'text-muted-foreground'}
-                          />
-                        </td>
+                      <tr key={p.id} className="border-b border-border/50">
+                        <td className="py-2 pr-2">{p.name}</td>
+                        <td className="py-2 pr-2">{p.brand}</td>
+                        <td className="py-2 pr-2">₹{Number(p.denomination).toFixed(0)}</td>
+                        <td className="py-2 pr-2">₹{Number(p.price).toFixed(0)}</td>
+                        <td className="py-2"><button onClick={() => handleToggleProductStatus(p.id, p.is_active)} className={`text-xs hover:underline ${p.is_active ? "text-green-500" : "text-muted-foreground"}`}>{p.is_active ? "Active" : "Inactive"}</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -813,37 +684,32 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Purchase Requests */}
-            <div className="space-y-3 pt-4 border-t border-border">
-              <SectionHeader title="Purchase Requests" count={giftCardPurchases.length} />
-              <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="border-t border-border pt-4 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase">Purchase Requests ({giftCardPurchases.length})</p>
+              <div className="overflow-x-auto">
                 <table className="w-full text-xs">
-                  <thead className="bg-muted/50">
-                    <tr className="text-left text-muted-foreground">
-                      <th className="px-3 py-2 font-medium">User</th>
-                      <th className="px-3 py-2 font-medium">Product</th>
-                      <th className="px-3 py-2 font-medium">Paid</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Actions</th>
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="py-2 pr-2 font-medium">User</th>
+                      <th className="py-2 pr-2 font-medium">Product</th>
+                      <th className="py-2 pr-2 font-medium">Paid</th>
+                      <th className="py-2 pr-2 font-medium">Status</th>
+                      <th className="py-2 font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody>
                     {giftCardPurchases.map(p => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                        <td className="px-3 py-2">{p.product?.name || '-'}</td>
-                        <td className="px-3 py-2">₹{Number(p.amount_paid).toFixed(0)}</td>
-                        <td className="px-3 py-2">
-                          <span className={p.status === 'completed' ? 'text-green-500' : p.status === 'processing' ? 'text-yellow-500' : 'text-muted-foreground'}>
-                            {p.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2">
-                          {p.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <ActionBtn onClick={() => handleUpdatePurchaseStatus(p.id, 'processing')} label="Process" color="text-yellow-500" />
-                              <ActionBtn onClick={() => handleUpdatePurchaseStatus(p.id, 'completed', 'CODE_' + Date.now())} label="Complete" color="text-green-500" />
-                            </div>
+                      <tr key={p.id} className="border-b border-border/50">
+                        <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="py-2 pr-2">{p.product?.name || "-"}</td>
+                        <td className="py-2 pr-2">₹{Number(p.amount_paid).toFixed(0)}</td>
+                        <td className="py-2 pr-2">{p.status}</td>
+                        <td className="py-2">
+                          {p.status === "pending" && (
+                            <span className="flex gap-2">
+                              <button onClick={() => handleUpdatePurchaseStatus(p.id, "processing")} className="text-xs text-yellow-500 hover:underline">Process</button>
+                              <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -857,60 +723,40 @@ const AdminDashboard = () => {
 
         {/* Roles */}
         {activeTab === "roles" && (
-          <div className="space-y-4">
-            <SectionHeader title="Role Management" />
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Role Management</p>
             <div className="flex gap-2 flex-wrap">
-              <select 
-                value={selectedUserId} 
-                onChange={(e) => setSelectedUserId(e.target.value)} 
-                className="flex-1 min-w-[140px] h-9 text-xs bg-background border border-border rounded-md px-2"
-              >
+              <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="flex-1 min-w-[120px] h-8 text-xs bg-background border border-border rounded px-2">
                 <option value="">Select User</option>
                 {userProfiles.map(p => (
                   <option key={p.user_id} value={p.user_id}>{p.user_id.slice(0, 16)}...</option>
                 ))}
               </select>
-              <select 
-                value={selectedRole} 
-                onChange={(e) => setSelectedRole(e.target.value)} 
-                className="h-9 text-xs bg-background border border-border rounded-md px-2"
-              >
+              <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} className="h-8 text-xs bg-background border border-border rounded px-2">
                 <option value="">Role</option>
                 <option value="admin">Admin</option>
                 <option value="moderator">Moderator</option>
                 <option value="user">User</option>
               </select>
-              <button 
-                onClick={handleAssignRole} 
-                disabled={actionLoading}
-                className="px-4 h-9 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:opacity-90 disabled:opacity-50"
-              >
-                Assign
-              </button>
+              <button onClick={handleAssignRole} disabled={actionLoading} className="px-3 h-8 bg-primary text-primary-foreground text-xs rounded">Assign</button>
             </div>
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/50">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2 font-medium">User</th>
-                    <th className="px-3 py-2 font-medium">Role</th>
-                    <th className="px-3 py-2 font-medium">Assigned</th>
-                    <th className="px-3 py-2 font-medium">Action</th>
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium">User</th>
+                    <th className="py-2 pr-2 font-medium">Role</th>
+                    <th className="py-2 pr-2 font-medium">Assigned</th>
+                    <th className="py-2 font-medium">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody>
                   {userRoles.map(r => (
-                    <tr key={r.id} className="hover:bg-muted/30">
-                      <td className="px-3 py-2 font-mono">{r.user_id.slice(0, 8)}</td>
-                      <td className="px-3 py-2">
-                        <span className={r.role === 'admin' ? 'text-primary font-medium' : r.role === 'moderator' ? 'text-yellow-500' : 'text-muted-foreground'}>
-                          {r.role}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
-                      <td className="px-3 py-2">
-                        <ActionBtn onClick={() => handleRevokeRole(r.id)} label="Revoke" color="text-primary" />
-                      </td>
+                    <tr key={r.id} className="border-b border-border/50">
+                      <td className="py-2 pr-2 font-mono">{r.user_id.slice(0, 8)}</td>
+                      <td className="py-2 pr-2">{r.role}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
+                      <td className="py-2"><button onClick={() => handleRevokeRole(r.id)} className="text-xs text-primary hover:underline" disabled={actionLoading}>Revoke</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -921,96 +767,87 @@ const AdminDashboard = () => {
 
         {/* Notifications */}
         {activeTab === "notifications" && (
-          <div className="space-y-4">
-            <SectionHeader title="Send Notification" count={userProfiles.length} />
-            <p className="text-[10px] text-muted-foreground -mt-2">Broadcast to all {userProfiles.length} users</p>
-            <Input 
-              placeholder="Notification Title" 
-              value={notificationTitle} 
-              onChange={(e) => setNotificationTitle(e.target.value)} 
-              className="h-9 text-sm"
-            />
-            <Textarea 
-              placeholder="Enter your message here..." 
-              value={notificationMessage} 
-              onChange={(e) => setNotificationMessage(e.target.value)} 
-              rows={4} 
-              className="text-sm resize-none"
-            />
-            <button 
-              onClick={handleSendNotification} 
-              disabled={actionLoading || !notificationTitle.trim() || !notificationMessage.trim()}
-              className="w-full py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 disabled:opacity-50"
-            >
-              {actionLoading ? 'Sending...' : 'Send to All Users'}
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Send Notification to All Users ({userProfiles.length})</p>
+            <Input placeholder="Title" value={notificationTitle} onChange={(e) => setNotificationTitle(e.target.value)} className="h-8 text-xs" />
+            <Textarea placeholder="Message..." value={notificationMessage} onChange={(e) => setNotificationMessage(e.target.value)} rows={4} className="text-xs resize-none" />
+            <button onClick={handleSendNotification} disabled={actionLoading || !notificationTitle.trim() || !notificationMessage.trim()} className="w-full py-2 bg-primary text-primary-foreground text-xs rounded disabled:opacity-50">
+              {actionLoading ? "Sending..." : "Send to All"}
             </button>
+          </div>
+        )}
+
+        {/* Support */}
+        {activeTab === "support" && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">Support Team Panel</p>
+            <div className="grid grid-cols-2 gap-2">
+              <StatBox label="Total Users" value={stats.totalUsers} />
+              <StatBox label="Active Today" value={dailyRewards.filter(d => d.last_claim_date === new Date().toISOString().split('T')[0]).length} />
+            </div>
+            <div className="border border-border rounded p-3 space-y-2">
+              <p className="text-xs font-medium">Quick Actions</p>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setActiveTab("users")} className="text-xs text-primary hover:underline">View Users</button>
+                <button onClick={() => setActiveTab("transactions")} className="text-xs text-primary hover:underline">Check Transactions</button>
+                <button onClick={() => setActiveTab("payments")} className="text-xs text-primary hover:underline">Process Payments</button>
+                <button onClick={() => setActiveTab("notifications")} className="text-xs text-primary hover:underline">Send Notification</button>
+              </div>
+            </div>
+            <div className="border border-border rounded p-3 space-y-2">
+              <p className="text-xs font-medium">Recent Activity</p>
+              <div className="space-y-1">
+                {transactions.slice(0, 5).map(tx => (
+                  <p key={tx.id} className="text-xs text-muted-foreground">
+                    {tx.user_id.slice(0, 8)} - {tx.transaction_type} - ₹{Math.abs(Number(tx.amount)).toFixed(2)}
+                  </p>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         {/* AdMob */}
         {activeTab === "admob" && (
-          <div className="space-y-4">
-            <SectionHeader title="AdMob Configuration" />
-            <div className="space-y-3">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase">AdMob Configuration</p>
+            <div className="space-y-2">
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">App ID *</label>
-                <Input 
-                  placeholder="ca-app-pub-xxxxxxxx~xxxxxxxxxx" 
-                  value={admobAppId} 
-                  onChange={(e) => setAdmobAppId(e.target.value)} 
-                  className="h-9 text-sm font-mono mt-1"
-                />
+                <label className="text-[10px] text-muted-foreground uppercase">App ID *</label>
+                <Input placeholder="ca-app-pub-xxxxxxxx~xxxxxxxxxx" value={admobAppId} onChange={(e) => setAdmobAppId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">Rewarded Ad Unit ID *</label>
-                <Input 
-                  placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" 
-                  value={admobRewardedAdUnitId} 
-                  onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)} 
-                  className="h-9 text-sm font-mono mt-1"
-                />
+                <label className="text-[10px] text-muted-foreground uppercase">Rewarded Ad Unit ID *</label>
+                <Input placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" value={admobRewardedAdUnitId} onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">Banner Ad Unit ID</label>
-                <Input 
-                  placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" 
-                  value={admobBannerAdUnitId} 
-                  onChange={(e) => setAdmobBannerAdUnitId(e.target.value)} 
-                  className="h-9 text-sm font-mono mt-1"
-                />
+                <label className="text-[10px] text-muted-foreground uppercase">Banner Ad Unit ID</label>
+                <Input placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" value={admobBannerAdUnitId} onChange={(e) => setAdmobBannerAdUnitId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground uppercase tracking-wide">Interstitial Ad Unit ID</label>
-                <Input 
-                  placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" 
-                  value={admobInterstitialAdUnitId} 
-                  onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)} 
-                  className="h-9 text-sm font-mono mt-1"
-                />
+                <label className="text-[10px] text-muted-foreground uppercase">Interstitial Ad Unit ID</label>
+                <Input placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" value={admobInterstitialAdUnitId} onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
               </div>
-              <div className="flex items-center gap-2 pt-2">
-                <input 
-                  type="checkbox" 
-                  id="test-mode" 
-                  checked={admobIsTesting} 
-                  onChange={(e) => setAdmobIsTesting(e.target.checked)}
-                  className="w-4 h-4 rounded border-border"
-                />
-                <label htmlFor="test-mode" className="text-sm text-foreground">Enable Test Mode</label>
+              <div className="flex items-center gap-2 pt-1">
+                <input type="checkbox" id="test-mode" checked={admobIsTesting} onChange={(e) => setAdmobIsTesting(e.target.checked)} className="w-4 h-4 rounded border-border" />
+                <label htmlFor="test-mode" className="text-xs">Enable Test Mode</label>
               </div>
             </div>
-            <button 
-              onClick={handleSaveAdmobConfig} 
-              disabled={actionLoading}
-              className="w-full py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:opacity-90 disabled:opacity-50"
-            >
-              {actionLoading ? 'Saving...' : 'Save AdMob Configuration'}
+            <button onClick={handleSaveAdmobConfig} disabled={actionLoading} className="w-full py-2 bg-primary text-primary-foreground text-xs rounded disabled:opacity-50">
+              {actionLoading ? "Saving..." : "Save Configuration"}
             </button>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };
+
+const StatBox = ({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) => (
+  <div className="border border-border rounded p-2">
+    <p className="text-[10px] text-muted-foreground uppercase">{label}</p>
+    <p className={`text-sm font-semibold ${highlight ? "text-primary" : "text-foreground"}`}>{value}</p>
+  </div>
+);
 
 export default AdminDashboard;
