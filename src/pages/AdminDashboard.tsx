@@ -85,6 +85,7 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [txFilter, setTxFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set());
 
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -250,6 +251,45 @@ const AdminDashboard = () => {
     toast.success(`Status updated: ${status}`);
     await loadData();
     setActionLoading(false);
+  };
+
+  const handleBulkPaymentStatus = async (status: string) => {
+    if (selectedPayments.size === 0) {
+      toast.error("No users selected");
+      return;
+    }
+    setActionLoading(true);
+    const userIds = Array.from(selectedPayments);
+    const { error } = await supabase.from("user_profiles").update({ payment_status: status }).in("user_id", userIds);
+    if (error) {
+      toast.error("Failed to update some records");
+    } else {
+      toast.success(`${userIds.length} users marked as ${status}`);
+    }
+    setSelectedPayments(new Set());
+    await loadData();
+    setActionLoading(false);
+  };
+
+  const togglePaymentSelection = (userId: string) => {
+    setSelectedPayments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
+      } else {
+        newSet.add(userId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAllPayments = (userIds: string[]) => {
+    setSelectedPayments(prev => {
+      if (prev.size === userIds.length) {
+        return new Set();
+      }
+      return new Set(userIds);
+    });
   };
 
   const handleAssignRole = async () => {
@@ -533,45 +573,74 @@ const AdminDashboard = () => {
         )}
 
         {/* Payments */}
-        {activeTab === "payments" && (
-          <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase">Withdrawal Requests (Balance ≥ ₹50)</p>
-            <div className="grid grid-cols-3 gap-2">
-              <StatBox label="Pending" value={stats.pendingPayments} />
-              <StatBox label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} highlight />
-              <StatBox label="Total Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} />
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="py-2 pr-2 font-medium">User</th>
-                    <th className="py-2 pr-2 font-medium">UPI</th>
-                    <th className="py-2 pr-2 font-medium">Amount</th>
-                    <th className="py-2 pr-2 font-medium">Status</th>
-                    <th className="py-2 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {userProfiles.filter(p => Number(p.withdrawable_balance) >= 50).map(p => (
-                    <tr key={p.id} className="border-b border-border/50">
-                      <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                      <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
-                      <td className="py-2 pr-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
-                      <td className="py-2 pr-2">{p.payment_status || "pending"}</td>
-                      <td className="py-2">
-                        <span className="flex gap-2">
-                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, "processing")} className="text-xs text-yellow-500 hover:underline" disabled={actionLoading}>Process</button>
-                          <button onClick={() => handleUpdatePaymentStatus(p.user_id, "paid")} className="text-xs text-green-500 hover:underline" disabled={actionLoading}>Paid</button>
-                        </span>
-                      </td>
+        {activeTab === "payments" && (() => {
+          const eligibleUsers = userProfiles.filter(p => Number(p.withdrawable_balance) >= 50);
+          const eligibleUserIds = eligibleUsers.map(p => p.user_id);
+          return (
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase">Withdrawal Requests (Balance ≥ ₹50)</p>
+              <div className="grid grid-cols-3 gap-2">
+                <StatBox label="Pending" value={stats.pendingPayments} />
+                <StatBox label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} highlight />
+                <StatBox label="Total Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} />
+              </div>
+              {/* Bulk Actions */}
+              {selectedPayments.size > 0 && (
+                <div className="flex items-center gap-3 p-2 bg-muted rounded text-xs">
+                  <span className="text-muted-foreground">{selectedPayments.size} selected</span>
+                  <button onClick={() => handleBulkPaymentStatus("processing")} className="text-yellow-500 hover:underline" disabled={actionLoading}>Mark Processing</button>
+                  <button onClick={() => handleBulkPaymentStatus("paid")} className="text-green-500 hover:underline" disabled={actionLoading}>Mark Paid</button>
+                  <button onClick={() => setSelectedPayments(new Set())} className="text-muted-foreground hover:underline">Clear</button>
+                </div>
+              )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="py-2 pr-2 font-medium w-8">
+                        <input
+                          type="checkbox"
+                          checked={eligibleUsers.length > 0 && selectedPayments.size === eligibleUsers.length}
+                          onChange={() => toggleAllPayments(eligibleUserIds)}
+                          className="h-3 w-3"
+                        />
+                      </th>
+                      <th className="py-2 pr-2 font-medium">User</th>
+                      <th className="py-2 pr-2 font-medium">UPI</th>
+                      <th className="py-2 pr-2 font-medium">Amount</th>
+                      <th className="py-2 pr-2 font-medium">Status</th>
+                      <th className="py-2 font-medium">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {eligibleUsers.map(p => (
+                      <tr key={p.id} className={`border-b border-border/50 ${selectedPayments.has(p.user_id) ? "bg-muted/50" : ""}`}>
+                        <td className="py-2 pr-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedPayments.has(p.user_id)}
+                            onChange={() => togglePaymentSelection(p.user_id)}
+                            className="h-3 w-3"
+                          />
+                        </td>
+                        <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
+                        <td className="py-2 pr-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                        <td className="py-2 pr-2">{p.payment_status || "pending"}</td>
+                        <td className="py-2">
+                          <span className="flex gap-2">
+                            <button onClick={() => handleUpdatePaymentStatus(p.user_id, "processing")} className="text-xs text-yellow-500 hover:underline" disabled={actionLoading}>Process</button>
+                            <button onClick={() => handleUpdatePaymentStatus(p.user_id, "paid")} className="text-xs text-green-500 hover:underline" disabled={actionLoading}>Paid</button>
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Daily Rewards */}
         {activeTab === "daily" && (
