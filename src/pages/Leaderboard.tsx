@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 interface LeaderboardUser {
   user_id: string;
   display_name: string | null;
-  username: string | null;
   avatar_url: string | null;
   referrals_count: number;
   total_earnings: number;
@@ -41,10 +40,10 @@ const Leaderboard = () => {
   }, [navigate]);
 
   const fetchLeaderboard = async (userId: string) => {
-    // Fetch top referrers
+    // Fetch top referrers from secure leaderboard view (only exposes safe fields)
     const { data: topUsers } = await supabase
-      .from("user_profiles")
-      .select("user_id, display_name, username, avatar_url, referrals_count, total_earnings")
+      .from("leaderboard_public")
+      .select("user_id, display_name, avatar_url, referrals_count, total_earnings")
       .order("referrals_count", { ascending: false })
       .limit(50);
 
@@ -55,20 +54,26 @@ const Leaderboard = () => {
       const userIndex = topUsers.findIndex(u => u.user_id === userId);
       if (userIndex !== -1) {
         setMyRank(userIndex + 1);
-        setMyProfile(topUsers[userIndex]);
-      } else {
-        // User not in top 50, fetch their profile
+        // Fetch own profile for referral code (private data only accessible to self)
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("*")
+          .select("referral_code, referrals_count, display_name")
+          .eq("user_id", userId)
+          .single();
+        setMyProfile(profile);
+      } else {
+        // User not in top 50, fetch their profile for referral code
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("referral_code, referrals_count, display_name")
           .eq("user_id", userId)
           .single();
         
         if (profile) {
           setMyProfile(profile);
-          // Calculate actual rank
+          // Calculate actual rank from leaderboard view
           const { count } = await supabase
-            .from("user_profiles")
+            .from("leaderboard_public")
             .select("*", { count: "exact", head: true })
             .gt("referrals_count", profile.referrals_count);
           
@@ -166,7 +171,7 @@ const Leaderboard = () => {
                   </Avatar>
                   <Medal className="w-5 h-5 text-gray-400 -mt-2" />
                   <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
-                    {topThree[1]?.display_name || topThree[1]?.username || "User"}
+                    {topThree[1]?.display_name || "User"}
                   </p>
                   <p className="text-[10px] text-muted-foreground">{topThree[1]?.referrals_count} refs</p>
                   <div className="w-16 h-16 bg-gray-400/20 rounded-t-lg mt-1"></div>
@@ -182,7 +187,7 @@ const Leaderboard = () => {
                   </Avatar>
                   <Crown className="w-6 h-6 text-yellow-500 -mt-2" />
                   <p className="text-sm font-bold mt-1 truncate max-w-[80px]">
-                    {topThree[0]?.display_name || topThree[0]?.username || "User"}
+                    {topThree[0]?.display_name || "User"}
                   </p>
                   <p className="text-xs text-muted-foreground">{topThree[0]?.referrals_count} refs</p>
                   <div className="w-18 h-24 bg-yellow-500/20 rounded-t-lg mt-1"></div>
@@ -198,7 +203,7 @@ const Leaderboard = () => {
                   </Avatar>
                   <Medal className="w-5 h-5 text-amber-700 -mt-2" />
                   <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
-                    {topThree[2]?.display_name || topThree[2]?.username || "User"}
+                    {topThree[2]?.display_name || "User"}
                   </p>
                   <p className="text-[10px] text-muted-foreground">{topThree[2]?.referrals_count} refs</p>
                   <div className="w-14 h-12 bg-amber-700/20 rounded-t-lg mt-1"></div>
@@ -225,11 +230,8 @@ const Leaderboard = () => {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">
-                        {user.display_name || user.username || "User"}
+                        {user.display_name || "User"}
                       </p>
-                      {user.username && (
-                        <p className="text-[10px] text-muted-foreground">@{user.username}</p>
-                      )}
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-sm">{user.referrals_count}</p>
@@ -286,11 +288,8 @@ const Leaderboard = () => {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">
-                        {user.display_name || user.username || "User"}
+                        {user.display_name || "User"}
                       </p>
-                      {user.username && (
-                        <p className="text-[10px] text-muted-foreground">@{user.username}</p>
-                      )}
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-sm text-success">₹{user.total_earnings.toFixed(0)}</p>

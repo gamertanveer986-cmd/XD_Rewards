@@ -241,6 +241,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          endpoint: string
+          id: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          endpoint: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          endpoint?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -366,6 +390,13 @@ export type Database = {
             foreignKeyName: "user_profiles_referred_by_fkey"
             columns: ["referred_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["user_id"]
           },
@@ -394,12 +425,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_public: {
+        Row: {
+          ads_watched: number | null
+          avatar_url: string | null
+          display_name: string | null
+          referrals_count: number | null
+          total_earnings: number | null
+          user_id: string | null
+        }
+        Insert: {
+          ads_watched?: number | null
+          avatar_url?: string | null
+          display_name?: string | null
+          referrals_count?: number | null
+          total_earnings?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          ads_watched?: number | null
+          avatar_url?: string | null
+          display_name?: string | null
+          referrals_count?: number | null
+          total_earnings?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_referral_code: {
         Args: { p_referral_code: string; p_user_id: string }
         Returns: Json
+      }
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_max_requests: number
+          p_user_id: string
+          p_window_minutes: number
+        }
+        Returns: boolean
       }
       claim_daily_reward: { Args: { p_user_id: string }; Returns: Json }
       get_user_roles: {
@@ -418,13 +484,14 @@ export type Database = {
         Returns: Json
       }
       record_ad_completion: {
-        Args: { p_ad_duration?: number; p_user_id: string }
+        Args: { p_ad_duration: number; p_user_id: string }
         Returns: Json
       }
       redeem_gift_card: {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
       }
+      verify_admin_access: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
