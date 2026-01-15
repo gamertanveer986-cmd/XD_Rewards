@@ -9,7 +9,8 @@ import AppLayout from "@/components/AppLayout";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import ProfileSetup from "@/components/ProfileSetup";
 import DailyRewards from "@/components/DailyRewards";
-import { Play, TrendingUp, Users, Eye, Copy, Share2 } from "lucide-react";
+import Disclaimer from "@/components/Disclaimer";
+import { Play, TrendingUp, Users, Eye, Copy, Share2, Coins } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ const Dashboard = () => {
 
   const shareReferralCode = () => {
     if (profile?.referral_code) {
-      const shareText = `Join XD Rewards and start earning! Use my referral code: ${profile.referral_code}`;
+      const shareText = `Join XD Rewards and collect points! Use my referral code: ${profile.referral_code}`;
       if (navigator.share) {
         navigator.share({ text: shareText });
       } else {
@@ -135,6 +136,10 @@ const Dashboard = () => {
     );
   }
 
+  // Convert to points (multiply by 100)
+  const totalPoints = Math.floor((profile?.total_earnings || 0) * 100);
+  const redeemablePoints = Math.floor((profile?.withdrawable_balance || 0) * 100);
+
   return (
     <AppLayout 
       title="XD REWARDS" 
@@ -150,11 +155,11 @@ const Dashboard = () => {
         <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10" />
           <div className="relative z-10">
-            <p className="text-sm text-muted-foreground mb-1">Total Earnings</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Points</p>
             <p className="text-4xl font-bold text-success mb-1">
-              ₹{profile?.total_earnings?.toFixed(2) || "0.00"}
+              {totalPoints.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground">Lifetime earnings</p>
+            <p className="text-xs text-muted-foreground">Entertainment points</p>
           </div>
         </Card>
 
@@ -163,10 +168,10 @@ const Dashboard = () => {
           <Card className="p-3 bg-card border-border/50">
             <div className="flex flex-col items-center text-center">
               <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center mb-2">
-                <TrendingUp className="w-5 h-5 text-success" />
+                <Coins className="w-5 h-5 text-success" />
               </div>
-              <p className="text-lg font-bold">₹{profile?.withdrawable_balance?.toFixed(0) || "0"}</p>
-              <p className="text-[10px] text-muted-foreground">Withdrawable</p>
+              <p className="text-lg font-bold">{redeemablePoints}</p>
+              <p className="text-[10px] text-muted-foreground">Redeemable</p>
             </div>
           </Card>
           
@@ -210,7 +215,7 @@ const Dashboard = () => {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Share and earn ₹5 for every friend who joins!
+            Get 500 bonus points for each friend who joins!
           </p>
         </Card>
 
@@ -226,15 +231,15 @@ const Dashboard = () => {
               <Play className="w-7 h-7 text-primary-foreground fill-current" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base">Watch & Earn</h3>
-              <p className="text-xs text-muted-foreground">₹0.05-₹0.10 per ad</p>
+              <h3 className="font-semibold text-base">Watch & Collect</h3>
+              <p className="text-xs text-muted-foreground">Watch ads to collect points</p>
             </div>
             <Button 
               size="sm"
               className="bg-primary hover:bg-primary/90 shrink-0 px-6"
               onClick={() => {
                 if (!isEmailVerified) {
-                  toast.error("Please verify your email to start earning");
+                  toast.error("Please verify your email to start collecting points");
                   return;
                 }
                 setShowAdModal(true);
@@ -253,11 +258,11 @@ const Dashboard = () => {
           <Card className="p-4 bg-card border-border/50">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-sm">💰</span>
+                <span className="text-sm">🎯</span>
               </div>
               <div>
-                <h4 className="font-medium text-sm">Earn per ad</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">₹0.05-₹0.10 instantly credited</p>
+                <h4 className="font-medium text-sm">Collect Points</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">5-10 points per ad watched</p>
               </div>
             </div>
           </Card>
@@ -268,8 +273,8 @@ const Dashboard = () => {
                 <span className="text-sm">👥</span>
               </div>
               <div>
-                <h4 className="font-medium text-sm">Refer & Earn</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">₹5 for every friend you refer</p>
+                <h4 className="font-medium text-sm">Invite Friends</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">500 bonus points per referral</p>
               </div>
             </div>
           </Card>
@@ -277,15 +282,18 @@ const Dashboard = () => {
           <Card className="p-4 bg-card border-border/50">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-sm">⚡</span>
+                <span className="text-sm">🎁</span>
               </div>
               <div>
-                <h4 className="font-medium text-sm">Instant Withdrawal</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">UPI payout in 1-5 minutes</p>
+                <h4 className="font-medium text-sm">Daily Bonus</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">Check in daily for streak rewards</p>
               </div>
             </div>
           </Card>
         </div>
+
+        {/* Disclaimer */}
+        <Disclaimer />
       </div>
 
       {/* Ad Modal */}

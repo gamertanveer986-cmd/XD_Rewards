@@ -139,7 +139,7 @@ const Auth = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium">Verify to Start Earning</p>
+                <p className="text-sm font-medium">Verify to Start Collecting</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Click the link in your email to verify and unlock all features.
                 </p>
@@ -178,23 +178,23 @@ const Auth = () => {
           <h1 className="text-3xl font-bold text-gradient-red glow-red mb-2">
             XD REWARDS
           </h1>
-          <p className="text-muted-foreground text-sm">Watch • Earn • Withdraw</p>
+          <p className="text-muted-foreground text-sm">Collect • Play • Enjoy</p>
         </div>
 
         {/* Features - Compact */}
         <div className="flex justify-center gap-6 mb-8">
           <div className="text-center">
-            <p className="text-lg font-bold text-success">₹0.10</p>
+            <p className="text-lg font-bold text-success">10 pts</p>
             <p className="text-[10px] text-muted-foreground">Per Ad</p>
           </div>
           <div className="w-px bg-border" />
           <div className="text-center">
-            <p className="text-lg font-bold text-primary">₹10</p>
-            <p className="text-[10px] text-muted-foreground">Signup Bonus</p>
+            <p className="text-lg font-bold text-primary">1000</p>
+            <p className="text-[10px] text-muted-foreground">Welcome Bonus</p>
           </div>
           <div className="w-px bg-border" />
           <div className="text-center">
-            <p className="text-lg font-bold">₹5</p>
+            <p className="text-lg font-bold">500</p>
             <p className="text-[10px] text-muted-foreground">Per Referral</p>
           </div>
         </div>
@@ -207,7 +207,7 @@ const Auth = () => {
                 {isLogin ? "Welcome Back" : "Create Account"}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {isLogin ? "Login to continue earning" : "Sign up and get ₹10 bonus"}
+                {isLogin ? "Login to continue collecting" : "Sign up and get 1000 bonus points"}
               </p>
             </div>
 
@@ -310,6 +310,11 @@ const Auth = () => {
             </button>
           </div>
         </Card>
+
+        {/* Disclaimer */}
+        <p className="text-[10px] text-muted-foreground text-center mt-4 px-4">
+          For entertainment purposes only. Points are promotional and have no monetary value.
+        </p>
 
         {/* Bottom safe area spacer */}
         <div className="h-6" />

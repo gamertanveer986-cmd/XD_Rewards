@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -62,7 +60,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
   const recordAdView = async () => {
     try {
       // Call the secure server-side function to record ad completion
-      // Earnings are calculated server-side to prevent manipulation
+      // Points are calculated server-side to prevent manipulation
       const { data, error } = await supabase.rpc('record_ad_completion', {
         p_user_id: userId,
         p_ad_duration: 15
@@ -70,12 +68,14 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
 
       if (error) {
         console.error('Error recording ad view:', error);
-        toast.error("Failed to record earnings. Please try again.");
+        toast.error("Failed to record points. Please try again.");
         return;
       }
 
       const result = data as { earnings: number; success: boolean };
-      toast.success(`You earned ₹${result.earnings.toFixed(2)}!`);
+      // Convert earnings to points (multiply by 100)
+      const pointsEarned = Math.floor(result.earnings * 100);
+      toast.success(`You collected ${pointsEarned} points!`);
       onAdComplete();
     } catch (err) {
       console.error('Error in recordAdView:', err);
@@ -96,7 +96,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">
-            {adCompleted ? "🎉 Ad Completed!" : isWatching ? "Watching Ad..." : "Watch Ad to Earn"}
+            {adCompleted ? "🎉 Points Collected!" : isWatching ? "Watching Ad..." : "Watch to Collect Points"}
           </DialogTitle>
         </DialogHeader>
         
@@ -107,7 +107,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
                 <span className="text-5xl">🎬</span>
               </div>
               <p className="text-muted-foreground">
-                Watch a {isNative ? "video" : "15-second"} ad to earn ₹0.05-₹0.10
+                Watch a {isNative ? "video" : "15-second"} ad to collect 5-10 points
               </p>
               {isNative && !isAdReady && (
                 <p className="text-sm text-muted-foreground">
@@ -145,8 +145,8 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
               <div className="w-24 h-24 bg-success/20 rounded-full flex items-center justify-center mx-auto">
                 <span className="text-5xl">✅</span>
               </div>
-              <p className="text-lg font-medium text-success">Reward Credited!</p>
-              <p className="text-muted-foreground">Your earnings have been added to your wallet</p>
+              <p className="text-lg font-medium text-success">Points Collected!</p>
+              <p className="text-muted-foreground">Your points have been added to your balance</p>
               <Button onClick={handleClose} className="w-full" variant="outline">
                 Continue
               </Button>

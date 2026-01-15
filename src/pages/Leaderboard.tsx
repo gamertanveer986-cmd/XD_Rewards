@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Trophy, Medal, Crown, TrendingUp, Users, Target, Share2, Copy } from "lucide-react";
+import { Trophy, Medal, Crown, Users, Share2, Copy, Coins } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Disclaimer from "@/components/Disclaimer";
 
 interface LeaderboardUser {
   user_id: string;
@@ -40,11 +41,11 @@ const Leaderboard = () => {
   }, [navigate]);
 
   const fetchLeaderboard = async (userId: string) => {
-    // Fetch top referrers from secure leaderboard view (only exposes safe fields)
+    // Fetch top users from secure leaderboard view (only exposes safe fields)
     const { data: topUsers } = await supabase
       .from("leaderboard_public")
       .select("user_id, display_name, avatar_url, referrals_count, total_earnings")
-      .order("referrals_count", { ascending: false })
+      .order("total_earnings", { ascending: false })
       .limit(50);
 
     if (topUsers) {
@@ -57,7 +58,7 @@ const Leaderboard = () => {
         // Fetch own profile for referral code (private data only accessible to self)
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("referral_code, referrals_count, display_name")
+          .select("referral_code, referrals_count, display_name, total_earnings")
           .eq("user_id", userId)
           .single();
         setMyProfile(profile);
@@ -65,7 +66,7 @@ const Leaderboard = () => {
         // User not in top 50, fetch their profile for referral code
         const { data: profile } = await supabase
           .from("user_profiles")
-          .select("referral_code, referrals_count, display_name")
+          .select("referral_code, referrals_count, display_name, total_earnings")
           .eq("user_id", userId)
           .single();
         
@@ -75,7 +76,7 @@ const Leaderboard = () => {
           const { count } = await supabase
             .from("leaderboard_public")
             .select("*", { count: "exact", head: true })
-            .gt("referrals_count", profile.referrals_count);
+            .gt("total_earnings", profile.total_earnings);
           
           setMyRank((count || 0) + 1);
         }
@@ -97,7 +98,7 @@ const Leaderboard = () => {
 
   const shareReferralCode = () => {
     if (myProfile?.referral_code) {
-      const shareText = `Join XD Rewards and start earning! Use my referral code: ${myProfile.referral_code}`;
+      const shareText = `Join XD Rewards and collect points! Use my referral code: ${myProfile.referral_code}`;
       if (navigator.share) {
         navigator.share({ text: shareText });
       } else {
@@ -106,6 +107,9 @@ const Leaderboard = () => {
       }
     }
   };
+
+  // Convert to points
+  const toPoints = (earnings: number) => Math.floor(earnings * 100);
 
   if (loading) {
     return (
@@ -119,7 +123,7 @@ const Leaderboard = () => {
   const rest = leaderboard.slice(3);
 
   return (
-    <AppLayout title="Leaderboard">
+    <AppLayout title="Top Point Collectors">
       <div className="px-4 py-4 space-y-4">
         {/* My Referral Card */}
         <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
@@ -151,13 +155,13 @@ const Leaderboard = () => {
           </div>
         </Card>
 
-        <Tabs defaultValue="referrals" className="w-full">
+        <Tabs defaultValue="points" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="points">Top Points</TabsTrigger>
             <TabsTrigger value="referrals">Top Referrers</TabsTrigger>
-            <TabsTrigger value="earners">Top Earners</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="referrals" className="space-y-4 mt-4">
+          <TabsContent value="points" className="space-y-4 mt-4">
             {/* Top 3 Podium */}
             {topThree.length >= 3 && (
               <div className="flex justify-center items-end gap-2 py-4">
@@ -173,7 +177,7 @@ const Leaderboard = () => {
                   <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
                     {topThree[1]?.display_name || "User"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{topThree[1]?.referrals_count} refs</p>
+                  <p className="text-[10px] text-muted-foreground">{toPoints(topThree[1]?.total_earnings || 0)} pts</p>
                   <div className="w-16 h-16 bg-gray-400/20 rounded-t-lg mt-1"></div>
                 </div>
 
@@ -189,7 +193,7 @@ const Leaderboard = () => {
                   <p className="text-sm font-bold mt-1 truncate max-w-[80px]">
                     {topThree[0]?.display_name || "User"}
                   </p>
-                  <p className="text-xs text-muted-foreground">{topThree[0]?.referrals_count} refs</p>
+                  <p className="text-xs text-muted-foreground">{toPoints(topThree[0]?.total_earnings || 0)} pts</p>
                   <div className="w-18 h-24 bg-yellow-500/20 rounded-t-lg mt-1"></div>
                 </div>
 
@@ -205,7 +209,7 @@ const Leaderboard = () => {
                   <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
                     {topThree[2]?.display_name || "User"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{topThree[2]?.referrals_count} refs</p>
+                  <p className="text-[10px] text-muted-foreground">{toPoints(topThree[2]?.total_earnings || 0)} pts</p>
                   <div className="w-14 h-12 bg-amber-700/20 rounded-t-lg mt-1"></div>
                 </div>
               </div>
@@ -234,8 +238,8 @@ const Leaderboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-sm">{user.referrals_count}</p>
-                      <p className="text-[10px] text-muted-foreground">referrals</p>
+                      <p className="font-bold text-sm text-success">{toPoints(user.total_earnings)} pts</p>
+                      <p className="text-[10px] text-muted-foreground">points</p>
                     </div>
                   </div>
                 </Card>
@@ -246,12 +250,12 @@ const Leaderboard = () => {
               <Card className="p-8 bg-card border-border/50">
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                    <Users className="w-8 h-8 text-primary" />
+                    <Coins className="w-8 h-8 text-primary" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold mb-1">Be the first!</h3>
                     <p className="text-sm text-muted-foreground">
-                      Share your referral code and climb the leaderboard
+                      Start collecting points to climb the leaderboard
                     </p>
                   </div>
                 </div>
@@ -259,9 +263,9 @@ const Leaderboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="earners" className="space-y-2 mt-4">
+          <TabsContent value="referrals" className="space-y-2 mt-4">
             {leaderboard
-              .sort((a, b) => b.total_earnings - a.total_earnings)
+              .sort((a, b) => b.referrals_count - a.referrals_count)
               .slice(0, 20)
               .map((user, index) => (
                 <Card 
@@ -292,8 +296,8 @@ const Leaderboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-sm text-success">₹{user.total_earnings.toFixed(0)}</p>
-                      <p className="text-[10px] text-muted-foreground">earned</p>
+                      <p className="font-bold text-sm">{user.referrals_count}</p>
+                      <p className="text-[10px] text-muted-foreground">referrals</p>
                     </div>
                   </div>
                 </Card>
@@ -308,13 +312,16 @@ const Leaderboard = () => {
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">Earn ₹5 per referral!</h4>
+              <h4 className="font-medium text-sm">500 points per referral!</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Share your code and earn when friends join
               </p>
             </div>
           </div>
         </Card>
+
+        {/* Disclaimer */}
+        <Disclaimer compact />
       </div>
     </AppLayout>
   );

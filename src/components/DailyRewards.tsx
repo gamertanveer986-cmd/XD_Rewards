@@ -11,13 +11,13 @@ interface DailyRewardsProps {
 }
 
 const REWARDS = [
-  { day: 1, amount: 0.10 },
-  { day: 2, amount: 0.20 },
-  { day: 3, amount: 0.30 },
-  { day: 4, amount: 0.40 },
-  { day: 5, amount: 0.50 },
-  { day: 6, amount: 0.60 },
-  { day: 7, amount: 0.70 },
+  { day: 1, points: 10 },
+  { day: 2, points: 20 },
+  { day: 3, points: 30 },
+  { day: 4, points: 40 },
+  { day: 5, points: 50 },
+  { day: 6, points: 60 },
+  { day: 7, points: 70 },
 ];
 
 const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
@@ -73,7 +73,8 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
       const result = data as { success: boolean; reward?: number; day?: number; message: string };
       
       if (result.success) {
-        toast.success(result.message);
+        const pointsEarned = REWARDS[(result.day || 1) - 1]?.points || 10;
+        toast.success(`You earned ${pointsEarned} Points!`);
         setCurrentStreak(result.day || 0);
         setLastClaimDate(new Date().toISOString().split("T")[0]);
         setCanClaim(false);
@@ -84,7 +85,7 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
       }
     } catch (error) {
       console.error("Error claiming daily reward:", error);
-      toast.error("Failed to claim daily reward");
+      toast.error("Failed to claim daily bonus");
     } finally {
       setClaiming(false);
     }
@@ -110,9 +111,9 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
           <Gift className="w-5 h-5 text-warning" />
         </div>
         <div>
-          <h3 className="font-semibold text-sm">Daily Rewards</h3>
+          <h3 className="font-semibold text-sm">Daily Bonus</h3>
           <p className="text-xs text-muted-foreground">
-            {canClaim ? `Claim Day ${nextDay} reward!` : "Come back tomorrow!"}
+            {canClaim ? `Claim Day ${nextDay} bonus!` : "Come back tomorrow!"}
           </p>
         </div>
       </div>
@@ -141,7 +142,7 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
               <p className={`text-xs font-bold ${
                 isCompleted ? "text-success" : isNext ? "text-warning" : "text-foreground"
               }`}>
-                ₹{reward.amount.toFixed(2)}
+                {reward.points}
               </p>
               {isCompleted && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full flex items-center justify-center">
@@ -152,6 +153,11 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
           );
         })}
       </div>
+
+      {/* Info text */}
+      <p className="text-[10px] text-muted-foreground text-center mb-3">
+        Daily bonus points for active users (non-guaranteed)
+      </p>
 
       {/* Claim Button */}
       <Button
@@ -165,7 +171,7 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
         ) : canClaim ? (
           <>
             <Gift className="w-4 h-4 mr-2" />
-            Claim ₹{REWARDS[nextDay - 1].amount.toFixed(2)}
+            Claim {REWARDS[nextDay - 1].points} Points
           </>
         ) : (
           "Already Claimed Today"
