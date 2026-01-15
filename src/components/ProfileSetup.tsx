@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Calendar, AtSign, Gift, Loader2, Camera } from "lucide-react";
+import { User, Calendar, AtSign, Gift, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface ProfileSetupProps {
@@ -109,7 +109,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
         if (resultObj && !resultObj.success) {
           toast.error(resultObj.message);
         } else if (resultObj?.success) {
-          toast.success("Referral code applied! Your referrer got ₹5 bonus");
+          toast.success("Referral code applied! Your friend got 500 bonus points");
         }
       }
 
@@ -174,7 +174,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
             {step === 1 && "This will be shown on the leaderboard"}
             {step === 2 && "Your unique identity on XD Rewards"}
             {step === 3 && "We'll celebrate with you!"}
-            {step === 4 && "Enter it to give your friend ₹5 bonus"}
+            {step === 4 && "Enter it to give your friend 500 bonus points"}
           </p>
         </div>
 
@@ -272,7 +272,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
                 autoFocus
               />
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Your friend will receive ₹5 bonus when you join!
+                Your friend will receive 500 bonus points when you join!
               </p>
             </div>
           </div>

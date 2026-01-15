@@ -42,7 +42,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           <h1 className="text-4xl font-bold text-gradient-red glow-red tracking-tight">
             XD REWARDS
           </h1>
-          <p className="text-muted-foreground text-sm">Watch • Earn • Withdraw</p>
+          <p className="text-muted-foreground text-sm">Collect • Play • Enjoy</p>
         </div>
 
         {/* Loading bar */}
@@ -59,7 +59,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
 
       {/* Bottom branding */}
       <div className="absolute bottom-8 text-center">
-        <p className="text-xs text-muted-foreground">Powered by XD Rewards</p>
+        <p className="text-xs text-muted-foreground">Entertainment App</p>
       </div>
     </div>
   );
