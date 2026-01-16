@@ -321,7 +321,7 @@ const Leaderboard = () => {
         </Card>
 
         {/* Disclaimer */}
-        <Disclaimer compact />
+        <Disclaimer variant="compact" />
       </div>
     </AppLayout>
   );
