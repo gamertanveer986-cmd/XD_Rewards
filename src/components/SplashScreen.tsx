@@ -31,7 +31,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
       </div>
 
       {/* Logo and branding */}
-      <div className="relative z-10 flex flex-col items-center space-y-8">
+      <div className="relative z-10 flex flex-col items-center space-y-6">
         {/* App icon */}
         <div className="w-24 h-24 bg-gradient-to-br from-primary to-red-700 rounded-3xl flex items-center justify-center shadow-2xl animate-float">
           <span className="text-5xl font-black text-primary-foreground">X</span>
@@ -57,9 +57,11 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         </div>
       </div>
 
-      {/* Bottom branding */}
-      <div className="absolute bottom-8 text-center">
-        <p className="text-xs text-muted-foreground">Entertainment App</p>
+      {/* Disclaimer at bottom */}
+      <div className="absolute bottom-6 left-4 right-4 text-center">
+        <p className="text-[9px] text-muted-foreground leading-relaxed max-w-xs mx-auto">
+          This app is a rewards-based entertainment platform. Reward points do not guarantee real money.
+        </p>
       </div>
     </div>
   );
