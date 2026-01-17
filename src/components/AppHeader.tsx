@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Shield, LogOut } from "lucide-react";
 import NotificationBell from "./NotificationBell";
+import HamburgerMenu from "./HamburgerMenu";
 
 interface AppHeaderProps {
   title: string;
@@ -16,8 +17,9 @@ const AppHeader = ({ title, showBack = false, showAdmin = false, showLogout = fa
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border safe-area-top">
       <div className="flex items-center justify-between h-14 px-4">
-        {/* Left side */}
+        {/* Left side - Hamburger Menu */}
         <div className="flex items-center gap-2 min-w-[60px]">
+          <HamburgerMenu />
           {showBack && (
             <button 
               onClick={() => navigate(-1)}

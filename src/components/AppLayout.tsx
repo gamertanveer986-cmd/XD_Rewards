@@ -31,7 +31,7 @@ const AppLayout = ({
         onLogout={onLogout}
       />
       
-      <main className="flex-1 overflow-y-auto pb-20">
+      <main className="flex-1 overflow-y-auto pb-[140px]">
         {children}
       </main>
       
