@@ -7,8 +7,10 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import SplashScreen from "@/components/SplashScreen";
+import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
+import { Shield } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ const Auth = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [checkingSession, setCheckingSession] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -171,7 +174,7 @@ const Auth = () => {
 
       <div className="flex-1 flex flex-col px-6 py-8 relative z-10">
         {/* Header */}
-        <div className="text-center mb-8 pt-4">
+        <div className="text-center mb-6 pt-4">
           <div className="w-16 h-16 bg-gradient-to-br from-primary to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-3xl font-black text-primary-foreground">X</span>
           </div>
@@ -181,11 +184,20 @@ const Auth = () => {
           <p className="text-muted-foreground text-sm">Collect • Play • Enjoy</p>
         </div>
 
+        {/* Transparency Policy Button */}
+        <Button
+          onClick={() => setShowPolicyModal(true)}
+          className="w-full mb-6 bg-blue-600 hover:bg-blue-700 text-white gap-2"
+        >
+          <Shield className="w-4 h-4" />
+          Transparency & Safety Policy
+        </Button>
+
         {/* Features - Compact */}
-        <div className="flex justify-center gap-6 mb-8">
+        <div className="flex justify-center gap-6 mb-6">
           <div className="text-center">
             <p className="text-lg font-bold text-success">10 pts</p>
-            <p className="text-[10px] text-muted-foreground">Per Ad</p>
+            <p className="text-[10px] text-muted-foreground">Per Task</p>
           </div>
           <div className="w-px bg-border" />
           <div className="text-center">
@@ -311,14 +323,28 @@ const Auth = () => {
           </div>
         </Card>
 
+        {/* Policy Agreement Note */}
+        <p className="text-[11px] text-muted-foreground text-center mt-4 px-4">
+          By signing up, you agree to our{" "}
+          <button 
+            onClick={() => setShowPolicyModal(true)}
+            className="text-primary underline"
+          >
+            Policy
+          </button>
+        </p>
+
         {/* Disclaimer */}
-        <p className="text-[10px] text-muted-foreground text-center mt-4 px-4">
-          For entertainment purposes only. Points are promotional and have no monetary value.
+        <p className="text-[10px] text-muted-foreground text-center mt-2 px-4">
+          Reward points do not guarantee real money. This is an entertainment platform.
         </p>
 
         {/* Bottom safe area spacer */}
         <div className="h-6" />
       </div>
+
+      {/* Policy Modal */}
+      <PolicyModal isOpen={showPolicyModal} onClose={() => setShowPolicyModal(false)} />
     </div>
   );
 };

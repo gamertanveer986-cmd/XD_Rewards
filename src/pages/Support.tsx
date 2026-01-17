@@ -5,23 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
 import { Mail, MessageCircle, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+import Disclaimer from "@/components/Disclaimer";
 
 const faqs = [
   {
-    question: "How do I withdraw my earnings?",
-    answer: "You can withdraw your earnings once you reach the minimum threshold of ₹50. Withdrawals are processed via UPI within 1-5 minutes."
+    question: "How do I earn reward points?",
+    answer: "You earn reward points by completing Fast Reward Tasks (watching ads), claiming daily bonuses, and inviting friends to join."
   },
   {
-    question: "How much can I earn per ad?",
-    answer: "You earn between ₹0.05 to ₹0.10 per ad watched. The exact amount depends on the advertiser and ad length."
+    question: "When will the redemption feature launch?",
+    answer: "The redemption system officially launches on February 14, 2026. Keep collecting points until then!"
   },
   {
     question: "What is the referral bonus?",
-    answer: "Earn ₹5 for every friend you refer who signs up and watches their first ad. Your referral code is in your dashboard."
+    answer: "Invite friends and get 500 bonus reward points for each friend who signs up using your referral code."
   },
   {
-    question: "Is there a limit to daily earnings?",
-    answer: "There's no daily limit! Watch as many ads as you want and earn without restrictions."
+    question: "Is this app free to use?",
+    answer: "Yes! XD Rewards is 100% free. No deposits or money payments are required. This is not a gambling app."
   }
 ];
 
@@ -78,7 +79,7 @@ const Support = () => {
                 className="w-full bg-primary hover:bg-primary/90 text-xs h-9"
                 asChild
               >
-                <a href="mailto:dxreward@gmail.com?subject=Support%20Request">Contact</a>
+                <a href="mailto:Dxreward@gmail.com?subject=Support%20Request">Contact</a>
               </Button>
             </div>
           </Card>
@@ -132,13 +133,16 @@ const Support = () => {
           <p className="text-sm text-center text-muted-foreground">
             Email us at{" "}
             <a 
-              href="mailto:dxreward@gmail.com?subject=Support%20Request" 
+              href="mailto:Dxreward@gmail.com?subject=Support%20Request" 
               className="text-primary font-medium underline"
             >
-              dxreward@gmail.com
+              Dxreward@gmail.com
             </a>
           </p>
         </Card>
+
+        {/* Disclaimer */}
+        <Disclaimer variant="compact" />
       </div>
     </AppLayout>
   );

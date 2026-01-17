@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdMob } from "@/hooks/useAdMob";
+import { CheckCircle, Zap } from "lucide-react";
 
 interface WatchAdModalProps {
   isOpen: boolean;
@@ -31,12 +32,12 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
         await recordAdView();
         setAdCompleted(true);
       } else {
-        toast.error("Ad failed to load. Please try again.");
+        toast.error("Task failed to load. Please try again.");
       }
       setIsWatching(false);
     } else {
-      // Simulate ad watching on web (for testing)
-      const duration = 15; // 15 seconds
+      // Simulate ad watching on web (12 seconds)
+      const duration = 12;
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 100) {
@@ -63,11 +64,11 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
       // Points are calculated server-side to prevent manipulation
       const { data, error } = await supabase.rpc('record_ad_completion', {
         p_user_id: userId,
-        p_ad_duration: 15
+        p_ad_duration: 12
       });
 
       if (error) {
-        console.error('Error recording ad view:', error);
+        console.error('Error recording task:', error);
         toast.error("Failed to record points. Please try again.");
         return;
       }
@@ -75,7 +76,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
       const result = data as { earnings: number; success: boolean };
       // Convert earnings to points (multiply by 100)
       const pointsEarned = Math.floor(result.earnings * 100);
-      toast.success(`You collected ${pointsEarned} points!`);
+      toast.success(`You earned ${pointsEarned} reward points!`);
       onAdComplete();
     } catch (err) {
       console.error('Error in recordAdView:', err);
@@ -95,8 +96,20 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">
-            {adCompleted ? "🎉 Points Collected!" : isWatching ? "Watching Ad..." : "Watch to Collect Points"}
+          <DialogTitle className="text-center flex items-center justify-center gap-2">
+            {adCompleted ? (
+              <>
+                <CheckCircle className="w-5 h-5 text-success" />
+                Task Completed!
+              </>
+            ) : isWatching ? (
+              "Verifying your task reward..."
+            ) : (
+              <>
+                <Zap className="w-5 h-5 text-primary" />
+                Fast Reward Task
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
         
@@ -104,14 +117,19 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
           {!isWatching && !adCompleted && (
             <div className="text-center space-y-4">
               <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-                <span className="text-5xl">🎬</span>
+                <Zap className="w-12 h-12 text-primary" />
               </div>
-              <p className="text-muted-foreground">
-                Watch a {isNative ? "video" : "15-second"} ad to collect 5-10 points
-              </p>
+              <div className="space-y-2">
+                <p className="text-foreground font-medium">
+                  Watch ads to earn reward points.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Rewards are not guaranteed and depend on system conditions.
+                </p>
+              </div>
               {isNative && !isAdReady && (
                 <p className="text-sm text-muted-foreground">
-                  {isLoading ? "Loading ad..." : "Preparing ad..."}
+                  {isLoading ? "Loading task..." : "Preparing task..."}
                 </p>
               )}
               <Button 
@@ -119,7 +137,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
                 className="w-full bg-primary hover:bg-primary/90"
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : "Start Watching"}
+                {isLoading ? "Loading..." : "Start Fast Reward Task"}
               </Button>
             </div>
           )}
@@ -129,13 +147,13 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
               <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-lg font-medium">Ad Playing...</p>
+                  <p className="text-lg font-medium">Verifying your task reward...</p>
                   <p className="text-sm text-muted-foreground">Do not close this window</p>
                 </div>
               </div>
               <Progress value={progress} className="h-2" />
               <p className="text-center text-sm text-muted-foreground">
-                {Math.ceil(15 - (progress / 100) * 15)} seconds remaining
+                {Math.ceil(12 - (progress / 100) * 12)} seconds remaining
               </p>
             </div>
           )}
@@ -143,9 +161,9 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
           {adCompleted && (
             <div className="text-center space-y-4">
               <div className="w-24 h-24 bg-success/20 rounded-full flex items-center justify-center mx-auto">
-                <span className="text-5xl">✅</span>
+                <CheckCircle className="w-12 h-12 text-success" />
               </div>
-              <p className="text-lg font-medium text-success">Points Collected!</p>
+              <p className="text-lg font-medium text-success">Reward Points Collected!</p>
               <p className="text-muted-foreground">Your points have been added to your balance</p>
               <Button onClick={handleClose} className="w-full" variant="outline">
                 Continue

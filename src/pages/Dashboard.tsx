@@ -224,15 +224,15 @@ const Dashboard = () => {
           <DailyRewards userId={user.id} onClaim={() => fetchProfile(user.id)} />
         )}
 
-        {/* Watch Ads CTA */}
+        {/* Fast Reward Task CTA */}
         <Card className="p-4 bg-gradient-to-r from-primary/10 to-transparent border-primary/30">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
               <Play className="w-7 h-7 text-primary-foreground fill-current" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base">Watch & Collect</h3>
-              <p className="text-xs text-muted-foreground">Watch ads to collect points</p>
+              <h3 className="font-semibold text-base">Fast Reward Task</h3>
+              <p className="text-xs text-muted-foreground">Watch ads to earn reward points</p>
             </div>
             <Button 
               size="sm"
@@ -261,8 +261,8 @@ const Dashboard = () => {
                 <span className="text-sm">🎯</span>
               </div>
               <div>
-                <h4 className="font-medium text-sm">Collect Points</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">5-10 points per ad watched</p>
+                <h4 className="font-medium text-sm">Fast Reward Task</h4>
+                <p className="text-xs text-muted-foreground mt-0.5">5-10 reward points per task</p>
               </div>
             </div>
           </Card>
