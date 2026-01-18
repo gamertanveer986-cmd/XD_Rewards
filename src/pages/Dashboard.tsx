@@ -10,7 +10,8 @@ import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import ProfileSetup from "@/components/ProfileSetup";
 import DailyRewards from "@/components/DailyRewards";
 import Disclaimer from "@/components/Disclaimer";
-import { Play, TrendingUp, Users, Eye, Copy, Share2, Coins } from "lucide-react";
+import XDCoin from "@/components/XDCoin";
+import { Play, Users, Eye, Copy, Share2 } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ const Dashboard = () => {
 
   const shareReferralCode = () => {
     if (profile?.referral_code) {
-      const shareText = `Join XD Rewards and collect points! Use my referral code: ${profile.referral_code}`;
+      const shareText = `Join XD Rewards and collect XD Coins! Use my referral code: ${profile.referral_code}`;
       if (navigator.share) {
         navigator.share({ text: shareText });
       } else {
@@ -136,9 +137,9 @@ const Dashboard = () => {
     );
   }
 
-  // Convert to points (multiply by 100)
-  const totalPoints = Math.floor((profile?.total_earnings || 0) * 100);
-  const redeemablePoints = Math.floor((profile?.withdrawable_balance || 0) * 100);
+  // Convert to XD Coins (multiply by 100)
+  const totalCoins = Math.floor((profile?.total_earnings || 0) * 100);
+  const redeemableCoins = Math.floor((profile?.withdrawable_balance || 0) * 100);
 
   return (
     <AppLayout 
@@ -155,11 +156,14 @@ const Dashboard = () => {
         <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10" />
           <div className="relative z-10">
-            <p className="text-sm text-muted-foreground mb-1">Total Points</p>
+            <div className="flex items-center gap-2 mb-2">
+              <XDCoin size="lg" />
+              <p className="text-sm text-muted-foreground">Total XD Coins</p>
+            </div>
             <p className="text-4xl font-bold text-success mb-1">
-              {totalPoints.toLocaleString()}
+              {totalCoins.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground">Entertainment points</p>
+            <p className="text-xs text-muted-foreground">Entertainment coins • ≈ {(totalCoins / 100).toFixed(1)} value</p>
           </div>
         </Card>
 
@@ -168,9 +172,9 @@ const Dashboard = () => {
           <Card className="p-3 bg-card border-border/50">
             <div className="flex flex-col items-center text-center">
               <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center mb-2">
-                <Coins className="w-5 h-5 text-success" />
+                <XDCoin size="md" />
               </div>
-              <p className="text-lg font-bold">{redeemablePoints}</p>
+              <p className="text-lg font-bold">{redeemableCoins}</p>
               <p className="text-[10px] text-muted-foreground">Redeemable</p>
             </div>
           </Card>
@@ -181,7 +185,7 @@ const Dashboard = () => {
                 <Eye className="w-5 h-5 text-primary" />
               </div>
               <p className="text-lg font-bold">{profile?.ads_watched || 0}</p>
-              <p className="text-[10px] text-muted-foreground">Ads Watched</p>
+              <p className="text-[10px] text-muted-foreground">Tasks Done</p>
             </div>
           </Card>
           
@@ -215,7 +219,7 @@ const Dashboard = () => {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Get 500 bonus points for each friend who joins!
+            Get 500 XD Coins (5 value) for each friend who joins!
           </p>
         </Card>
 
@@ -232,14 +236,14 @@ const Dashboard = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-base">Fast Reward Task</h3>
-              <p className="text-xs text-muted-foreground">Watch ads to earn reward points</p>
+              <p className="text-xs text-muted-foreground">Complete tasks to earn XD Coins</p>
             </div>
             <Button 
               size="sm"
               className="bg-primary hover:bg-primary/90 shrink-0 px-6"
               onClick={() => {
                 if (!isEmailVerified) {
-                  toast.error("Please verify your email to start collecting points");
+                  toast.error("Please verify your email to start collecting XD Coins");
                   return;
                 }
                 setShowAdModal(true);
@@ -262,7 +266,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h4 className="font-medium text-sm">Fast Reward Task</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">5-10 reward points per task</p>
+                <p className="text-xs text-muted-foreground mt-0.5">5-10 XD Coins per task</p>
               </div>
             </div>
           </Card>
@@ -274,7 +278,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h4 className="font-medium text-sm">Invite Friends</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">500 bonus points per referral</p>
+                <p className="text-xs text-muted-foreground mt-0.5">500 XD Coins (5 value) per referral</p>
               </div>
             </div>
           </Card>
@@ -288,6 +292,17 @@ const Dashboard = () => {
                 <h4 className="font-medium text-sm">Daily Bonus</h4>
                 <p className="text-xs text-muted-foreground mt-0.5">Check in daily for streak rewards</p>
               </div>
+            </div>
+          </Card>
+
+          {/* Value Info */}
+          <Card className="p-4 bg-primary/10 border-primary/30">
+            <h4 className="font-medium text-sm mb-2">XD Coin Value</h4>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>• 1000 XD Coins = 10 value</p>
+              <p>• Sign-up bonus: 1000 XD Coins (10 value)</p>
+              <p>• Referral bonus: 500 XD Coins (5 value)</p>
+              <p>• Min. withdrawal: 5000 XD Coins (50 value)</p>
             </div>
           </Card>
         </div>

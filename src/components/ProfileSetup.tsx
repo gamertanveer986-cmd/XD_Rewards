@@ -109,7 +109,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
         if (resultObj && !resultObj.success) {
           toast.error(resultObj.message);
         } else if (resultObj?.success) {
-          toast.success("Referral code applied! Your friend got 500 bonus points");
+          toast.success("Referral code applied! Your friend got 5 value bonus (500 XD Coins)");
         }
       }
 
@@ -171,10 +171,11 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
             {step === 4 && "Got a referral code?"}
           </h2>
           <p className="text-sm text-muted-foreground">
+
             {step === 1 && "This will be shown on the leaderboard"}
             {step === 2 && "Your unique identity on XD Rewards"}
             {step === 3 && "We'll celebrate with you!"}
-            {step === 4 && "Enter it to give your friend 500 bonus points"}
+            {step === 4 && "Enter it to give your friend 5 value bonus (500 XD Coins)"}
           </p>
         </div>
 
@@ -272,7 +273,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
                 autoFocus
               />
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Your friend will receive 500 bonus points when you join!
+                Your friend will receive 5 value bonus (500 XD Coins) when you join!
               </p>
             </div>
           </div>

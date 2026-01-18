@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppLayout from "@/components/AppLayout";
-import { Gift, ShoppingCart, Clock, Coins, Lock } from "lucide-react";
+import { Gift, ShoppingCart, Clock, AlertCircle } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
+import XDCoin from "@/components/XDCoin";
+import { toast } from "sonner";
 
 interface GiftCardProduct {
   id: string;
@@ -34,6 +37,7 @@ const GiftCards = () => {
   const [products, setProducts] = useState<GiftCardProduct[]>([]);
   const [purchases, setPurchases] = useState<GiftCardPurchase[]>([]);
   const [balance, setBalance] = useState(0);
+  const [redeeming, setRedeeming] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,6 +85,41 @@ const GiftCards = () => {
     setPurchases(data || []);
   };
 
+  const handleRedeem = async (product: GiftCardProduct) => {
+    const requiredCoins = Math.floor(product.price * 100);
+    const userCoins = Math.floor(balance * 100);
+    
+    if (userCoins < requiredCoins) {
+      toast.error(`You need ${requiredCoins} XD Coins to redeem this. You have ${userCoins}.`);
+      return;
+    }
+
+    setRedeeming(product.id);
+    try {
+      const { data, error } = await supabase.rpc("purchase_gift_card", {
+        p_user_id: user.id,
+        p_product_id: product.id
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; message: string };
+      if (result.success) {
+        toast.success("Redemption submitted! We'll process it within 24-48 hours.");
+        await Promise.all([
+          fetchBalance(user.id),
+          fetchPurchases(user.id)
+        ]);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to redeem");
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
   const getBrandIcon = (brand: string) => {
     const icons: Record<string, string> = {
       "Amazon": "🛒",
@@ -90,8 +129,8 @@ const GiftCards = () => {
     return icons[brand] || "🎁";
   };
 
-  // Convert to points
-  const totalPoints = Math.floor(balance * 100);
+  // Convert to XD Coins
+  const totalCoins = Math.floor(balance * 100);
 
   if (loading) {
     return (
@@ -111,25 +150,23 @@ const GiftCards = () => {
         <Card className="p-4 bg-gradient-to-r from-primary/20 to-transparent border-primary/30">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Your Points</p>
-              <p className="text-2xl font-bold text-success">{totalPoints.toLocaleString()} pts</p>
+              <p className="text-xs text-muted-foreground">Your XD Coins</p>
+              <div className="flex items-center gap-2">
+                <XDCoin size="lg" />
+                <p className="text-2xl font-bold text-success">{totalCoins.toLocaleString()}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">≈ {(totalCoins / 100).toFixed(1)} value</p>
             </div>
-            <Coins className="w-10 h-10 text-primary/50" />
           </div>
         </Card>
 
-        {/* Coming Soon Notice */}
-        <Card className="p-4 bg-warning/10 border-warning/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
-              <Lock className="w-5 h-5 text-warning" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm">Rewards Coming Soon</h3>
-              <p className="text-xs text-muted-foreground">
-                Keep collecting points! Redemption features are under development.
-              </p>
-            </div>
+        {/* Min Withdrawal Notice */}
+        <Card className="p-3 bg-warning/10 border-warning/30">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Minimum 5000 XD Coins (50 value) required for redemption. Rewards subject to verification and availability.
+            </p>
           </div>
         </Card>
 
@@ -137,7 +174,7 @@ const GiftCards = () => {
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="browse" className="text-xs">
               <ShoppingCart className="w-3 h-3 mr-1" />
-              Browse
+              Redeem
             </TabsTrigger>
             <TabsTrigger value="history" className="text-xs">
               <Clock className="w-3 h-3 mr-1" />
@@ -147,39 +184,56 @@ const GiftCards = () => {
 
           {/* Browse Tab */}
           <TabsContent value="browse" className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground">Demo Rewards</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground">Available Rewards</h3>
             
             {products.length === 0 ? (
               <Card className="p-6 text-center">
                 <Gift className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">No rewards available yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Check back soon!</p>
               </Card>
             ) : (
               <div className="grid grid-cols-1 gap-3">
-                {products.map((product) => (
-                  <Card key={product.id} className="p-4 bg-card border-border/50 opacity-75">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
-                        {getBrandIcon(product.brand)}
+                {products.map((product) => {
+                  const requiredCoins = Math.floor(product.price * 100);
+                  const canAfford = totalCoins >= requiredCoins;
+                  const denominationValue = Math.floor(product.denomination);
+                  
+                  return (
+                    <Card key={product.id} className={`p-4 bg-card border-border/50 ${!canAfford ? 'opacity-60' : ''}`}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-2xl">
+                          {getBrandIcon(product.brand)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">{product.name}</h4>
+                          <p className="text-xs text-muted-foreground">{denominationValue} value reward</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1 justify-end mb-1">
+                            <XDCoin size="sm" />
+                            <p className="text-sm font-bold">{requiredCoins.toLocaleString()}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            disabled={!canAfford || redeeming === product.id}
+                            onClick={() => handleRedeem(product)}
+                            className="text-xs h-7"
+                          >
+                            {redeeming === product.id ? "Processing..." : canAfford ? "Redeem" : "Need More"}
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">{product.name}</h4>
-                        <p className="text-xs text-muted-foreground">Demo: {Math.floor(product.denomination * 100)} pts value</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-muted-foreground">{Math.floor(product.price * 100)} pts</p>
-                        <span className="text-[10px] text-warning">Coming Soon</span>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
 
-            {/* Demo notice */}
+            {/* Info notice */}
             <Card className="p-4 bg-muted/30 border-border/50">
               <p className="text-xs text-muted-foreground text-center">
-                Rewards shown are for demonstration purposes only and subject to availability.
+                Rewards subject to availability and verification. Processing time: 24-48 hours.
               </p>
             </Card>
           </TabsContent>
@@ -192,7 +246,7 @@ const GiftCards = () => {
               <Card className="p-6 text-center">
                 <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">No redemptions yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Redemption features coming soon!</p>
+                <p className="text-xs text-muted-foreground mt-1">Redeem XD Coins for rewards!</p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -217,7 +271,10 @@ const GiftCards = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold">{Math.floor(purchase.amount_paid * 100)} pts</p>
+                        <div className="flex items-center gap-1 justify-end">
+                          <XDCoin size="sm" />
+                          <p className="text-sm font-bold">{Math.floor(purchase.amount_paid * 100)}</p>
+                        </div>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                           purchase.status === "completed" 
                             ? "bg-success/20 text-success" 
@@ -227,6 +284,12 @@ const GiftCards = () => {
                         </span>
                       </div>
                     </div>
+                    {purchase.status === "completed" && purchase.redemption_code && (
+                      <div className="mt-3 p-2 bg-success/10 rounded-lg">
+                        <p className="text-xs text-muted-foreground">Redemption Code:</p>
+                        <p className="font-mono font-bold text-success">{purchase.redemption_code}</p>
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>

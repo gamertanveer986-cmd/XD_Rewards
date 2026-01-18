@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Trophy, Medal, Crown, Users, Share2, Copy, Coins } from "lucide-react";
+import { Trophy, Medal, Crown, Users, Share2, Copy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Disclaimer from "@/components/Disclaimer";
+import XDCoin from "@/components/XDCoin";
 
 interface LeaderboardUser {
   user_id: string;
@@ -98,7 +99,7 @@ const Leaderboard = () => {
 
   const shareReferralCode = () => {
     if (myProfile?.referral_code) {
-      const shareText = `Join XD Rewards and collect points! Use my referral code: ${myProfile.referral_code}`;
+      const shareText = `Join XD Rewards and collect XD Coins! Use my referral code: ${myProfile.referral_code}`;
       if (navigator.share) {
         navigator.share({ text: shareText });
       } else {
@@ -108,8 +109,8 @@ const Leaderboard = () => {
     }
   };
 
-  // Convert to points
-  const toPoints = (earnings: number) => Math.floor(earnings * 100);
+  // Convert to XD Coins
+  const toCoins = (earnings: number) => Math.floor(earnings * 100);
 
   if (loading) {
     return (
@@ -123,7 +124,7 @@ const Leaderboard = () => {
   const rest = leaderboard.slice(3);
 
   return (
-    <AppLayout title="Top Point Collectors">
+    <AppLayout title="Top XD Coin Collectors">
       <div className="px-4 py-4 space-y-4">
         {/* My Referral Card */}
         <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
@@ -155,13 +156,13 @@ const Leaderboard = () => {
           </div>
         </Card>
 
-        <Tabs defaultValue="points" className="w-full">
+        <Tabs defaultValue="coins" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="points">Top Points</TabsTrigger>
+            <TabsTrigger value="coins">Top XD Coins</TabsTrigger>
             <TabsTrigger value="referrals">Top Referrers</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="points" className="space-y-4 mt-4">
+          <TabsContent value="coins" className="space-y-4 mt-4">
             {/* Top 3 Podium */}
             {topThree.length >= 3 && (
               <div className="flex justify-center items-end gap-2 py-4">
@@ -177,7 +178,10 @@ const Leaderboard = () => {
                   <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
                     {topThree[1]?.display_name || "User"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{toPoints(topThree[1]?.total_earnings || 0)} pts</p>
+                  <div className="flex items-center gap-0.5">
+                    <XDCoin size="sm" />
+                    <p className="text-[10px] text-muted-foreground">{toCoins(topThree[1]?.total_earnings || 0)}</p>
+                  </div>
                   <div className="w-16 h-16 bg-gray-400/20 rounded-t-lg mt-1"></div>
                 </div>
 
@@ -193,7 +197,10 @@ const Leaderboard = () => {
                   <p className="text-sm font-bold mt-1 truncate max-w-[80px]">
                     {topThree[0]?.display_name || "User"}
                   </p>
-                  <p className="text-xs text-muted-foreground">{toPoints(topThree[0]?.total_earnings || 0)} pts</p>
+                  <div className="flex items-center gap-0.5">
+                    <XDCoin size="sm" />
+                    <p className="text-xs text-muted-foreground">{toCoins(topThree[0]?.total_earnings || 0)}</p>
+                  </div>
                   <div className="w-18 h-24 bg-yellow-500/20 rounded-t-lg mt-1"></div>
                 </div>
 
@@ -209,7 +216,10 @@ const Leaderboard = () => {
                   <p className="text-xs font-medium mt-1 truncate max-w-[70px]">
                     {topThree[2]?.display_name || "User"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">{toPoints(topThree[2]?.total_earnings || 0)} pts</p>
+                  <div className="flex items-center gap-0.5">
+                    <XDCoin size="sm" />
+                    <p className="text-[10px] text-muted-foreground">{toCoins(topThree[2]?.total_earnings || 0)}</p>
+                  </div>
                   <div className="w-14 h-12 bg-amber-700/20 rounded-t-lg mt-1"></div>
                 </div>
               </div>
@@ -238,8 +248,11 @@ const Leaderboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-sm text-success">{toPoints(user.total_earnings)} pts</p>
-                      <p className="text-[10px] text-muted-foreground">points</p>
+                      <div className="flex items-center gap-1 justify-end">
+                        <XDCoin size="sm" />
+                        <p className="font-bold text-sm text-success">{toCoins(user.total_earnings)}</p>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">XD Coins</p>
                     </div>
                   </div>
                 </Card>
@@ -250,12 +263,12 @@ const Leaderboard = () => {
               <Card className="p-8 bg-card border-border/50">
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                    <Coins className="w-8 h-8 text-primary" />
+                    <XDCoin size="xl" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold mb-1">Be the first!</h3>
                     <p className="text-sm text-muted-foreground">
-                      Start collecting points to climb the leaderboard
+                      Start collecting XD Coins to climb the leaderboard
                     </p>
                   </div>
                 </div>
@@ -312,9 +325,9 @@ const Leaderboard = () => {
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">500 points per referral!</h4>
+              <h4 className="font-medium text-sm">500 XD Coins per referral!</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Share your code and earn when friends join
+                Share your code and earn when friends join (5 value each)
               </p>
             </div>
           </div>
