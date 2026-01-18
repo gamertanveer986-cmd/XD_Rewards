@@ -47,7 +47,7 @@ const PolicyModal = ({ isOpen, onClose }: PolicyModalProps) => {
             <div>
               <h4 className="font-semibold text-sm text-warning">Redeem Feature</h4>
               <p className="text-xs text-muted-foreground mt-1">
-                The redemption system officially launches on February 14, 2026.
+                Redeem XD Coins for rewards. 1000 XD Coins = 10 value. Minimum withdrawal: 50 value.
               </p>
             </div>
           </div>

@@ -74,9 +74,9 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
       }
 
       const result = data as { earnings: number; success: boolean };
-      // Convert earnings to points (multiply by 100)
-      const pointsEarned = Math.floor(result.earnings * 100);
-      toast.success(`You earned ${pointsEarned} reward points!`);
+      // Convert earnings to XD Coins (multiply by 100)
+      const coinsEarned = Math.floor(result.earnings * 100);
+      toast.success(`You earned ${coinsEarned} XD Coins!`);
       onAdComplete();
     } catch (err) {
       console.error('Error in recordAdView:', err);
@@ -121,7 +121,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
               </div>
               <div className="space-y-2">
                 <p className="text-foreground font-medium">
-                  Watch ads to earn reward points.
+                  Complete tasks to earn XD Coins.
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Rewards are not guaranteed and depend on system conditions.
@@ -163,8 +163,8 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
               <div className="w-24 h-24 bg-success/20 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle className="w-12 h-12 text-success" />
               </div>
-              <p className="text-lg font-medium text-success">Reward Points Collected!</p>
-              <p className="text-muted-foreground">Your points have been added to your balance</p>
+              <p className="text-lg font-medium text-success">XD Coins Collected!</p>
+              <p className="text-muted-foreground">Your XD Coins have been added to your balance</p>
               <Button onClick={handleClose} className="w-full" variant="outline">
                 Continue
               </Button>

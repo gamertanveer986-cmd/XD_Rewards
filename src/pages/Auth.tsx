@@ -196,18 +196,18 @@ const Auth = () => {
         {/* Features - Compact */}
         <div className="flex justify-center gap-6 mb-6">
           <div className="text-center">
-            <p className="text-lg font-bold text-success">10 pts</p>
-            <p className="text-[10px] text-muted-foreground">Per Task</p>
+            <p className="text-lg font-bold text-success">10</p>
+            <p className="text-[10px] text-muted-foreground">XD Coins/Task</p>
           </div>
           <div className="w-px bg-border" />
           <div className="text-center">
-            <p className="text-lg font-bold text-primary">1000</p>
-            <p className="text-[10px] text-muted-foreground">Welcome Bonus</p>
+            <p className="text-lg font-bold text-primary">10</p>
+            <p className="text-[10px] text-muted-foreground">Value Bonus</p>
           </div>
           <div className="w-px bg-border" />
           <div className="text-center">
-            <p className="text-lg font-bold">500</p>
-            <p className="text-[10px] text-muted-foreground">Per Referral</p>
+            <p className="text-lg font-bold">5</p>
+            <p className="text-[10px] text-muted-foreground">Value/Referral</p>
           </div>
         </div>
 
@@ -219,7 +219,7 @@ const Auth = () => {
                 {isLogin ? "Welcome Back" : "Create Account"}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {isLogin ? "Login to continue collecting" : "Sign up and get 1000 bonus points"}
+                {isLogin ? "Login to continue collecting" : "Sign up and get 10 value bonus (1000 XD Coins)"}
               </p>
             </div>
 

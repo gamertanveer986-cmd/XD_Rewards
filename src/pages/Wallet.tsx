@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Wallet as WalletIcon, Gift, Video, Users, Coins } from "lucide-react";
+import { Wallet as WalletIcon, Gift, Video, Users } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
+import XDCoin from "@/components/XDCoin";
 
 const Wallet = () => {
   const navigate = useNavigate();
@@ -38,33 +39,51 @@ const Wallet = () => {
     );
   }
 
-  // Convert balances to points (multiply by 100 for display)
-  const totalPoints = Math.floor((profile?.total_earnings || 0) * 100);
-  const redeemablePoints = Math.floor((profile?.withdrawable_balance || 0) * 100);
-  const bonusPoints = Math.floor((profile?.non_withdrawable_balance || 0) * 100);
-  const referralPoints = (profile?.referrals_count || 0) * 500;
+  // Convert balances to XD Coins (multiply by 100 for display)
+  const totalCoins = Math.floor((profile?.total_earnings || 0) * 100);
+  const redeemableCoins = Math.floor((profile?.withdrawable_balance || 0) * 100);
+  const bonusCoins = Math.floor((profile?.non_withdrawable_balance || 0) * 100);
+  const referralCoins = (profile?.referrals_count || 0) * 500;
+
+  // Value conversion: 1000 XD Coins = 10 value
+  const totalValue = (totalCoins / 100).toFixed(1);
 
   return (
-    <AppLayout title="Points Wallet">
+    <AppLayout title="XD Coin Wallet">
       <div className="px-4 py-4 space-y-4">
         {/* Balance Card */}
         <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10" />
           <div className="relative z-10 text-center">
-            <Coins className="w-10 h-10 text-primary mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground mb-1">Total Points</p>
+            <XDCoin size="xl" className="mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-1">Total XD Coins</p>
             <p className="text-5xl font-bold text-success mb-1">
-              {totalPoints.toLocaleString()}
+              {totalCoins.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground mb-4">
-              Redeemable: {redeemablePoints.toLocaleString()} pts
+            <p className="text-xs text-muted-foreground mb-2">
+              ≈ {totalValue} value
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Redeemable: {redeemableCoins.toLocaleString()} XD Coins
             </p>
           </div>
         </Card>
 
-        {/* Points Breakdown */}
+        {/* Coin Value Info */}
+        <Card className="p-3 bg-primary/10 border-primary/30">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Conversion Rate:</span>
+            <span className="font-bold">1000 XD Coins = 10 value</span>
+          </div>
+          <div className="flex items-center justify-between text-sm mt-1">
+            <span className="text-muted-foreground">Min. Withdrawal:</span>
+            <span className="font-bold">5000 XD Coins (50 value)</span>
+          </div>
+        </Card>
+
+        {/* Coins Breakdown */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground px-1">Points Breakdown</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground px-1">XD Coins Breakdown</h2>
           
           <Card className="divide-y divide-border/50">
             <div className="flex items-center justify-between p-4">
@@ -74,10 +93,13 @@ const Wallet = () => {
                 </div>
                 <div>
                   <p className="font-medium text-sm">Welcome Bonus</p>
-                  <p className="text-xs text-muted-foreground">Promotional points</p>
+                  <p className="text-xs text-muted-foreground">10 value bonus</p>
                 </div>
               </div>
-              <p className="font-semibold text-primary">{bonusPoints.toLocaleString()} pts</p>
+              <div className="flex items-center gap-1">
+                <XDCoin size="sm" />
+                <p className="font-semibold text-primary">{bonusCoins.toLocaleString()}</p>
+              </div>
             </div>
             
             <div className="flex items-center justify-between p-4">
@@ -86,11 +108,14 @@ const Wallet = () => {
                   <Video className="w-5 h-5 text-success" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Ad Points</p>
-                  <p className="text-xs text-muted-foreground">From watching ads</p>
+                  <p className="font-medium text-sm">Task Rewards</p>
+                  <p className="text-xs text-muted-foreground">From completing tasks</p>
                 </div>
               </div>
-              <p className="font-semibold text-success">{redeemablePoints.toLocaleString()} pts</p>
+              <div className="flex items-center gap-1">
+                <XDCoin size="sm" />
+                <p className="font-semibold text-success">{redeemableCoins.toLocaleString()}</p>
+              </div>
             </div>
             
             <div className="flex items-center justify-between p-4">
@@ -99,34 +124,37 @@ const Wallet = () => {
                   <Users className="w-5 h-5 text-accent" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Referral Points</p>
-                  <p className="text-xs text-muted-foreground">{profile?.referrals_count || 0} friends invited</p>
+                  <p className="font-medium text-sm">Referral Bonus</p>
+                  <p className="text-xs text-muted-foreground">{profile?.referrals_count || 0} friends (5 value each)</p>
                 </div>
               </div>
-              <p className="font-semibold text-accent">{referralPoints.toLocaleString()} pts</p>
+              <div className="flex items-center gap-1">
+                <XDCoin size="sm" />
+                <p className="font-semibold text-accent">{referralCoins.toLocaleString()}</p>
+              </div>
             </div>
           </Card>
         </div>
 
-        {/* Points Info */}
+        {/* Coins Info */}
         <Card className="p-4 bg-card border-border/50">
-          <h3 className="font-semibold text-sm mb-3">About Points</h3>
+          <h3 className="font-semibold text-sm mb-3">About XD Coins</h3>
           <div className="space-y-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <span>Points are for entertainment purposes only</span>
+              <span>1000 XD Coins = 10 value</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <span>Earn points by watching ads & daily bonuses</span>
+              <span>Minimum withdrawal: 50 value (5000 XD Coins)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <span>Invite friends to earn bonus points</span>
+              <span>Sign-up bonus: 10 value (1000 XD Coins)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <span>Rewards subject to availability</span>
+              <span>Referral bonus: 5 value (500 XD Coins)</span>
             </div>
           </div>
         </Card>
@@ -140,7 +168,7 @@ const Wallet = () => {
                 <WalletIcon className="w-6 h-6 text-muted-foreground" />
               </div>
               <p className="text-sm text-muted-foreground">No activity yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Start watching ads to collect points!</p>
+              <p className="text-xs text-muted-foreground mt-1">Start completing tasks to collect XD Coins!</p>
             </div>
           </Card>
         </div>
