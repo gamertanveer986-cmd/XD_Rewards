@@ -65,7 +65,7 @@ const HamburgerMenu = () => {
               <div className="flex items-start gap-2 p-2 bg-warning/10 rounded-lg">
                 <span className="text-warning">🎁</span>
                 <p className="text-muted-foreground">
-                  <strong className="text-warning">Redeem Feature:</strong> Launches February 14, 2026.
+                  <strong className="text-warning">Redeem Feature:</strong> Redeem XD Coins for rewards. 1000 XD Coins = 10 value. Minimum withdrawal: 50 value.
                 </p>
               </div>
             </div>
