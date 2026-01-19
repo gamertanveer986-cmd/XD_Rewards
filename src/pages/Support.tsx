@@ -13,8 +13,8 @@ const faqs = [
     answer: "You earn reward points by completing Fast Reward Tasks (watching ads), claiming daily bonuses, and inviting friends to join."
   },
   {
-    question: "When will the redemption feature launch?",
-    answer: "The redemption system officially launches on February 14, 2026. Keep collecting points until then!"
+    question: "How does the redemption feature work?",
+    answer: "The redemption system is now live! Once you have enough XD Coins (minimum 50 value), you can redeem them for gift cards and rewards."
   },
   {
     question: "What is the referral bonus?",
