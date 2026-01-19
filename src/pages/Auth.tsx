@@ -17,6 +17,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -83,6 +84,9 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: {
+              referral_code: referralCode.trim().toUpperCase() || null,
+            },
           },
         });
         if (error) throw error;
@@ -251,6 +255,25 @@ const Auth = () => {
                 )}
               </div>
 
+              {/* Referral Code Field - Only show for signup */}
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="referralCode" className="text-sm">Referral Code (Optional)</Label>
+                  <Input
+                    id="referralCode"
+                    type="text"
+                    placeholder="Enter referral code"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    className="bg-muted border-border h-12 uppercase tracking-widest"
+                    maxLength={8}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your referrer will receive 5 value bonus (500 XD Coins)
+                  </p>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 text-base"
@@ -265,6 +288,7 @@ const Auth = () => {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setErrors({});
+                setReferralCode("");
               }}
               className="w-full text-sm text-muted-foreground hover:text-primary transition-colors py-2"
             >

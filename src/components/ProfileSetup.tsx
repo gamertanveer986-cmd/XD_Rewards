@@ -17,6 +17,7 @@ interface ProfileSetupProps {
 const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [signupReferralCode, setSignupReferralCode] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     display_name: existingProfile?.display_name || "",
     username: existingProfile?.username || "",
@@ -26,6 +27,19 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
   });
 
   const totalSteps = 4;
+
+  // Check for referral code from signup metadata
+  useState(() => {
+    const checkReferralFromMetadata = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.referral_code) {
+        const code = user.user_metadata.referral_code;
+        setSignupReferralCode(code);
+        setFormData(prev => ({ ...prev, referral_input: code }));
+      }
+    };
+    checkReferralFromMetadata();
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -168,14 +182,15 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
             {step === 1 && "What's your name?"}
             {step === 2 && "Choose a username"}
             {step === 3 && "When's your birthday?"}
-            {step === 4 && "Got a referral code?"}
+            {step === 4 && (signupReferralCode ? "Confirm referral code" : "Got a referral code?")}
           </h2>
           <p className="text-sm text-muted-foreground">
-
             {step === 1 && "This will be shown on the leaderboard"}
             {step === 2 && "Your unique identity on XD Rewards"}
             {step === 3 && "We'll celebrate with you!"}
-            {step === 4 && "Enter it to give your friend 5 value bonus (500 XD Coins)"}
+            {step === 4 && (signupReferralCode 
+              ? "We found a referral code from your signup!" 
+              : "Enter it to give your friend 5 value bonus (500 XD Coins)")}
           </p>
         </div>
 
