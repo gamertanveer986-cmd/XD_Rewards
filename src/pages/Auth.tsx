@@ -10,7 +10,7 @@ import SplashScreen from "@/components/SplashScreen";
 import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
-import { Shield } from "lucide-react";
+import { Shield, ArrowLeft, Mail } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -23,6 +23,8 @@ const Auth = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -99,8 +101,150 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      setErrors({ email: "Please enter your email address" });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      
+      if (error) throw error;
+      setResetEmailSent(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (showSplash || checkingSession) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
+  // Show reset email sent confirmation
+  if (resetEmailSent) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col safe-area-top safe-area-bottom">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px]"></div>
+        </div>
+        
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 relative z-10">
+          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mb-6">
+            <Mail className="w-10 h-10 text-primary" />
+          </div>
+          
+          <h1 className="text-2xl font-bold text-center mb-2">Check Your Email</h1>
+          <p className="text-muted-foreground text-center text-sm mb-6 max-w-xs">
+            We've sent a password reset link to <span className="text-foreground font-medium">{email}</span>
+          </p>
+          
+          <div className="bg-card/90 border border-border/50 rounded-xl p-4 mb-6 max-w-xs">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <polyline points="3 7 12 13 21 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Reset Your Password</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click the link in your email to set a new password.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => {
+              setResetEmailSent(false);
+              setShowForgotPassword(false);
+              setIsLogin(true);
+            }}
+            className="border-border"
+          >
+            Back to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show forgot password form
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col safe-area-top safe-area-bottom">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px]"></div>
+        </div>
+
+        <div className="flex-1 flex flex-col px-6 py-8 relative z-10">
+          {/* Back Button */}
+          <button
+            onClick={() => {
+              setShowForgotPassword(false);
+              setErrors({});
+            }}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Back to Login</span>
+          </button>
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="text-3xl font-black text-primary-foreground">X</span>
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Forgot Password?</h1>
+            <p className="text-muted-foreground text-sm">
+              Enter your email and we'll send you a reset link
+            </p>
+          </div>
+
+          {/* Reset Form */}
+          <Card className="p-6 bg-card/90 border-border/50 backdrop-blur-sm">
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email" className="text-sm">Email</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors({});
+                  }}
+                  className={`bg-muted border-border h-12 ${errors.email ? 'border-destructive' : ''}`}
+                />
+                {errors.email && (
+                  <p className="text-xs text-destructive">{errors.email}</p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 text-base"
+                disabled={loading}
+              >
+                {loading ? "Sending..." : "Send Reset Link"}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   // Show signup success screen
@@ -252,6 +396,18 @@ const Auth = () => {
                   <p className="text-xs text-muted-foreground">
                     Min 8 chars with uppercase, lowercase & number
                   </p>
+                )}
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(true);
+                      setErrors({});
+                    }}
+                    className="text-xs text-primary hover:underline mt-1"
+                  >
+                    Forgot Password?
+                  </button>
                 )}
               </div>
 
