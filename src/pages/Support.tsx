@@ -9,20 +9,20 @@ import Disclaimer from "@/components/Disclaimer";
 
 const faqs = [
   {
-    question: "How do I earn reward points?",
-    answer: "You earn reward points by completing Fast Reward Tasks (watching ads), claiming daily bonuses, and inviting friends to join."
+    question: "How do I earn XD Coins?",
+    answer: "You earn XD Coins by completing Fast Reward Tasks, claiming daily bonuses, and inviting friends to join using your referral code."
   },
   {
     question: "How does the redemption feature work?",
-    answer: "The redemption system is now live! Once you have enough XD Coins (minimum 50 value), you can redeem them for gift cards and rewards."
+    answer: "Once you have enough XD Coins (minimum 5000 XD Coins = 50 value), you can redeem them for gift cards and rewards in the Rewards section."
   },
   {
     question: "What is the referral bonus?",
-    answer: "Invite friends and get 500 bonus reward points for each friend who signs up using your referral code."
+    answer: "Invite friends and get 500 XD Coins (5 value) for each friend who signs up using your referral code."
   },
   {
     question: "Is this app free to use?",
-    answer: "Yes! XD Rewards is 100% free. No deposits or money payments are required. This is not a gambling app."
+    answer: "Yes! XD Rewards is 100% free. No deposits or payments are required. This is an entertainment platform, not a gambling app."
   }
 ];
 
@@ -90,11 +90,18 @@ const Support = () => {
                 <MessageCircle className="w-6 h-6 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-medium text-sm">Live Chat</p>
-                <p className="text-xs text-muted-foreground">Coming soon</p>
+                <p className="font-medium text-sm">WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Quick support</p>
               </div>
-              <Button size="sm" variant="outline" className="w-full text-xs h-9" disabled>
-                Unavailable
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full text-xs h-9"
+                asChild
+              >
+                <a href="https://wa.me/message" target="_blank" rel="noopener noreferrer">
+                  Message
+                </a>
               </Button>
             </div>
           </Card>

@@ -455,11 +455,11 @@ const AdminDashboard = () => {
             <p className="text-xs font-medium text-muted-foreground uppercase">Dashboard Stats</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <StatBox label="Users" value={stats.totalUsers} />
-              <StatBox label="Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} highlight />
-              <StatBox label="Ads Watched" value={stats.totalAdsWatched} />
+              <StatBox label="Earnings (value)" value={stats.totalEarnings.toFixed(0)} highlight />
+              <StatBox label="Tasks Done" value={stats.totalAdsWatched} />
               <StatBox label="Pending" value={stats.pendingPayments} />
-              <StatBox label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} highlight />
-              <StatBox label="Withdrawals" value={`₹${stats.totalWithdrawals.toFixed(0)}`} />
+              <StatBox label="Payable (value)" value={stats.totalPayable.toFixed(0)} highlight />
+              <StatBox label="Withdrawals (value)" value={stats.totalWithdrawals.toFixed(0)} />
             </div>
           </div>
         )}
@@ -485,8 +485,8 @@ const AdminDashboard = () => {
                     <tr key={p.id} className="border-b border-border/50">
                       <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
                       <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
-                      <td className="py-2 pr-2">₹{Number(p.total_earnings).toFixed(2)}</td>
-                      <td className="py-2 pr-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                      <td className="py-2 pr-2">{Number(p.total_earnings).toFixed(2)} val</td>
+                      <td className="py-2 pr-2">{Number(p.withdrawable_balance).toFixed(2)} val</td>
                       <td className="py-2">{p.payment_status || "pending"}</td>
                     </tr>
                   ))}
@@ -519,7 +519,7 @@ const AdminDashboard = () => {
                       <tr key={p.id} className="border-b border-border/50">
                         <td className="py-2 pr-2 font-bold text-primary">{i + 1}</td>
                         <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                        <td className="py-2 pr-2">₹{Number(p.total_earnings).toFixed(2)}</td>
+                        <td className="py-2 pr-2">{Number(p.total_earnings).toFixed(2)} val</td>
                         <td className="py-2 pr-2">{p.referrals_count}</td>
                         <td className="py-2">{p.ads_watched}</td>
                       </tr>
@@ -561,7 +561,7 @@ const AdminDashboard = () => {
                     <tr key={tx.id} className="border-b border-border/50">
                       <td className="py-2 pr-2 font-mono">{tx.user_id.slice(0, 8)}</td>
                       <td className="py-2 pr-2">{tx.transaction_type}</td>
-                      <td className="py-2 pr-2">₹{Math.abs(Number(tx.amount)).toFixed(2)}</td>
+                      <td className="py-2 pr-2">{Math.abs(Number(tx.amount)).toFixed(2)} val</td>
                       <td className="py-2 pr-2 max-w-[100px] truncate">{tx.description || "-"}</td>
                       <td className="py-2 text-muted-foreground">{new Date(tx.created_at).toLocaleDateString()}</td>
                     </tr>
@@ -578,11 +578,11 @@ const AdminDashboard = () => {
           const eligibleUserIds = eligibleUsers.map(p => p.user_id);
           return (
             <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase">Withdrawal Requests (Balance ≥ ₹50)</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase">Withdrawal Requests (Balance ≥ 50 value)</p>
               <div className="grid grid-cols-3 gap-2">
                 <StatBox label="Pending" value={stats.pendingPayments} />
-                <StatBox label="Payable" value={`₹${stats.totalPayable.toFixed(0)}`} highlight />
-                <StatBox label="Total Earnings" value={`₹${stats.totalEarnings.toFixed(0)}`} />
+                <StatBox label="Payable (val)" value={stats.totalPayable.toFixed(0)} highlight />
+                <StatBox label="Total Earnings (val)" value={stats.totalEarnings.toFixed(0)} />
               </div>
               {/* Bulk Actions */}
               {selectedPayments.size > 0 && (
@@ -625,7 +625,7 @@ const AdminDashboard = () => {
                         </td>
                         <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
                         <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
-                        <td className="py-2 pr-2">₹{Number(p.withdrawable_balance).toFixed(2)}</td>
+                        <td className="py-2 pr-2">{Number(p.withdrawable_balance).toFixed(2)} val</td>
                         <td className="py-2 pr-2">{p.payment_status || "pending"}</td>
                         <td className="py-2">
                           <span className="flex gap-2">
@@ -648,7 +648,7 @@ const AdminDashboard = () => {
             <p className="text-xs font-medium text-muted-foreground uppercase">Daily Rewards ({dailyRewards.length})</p>
             <div className="grid grid-cols-3 gap-2">
               <StatBox label="Claimers" value={dailyRewards.length} />
-              <StatBox label="Total Given" value={`₹${dailyRewards.reduce((s, d) => s + Number(d.total_claimed), 0).toFixed(0)}`} highlight />
+              <StatBox label="Total Given (val)" value={dailyRewards.reduce((s, d) => s + Number(d.total_claimed), 0).toFixed(0)} highlight />
               <StatBox label="7-Day Streaks" value={dailyRewards.filter(d => d.current_streak >= 7).length} />
             </div>
             <div className="overflow-x-auto">
@@ -667,7 +667,7 @@ const AdminDashboard = () => {
                       <td className="py-2 pr-2 font-mono">{d.user_id.slice(0, 8)}</td>
                       <td className="py-2 pr-2">Day {d.current_streak}</td>
                       <td className="py-2 pr-2 text-muted-foreground">{d.last_claim_date || "-"}</td>
-                      <td className="py-2">₹{Number(d.total_claimed).toFixed(2)}</td>
+                      <td className="py-2">{Number(d.total_claimed).toFixed(2)} val</td>
                     </tr>
                   ))}
                 </tbody>
@@ -683,7 +683,7 @@ const AdminDashboard = () => {
               <p className="text-xs font-medium text-muted-foreground uppercase">Create Gift Card Code</p>
               <div className="flex gap-2">
                 <Input placeholder="CODE" value={newGiftCardCode} onChange={(e) => setNewGiftCardCode(e.target.value.toUpperCase())} className="h-8 text-xs flex-1 font-mono" />
-                <Input type="number" placeholder="₹ Value" value={newGiftCardValue} onChange={(e) => setNewGiftCardValue(e.target.value)} className="h-8 text-xs w-20" />
+                <Input type="number" placeholder="Value" value={newGiftCardValue} onChange={(e) => setNewGiftCardValue(e.target.value)} className="h-8 text-xs w-20" />
                 <button onClick={handleCreateGiftCard} disabled={actionLoading} className="px-3 h-8 bg-primary text-primary-foreground text-xs rounded">Add</button>
               </div>
             </div>
@@ -704,7 +704,7 @@ const AdminDashboard = () => {
                     {giftCards.map(gc => (
                       <tr key={gc.id} className="border-b border-border/50">
                         <td className="py-2 pr-2 font-mono">{gc.code}</td>
-                        <td className="py-2 pr-2">₹{Number(gc.value).toFixed(0)}</td>
+                        <td className="py-2 pr-2">{Number(gc.value).toFixed(0)} val</td>
                         <td className="py-2 pr-2">{gc.is_redeemed ? "Redeemed" : "Active"}</td>
                         <td className="py-2">{!gc.is_redeemed && <button onClick={() => handleDeleteGiftCard(gc.id)} className="text-xs text-primary hover:underline">Delete</button>}</td>
                       </tr>
@@ -719,8 +719,8 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-2 gap-2">
                 <Input placeholder="Product Name" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} className="h-8 text-xs" />
                 <Input placeholder="Brand" value={newProductBrand} onChange={(e) => setNewProductBrand(e.target.value)} className="h-8 text-xs" />
-                <Input type="number" placeholder="Denomination ₹" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="h-8 text-xs" />
-                <Input type="number" placeholder="Price ₹" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="h-8 text-xs" />
+                <Input type="number" placeholder="Denomination (val)" value={newProductDenomination} onChange={(e) => setNewProductDenomination(e.target.value)} className="h-8 text-xs" />
+                <Input type="number" placeholder="Price (val)" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} className="h-8 text-xs" />
               </div>
               <button onClick={handleCreateProduct} disabled={actionLoading} className="px-3 py-1.5 bg-primary text-primary-foreground text-xs rounded">Create</button>
             </div>
@@ -743,8 +743,8 @@ const AdminDashboard = () => {
                       <tr key={p.id} className="border-b border-border/50">
                         <td className="py-2 pr-2">{p.name}</td>
                         <td className="py-2 pr-2">{p.brand}</td>
-                        <td className="py-2 pr-2">₹{Number(p.denomination).toFixed(0)}</td>
-                        <td className="py-2 pr-2">₹{Number(p.price).toFixed(0)}</td>
+                        <td className="py-2 pr-2">{Number(p.denomination).toFixed(0)} val</td>
+                        <td className="py-2 pr-2">{Number(p.price).toFixed(0)} val</td>
                         <td className="py-2"><button onClick={() => handleToggleProductStatus(p.id, p.is_active)} className={`text-xs hover:underline ${p.is_active ? "text-green-500" : "text-muted-foreground"}`}>{p.is_active ? "Active" : "Inactive"}</button></td>
                       </tr>
                     ))}
@@ -771,7 +771,7 @@ const AdminDashboard = () => {
                       <tr key={p.id} className="border-b border-border/50">
                         <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
                         <td className="py-2 pr-2">{p.product?.name || "-"}</td>
-                        <td className="py-2 pr-2">₹{Number(p.amount_paid).toFixed(0)}</td>
+                        <td className="py-2 pr-2">{Number(p.amount_paid).toFixed(0)} val</td>
                         <td className="py-2 pr-2">{p.status}</td>
                         <td className="py-2">
                           {p.status === "pending" && (
@@ -868,7 +868,7 @@ const AdminDashboard = () => {
               <div className="space-y-1">
                 {transactions.slice(0, 5).map(tx => (
                   <p key={tx.id} className="text-xs text-muted-foreground">
-                    {tx.user_id.slice(0, 8)} - {tx.transaction_type} - ₹{Math.abs(Number(tx.amount)).toFixed(2)}
+                    {tx.user_id.slice(0, 8)} - {tx.transaction_type} - {Math.abs(Number(tx.amount)).toFixed(2)} val
                   </p>
                 ))}
               </div>
