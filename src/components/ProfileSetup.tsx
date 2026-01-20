@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
   const totalSteps = 4;
 
   // Check for referral code from signup metadata
-  useState(() => {
+  useEffect(() => {
     const checkReferralFromMetadata = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.user_metadata?.referral_code) {
@@ -39,7 +39,7 @@ const ProfileSetup = ({ userId, onComplete, existingProfile }: ProfileSetupProps
       }
     };
     checkReferralFromMetadata();
-  });
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
