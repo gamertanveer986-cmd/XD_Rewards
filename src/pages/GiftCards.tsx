@@ -155,7 +155,7 @@ const GiftCards = () => {
                 <XDCoin size="lg" />
                 <p className="text-2xl font-bold text-success">{totalCoins.toLocaleString()}</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">≈ {(totalCoins / 100).toFixed(1)} value</p>
+              <p className="text-xs text-muted-foreground mt-1">Entertainment coins (in-app reward value only)</p>
             </div>
           </div>
         </Card>
@@ -164,9 +164,15 @@ const GiftCards = () => {
         <Card className="p-3 bg-warning/10 border-warning/30">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Minimum 5000 XD Coins (50 value) required for redemption. Rewards subject to verification and availability.
-            </p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Minimum 5000 XD Coins (50 value) required for redemption.
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                Rewards are promotional and subject to availability and verification. 
+                Gift cards or codes are not guaranteed cash rewards.
+              </p>
+            </div>
           </div>
         </Card>
 
@@ -232,8 +238,11 @@ const GiftCards = () => {
 
             {/* Info notice */}
             <Card className="p-4 bg-muted/30 border-border/50">
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center mb-2">
                 Rewards subject to availability and verification. Processing time: 24-48 hours.
+              </p>
+              <p className="text-[10px] text-muted-foreground text-center">
+                Gift cards or codes are not guaranteed cash rewards. All redemptions are for in-app entertainment value only.
               </p>
             </Card>
           </TabsContent>

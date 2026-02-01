@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Gift, Check, Loader2, Clock } from "lucide-react";
+import { Gift, Check, Loader2, Clock, AlertCircle } from "lucide-react";
 import XDCoin from "@/components/XDCoin";
 
 interface DailyRewardsProps {
@@ -197,10 +197,15 @@ const DailyRewards = ({ userId, onClaim }: DailyRewardsProps) => {
           })}
         </div>
 
-        {/* Info text */}
-        <p className="text-[10px] text-muted-foreground text-center mb-3">
-          Bonus XD Coins for active users • Streak resets if you miss a day
-        </p>
+        {/* Daily Bonus Disclaimer */}
+        <div className="bg-muted/30 rounded-lg p-2 mb-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-[10px] text-muted-foreground">
+              Daily bonus rewards are available only to active users. Any misuse, automation, or suspicious activity may result in account suspension. Bonus streak resets if a day is missed.
+            </p>
+          </div>
+        </div>
 
         {/* Claim Button */}
         <Button

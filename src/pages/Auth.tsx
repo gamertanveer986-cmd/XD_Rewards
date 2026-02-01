@@ -318,15 +318,6 @@ const Auth = () => {
           <p className="text-muted-foreground text-sm">Collect • Play • Enjoy</p>
         </div>
 
-        {/* Transparency Policy Button */}
-        <Button
-          onClick={() => setShowPolicyModal(true)}
-          className="w-full mb-6 bg-blue-600 hover:bg-blue-700 text-white gap-2"
-        >
-          <Shield className="w-4 h-4" />
-          Transparency & Safety Policy
-        </Button>
-
         {/* Features - Compact */}
         <div className="flex justify-center gap-6 mb-6">
           <div className="text-center">
@@ -453,8 +444,19 @@ const Auth = () => {
           </div>
         </Card>
 
+        {/* Transparency Policy Button - Moved to bottom with smaller text */}
+        <Button
+          onClick={() => setShowPolicyModal(true)}
+          variant="outline"
+          size="sm"
+          className="w-full mb-3 text-xs gap-2"
+        >
+          <Shield className="w-3 h-3" />
+          Transparency & Safety Policy
+        </Button>
+
         {/* Policy Agreement Note */}
-        <p className="text-[11px] text-muted-foreground text-center mt-4 px-4">
+        <p className="text-[10px] text-muted-foreground text-center px-4">
           By signing up, you agree to our{" "}
           <button 
             onClick={() => setShowPolicyModal(true)}
@@ -466,7 +468,7 @@ const Auth = () => {
 
         {/* Disclaimer */}
         <p className="text-[10px] text-muted-foreground text-center mt-2 px-4">
-          Reward points do not guarantee real money. This is an entertainment platform.
+          In-app rewards are for entertainment purposes only and do not represent guaranteed real money.
         </p>
 
         {/* Bottom safe area spacer */}
