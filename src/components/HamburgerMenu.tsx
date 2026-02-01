@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Menu, X, Shield, Info, FileText, Mail, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Menu, X, Shield, Info, FileText, Mail, ExternalLink, User } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 const HamburgerMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -27,6 +29,19 @@ const HamburgerMenu = () => {
         </SheetHeader>
         
         <div className="mt-6 space-y-4">
+          {/* Profile Button */}
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2"
+            onClick={() => {
+              navigate("/profile");
+              setIsOpen(false);
+            }}
+          >
+            <User className="w-4 h-4" />
+            My Profile
+          </Button>
+
           {/* About Section */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
@@ -35,7 +50,7 @@ const HamburgerMenu = () => {
             </h3>
             <div className="bg-muted/50 rounded-lg p-4 space-y-3">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                XD Rewards is a rewards-based entertainment platform where users earn points by engaging with ads and activities.
+                XD Rewards is a rewards-based entertainment platform where users earn entertainment coins by engaging with tasks and activities.
               </p>
             </div>
           </div>
@@ -65,7 +80,7 @@ const HamburgerMenu = () => {
               <div className="flex items-start gap-2 p-2 bg-warning/10 rounded-lg">
                 <span className="text-warning">🎁</span>
                 <p className="text-muted-foreground">
-                  <strong className="text-warning">Redeem Feature:</strong> Redeem XD Coins for rewards. 1000 XD Coins = 10 value. Minimum withdrawal: 50 value.
+                  <strong className="text-warning">Redeem Feature:</strong> Redeem XD Coins for rewards. 1000 XD Coins = 10 value. Minimum: 50 value.
                 </p>
               </div>
             </div>
@@ -92,19 +107,20 @@ const HamburgerMenu = () => {
             <Button
               variant="outline"
               className="w-full justify-start gap-2"
-              asChild
+              onClick={() => {
+                navigate("/support");
+                setIsOpen(false);
+              }}
             >
-              <a href="mailto:Dxreward@gmail.com">
-                <Mail className="w-4 h-4" />
-                Contact Support
-              </a>
+              <Mail className="w-4 h-4" />
+              Support & FAQ
             </Button>
           </div>
 
           {/* Footer Disclaimer */}
           <div className="pt-4 border-t border-border">
             <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-              Reward points do not guarantee real money. Any redemption depends on eligibility, verification, and availability.
+              In-app rewards are for entertainment purposes only and do not represent guaranteed real money. Rewards are promotional and subject to availability and verification.
             </p>
           </div>
         </div>

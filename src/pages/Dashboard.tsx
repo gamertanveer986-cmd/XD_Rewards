@@ -163,7 +163,7 @@ const Dashboard = () => {
             <p className="text-4xl font-bold text-success mb-1">
               {totalCoins.toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground">Entertainment coins • ≈ {(totalCoins / 100).toFixed(1)} value</p>
+            <p className="text-xs text-muted-foreground">Entertainment coins (in-app reward value only)</p>
           </div>
         </Card>
 

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Wallet, Trophy, Gift, Headphones } from "lucide-react";
+import { Home, Wallet, Trophy, Gift, Headphones, User } from "lucide-react";
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -10,24 +10,20 @@ const BottomNav = () => {
     { path: "/wallet", icon: Wallet, label: "Wallet" },
     { path: "/gift-cards", icon: Gift, label: "Rewards" },
     { path: "/leaderboard", icon: Trophy, label: "Ranks" },
-    { path: "mailto:Dxreward@gmail.com", icon: Headphones, label: "Support", isExternal: true },
+    { path: "/support", icon: Headphones, label: "Support" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
   const handleClick = (item: typeof navItems[0]) => {
-    if (item.isExternal) {
-      window.location.href = item.path;
-    } else {
-      navigate(item.path);
-    }
+    navigate(item.path);
   };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50 pb-[100px] safe-area-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {navItems.map((item) => {
-          const active = !item.isExternal && isActive(item.path);
+          const active = isActive(item.path);
           return (
             <button
               key={item.path}

@@ -42,7 +42,6 @@ const Leaderboard = () => {
   }, [navigate]);
 
   const fetchLeaderboard = async (userId: string) => {
-    // Fetch top users from secure leaderboard view (only exposes safe fields)
     const { data: topUsers } = await supabase
       .from("leaderboard_public")
       .select("user_id, display_name, avatar_url, referrals_count, total_earnings")
@@ -52,11 +51,9 @@ const Leaderboard = () => {
     if (topUsers) {
       setLeaderboard(topUsers);
       
-      // Find current user's rank
       const userIndex = topUsers.findIndex(u => u.user_id === userId);
       if (userIndex !== -1) {
         setMyRank(userIndex + 1);
-        // Fetch own profile for referral code (private data only accessible to self)
         const { data: profile } = await supabase
           .from("user_profiles")
           .select("referral_code, referrals_count, display_name, total_earnings")
@@ -64,7 +61,6 @@ const Leaderboard = () => {
           .single();
         setMyProfile(profile);
       } else {
-        // User not in top 50, fetch their profile for referral code
         const { data: profile } = await supabase
           .from("user_profiles")
           .select("referral_code, referrals_count, display_name, total_earnings")
@@ -73,7 +69,6 @@ const Leaderboard = () => {
         
         if (profile) {
           setMyProfile(profile);
-          // Calculate actual rank from leaderboard view
           const { count } = await supabase
             .from("leaderboard_public")
             .select("*", { count: "exact", head: true })
@@ -109,7 +104,6 @@ const Leaderboard = () => {
     }
   };
 
-  // Convert to XD Coins
   const toCoins = (earnings: number) => Math.floor(earnings * 100);
 
   if (loading) {
@@ -163,7 +157,6 @@ const Leaderboard = () => {
           </TabsList>
 
           <TabsContent value="coins" className="space-y-4 mt-4">
-            {/* Top 3 Podium */}
             {topThree.length >= 3 && (
               <div className="flex justify-center items-end gap-2 py-4">
                 {/* 2nd Place */}
@@ -331,6 +324,14 @@ const Leaderboard = () => {
               </p>
             </div>
           </div>
+        </Card>
+
+        {/* Leaderboard Disclaimer */}
+        <Card className="p-3 bg-muted/30 border-border/50">
+          <p className="text-[10px] text-muted-foreground text-center">
+            Rankings are for engagement display only. They do not guarantee or affect reward eligibility.
+            Leaderboard rewards are promotional and verified. No guaranteed rewards.
+          </p>
         </Card>
 
         {/* Disclaimer */}

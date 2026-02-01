@@ -61,7 +61,7 @@ const Wallet = () => {
               {totalCoins.toLocaleString()}
             </p>
             <p className="text-xs text-muted-foreground mb-2">
-              ≈ {totalValue} value
+              Entertainment coins (in-app reward value only)
             </p>
             <p className="text-xs text-muted-foreground">
               Redeemable: {redeemableCoins.toLocaleString()} XD Coins
