@@ -12,11 +12,13 @@ import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
 
 interface LeaderboardUser {
-  user_id: string;
+  rank_position: number;
   display_name: string | null;
   avatar_url: string | null;
   referrals_count: number;
   total_earnings: number;
+  ads_watched: number;
+  is_current_user: boolean;
 }
 
 const Leaderboard = () => {
@@ -42,40 +44,38 @@ const Leaderboard = () => {
   }, [navigate]);
 
   const fetchLeaderboard = async (userId: string) => {
-    const { data: topUsers } = await supabase
-      .from("leaderboard_public")
-      .select("user_id, display_name, avatar_url, referrals_count, total_earnings")
-      .order("total_earnings", { ascending: false })
-      .limit(50);
+    // Use the secure RPC function that doesn't expose user_id
+    const { data: topUsers, error } = await supabase
+      .rpc("get_public_leaderboard", { limit_count: 50 });
 
-    if (topUsers) {
-      setLeaderboard(topUsers);
+    if (topUsers && !error) {
+      setLeaderboard(topUsers as LeaderboardUser[]);
       
-      const userIndex = topUsers.findIndex(u => u.user_id === userId);
-      if (userIndex !== -1) {
-        setMyRank(userIndex + 1);
-        const { data: profile } = await supabase
+      // Find current user's position using the is_current_user flag
+      const userEntry = topUsers.find((u: LeaderboardUser) => u.is_current_user);
+      if (userEntry) {
+        setMyRank(userEntry.rank_position);
+      }
+    }
+
+    // Get user's own profile data
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("referral_code, referrals_count, display_name, total_earnings")
+      .eq("user_id", userId)
+      .single();
+    
+    if (profile) {
+      setMyProfile(profile);
+      
+      // If user wasn't in top 50, calculate their rank
+      if (!topUsers?.find((u: LeaderboardUser) => u.is_current_user)) {
+        const { count } = await supabase
           .from("user_profiles")
-          .select("referral_code, referrals_count, display_name, total_earnings")
-          .eq("user_id", userId)
-          .single();
-        setMyProfile(profile);
-      } else {
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("referral_code, referrals_count, display_name, total_earnings")
-          .eq("user_id", userId)
-          .single();
+          .select("*", { count: "exact", head: true })
+          .gt("total_earnings", profile.total_earnings);
         
-        if (profile) {
-          setMyProfile(profile);
-          const { count } = await supabase
-            .from("leaderboard_public")
-            .select("*", { count: "exact", head: true })
-            .gt("total_earnings", profile.total_earnings);
-          
-          setMyRank((count || 0) + 1);
-        }
+        setMyRank((count || 0) + 1);
       }
     }
   };
@@ -222,12 +222,12 @@ const Leaderboard = () => {
             <div className="space-y-2">
               {rest.map((user, index) => (
                 <Card 
-                  key={user.user_id} 
-                  className={`p-3 bg-card border-border/50 ${user.user_id === currentUser?.id ? "border-primary/50 bg-primary/5" : ""}`}
+                  key={`rank-${user.rank_position}`} 
+                  className={`p-3 bg-card border-border/50 ${user.is_current_user ? "border-primary/50 bg-primary/5" : ""}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
-                      {index + 4}
+                      {user.rank_position}
                     </div>
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={user.avatar_url || ""} />
@@ -270,13 +270,13 @@ const Leaderboard = () => {
           </TabsContent>
 
           <TabsContent value="referrals" className="space-y-2 mt-4">
-            {leaderboard
+            {[...leaderboard]
               .sort((a, b) => b.referrals_count - a.referrals_count)
               .slice(0, 20)
               .map((user, index) => (
                 <Card 
-                  key={user.user_id} 
-                  className={`p-3 bg-card border-border/50 ${user.user_id === currentUser?.id ? "border-primary/50 bg-primary/5" : ""}`}
+                  key={`referral-${user.rank_position}`} 
+                  className={`p-3 bg-card border-border/50 ${user.is_current_user ? "border-primary/50 bg-primary/5" : ""}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
