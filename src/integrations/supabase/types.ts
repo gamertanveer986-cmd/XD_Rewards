@@ -390,13 +390,6 @@ export type Database = {
             foreignKeyName: "user_profiles_referred_by_fkey"
             columns: ["referred_by"]
             isOneToOne: false
-            referencedRelation: "leaderboard_public"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "user_profiles_referred_by_fkey"
-            columns: ["referred_by"]
-            isOneToOne: false
             referencedRelation: "user_profiles"
             referencedColumns: ["user_id"]
           },
@@ -432,7 +425,6 @@ export type Database = {
           display_name: string | null
           referrals_count: number | null
           total_earnings: number | null
-          user_id: string | null
         }
         Insert: {
           ads_watched?: number | null
@@ -440,7 +432,6 @@ export type Database = {
           display_name?: string | null
           referrals_count?: number | null
           total_earnings?: number | null
-          user_id?: string | null
         }
         Update: {
           ads_watched?: number | null
@@ -448,7 +439,6 @@ export type Database = {
           display_name?: string | null
           referrals_count?: number | null
           total_earnings?: number | null
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -468,6 +458,18 @@ export type Database = {
         Returns: boolean
       }
       claim_daily_reward: { Args: { p_user_id: string }; Returns: Json }
+      get_public_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          ads_watched: number
+          avatar_url: string
+          display_name: string
+          is_current_user: boolean
+          rank_position: number
+          referrals_count: number
+          total_earnings: number
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
