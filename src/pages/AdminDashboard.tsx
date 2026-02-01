@@ -78,6 +78,7 @@ type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null); // null = checking, false = denied, true = granted
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
@@ -117,38 +118,64 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
+    const checkAdminAccess = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          if (isMounted) {
+            setIsAdmin(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const { data: roleData, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (!isMounted) return;
+
+        if (error || !roleData) {
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        setIsAdmin(true);
+        // Load data only after admin access is confirmed
+        await loadAllDataInternal();
+        if (isMounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error checking admin access:", error);
+        if (isMounted) {
+          setIsAdmin(false);
+          setLoading(false);
+        }
+      }
+    };
+
     checkAdminAccess();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/admin/login");
-        return;
-      }
-      const { data: roleData, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (error || !roleData) {
-        toast.error("Unauthorized: Admin access required");
-        navigate("/admin/login");
-        return;
-      }
-      await loadAllData();
-    } catch (error) {
-      console.error("Error checking admin access:", error);
-      navigate("/admin/login");
-    }
+  const loadAllDataInternal = async () => {
+    await Promise.all([loadData(), loadAdmobConfig(), loadDailyRewards(), loadGiftCardsData()]);
   };
 
   const loadAllData = async () => {
     setLoading(true);
-    await Promise.all([loadData(), loadAdmobConfig(), loadDailyRewards(), loadGiftCardsData()]);
+    await loadAllDataInternal();
     setLoading(false);
   };
 
@@ -407,10 +434,37 @@ const AdminDashboard = () => {
     { key: "admob", label: "AdMob" }
   ];
 
+  // Show loading state while checking access
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-sm text-muted-foreground">Verifying admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🔒</span>
+          </div>
+          <h1 className="text-xl font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            You do not have administrator privileges to access this panel.
+          </p>
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            Return to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
