@@ -144,6 +144,7 @@ export type Database = {
         Row: {
           amount_paid: number
           created_at: string
+          email: string | null
           id: string
           processed_at: string | null
           product_id: string
@@ -154,6 +155,7 @@ export type Database = {
         Insert: {
           amount_paid: number
           created_at?: string
+          email?: string | null
           id?: string
           processed_at?: string | null
           product_id: string
@@ -164,6 +166,7 @@ export type Database = {
         Update: {
           amount_paid?: number
           created_at?: string
+          email?: string | null
           id?: string
           processed_at?: string | null
           product_id?: string
@@ -481,10 +484,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      purchase_gift_card: {
-        Args: { p_product_id: string; p_user_id: string }
-        Returns: Json
-      }
+      purchase_gift_card:
+        | { Args: { p_product_id: string; p_user_id: string }; Returns: Json }
+        | {
+            Args: { p_email?: string; p_product_id: string; p_user_id: string }
+            Returns: Json
+          }
       record_ad_completion: {
         Args: { p_ad_duration: number; p_user_id: string }
         Returns: Json

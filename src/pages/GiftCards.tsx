@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppLayout from "@/components/AppLayout";
-import { Gift, ShoppingCart, Clock, AlertCircle } from "lucide-react";
+import { Gift, ShoppingCart, Clock, AlertCircle, Mail } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
 import { toast } from "sonner";
@@ -38,6 +40,27 @@ const GiftCards = () => {
   const [purchases, setPurchases] = useState<GiftCardPurchase[]>([]);
   const [balance, setBalance] = useState(0);
   const [redeeming, setRedeeming] = useState<string | null>(null);
+  const [redeemEmail, setRedeemEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  // Email validation
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
+  const isEmailValid = validateEmail(redeemEmail);
+
+  const handleEmailChange = (value: string) => {
+    setRedeemEmail(value);
+    if (value.trim() === "") {
+      setEmailError("");
+    } else if (!validateEmail(value)) {
+      setEmailError("Please enter a valid email to continue");
+    } else {
+      setEmailError("");
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -86,6 +109,19 @@ const GiftCards = () => {
   };
 
   const handleRedeem = async (product: GiftCardProduct) => {
+    // Validate email first
+    if (!redeemEmail.trim()) {
+      setEmailError("Please enter a valid email to continue");
+      toast.error("Please enter your email address first");
+      return;
+    }
+
+    if (!isEmailValid) {
+      setEmailError("Please enter a valid email to continue");
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     const requiredCoins = Math.floor(product.price * 100);
     const userCoins = Math.floor(balance * 100);
     
@@ -98,7 +134,8 @@ const GiftCards = () => {
     try {
       const { data, error } = await supabase.rpc("purchase_gift_card", {
         p_user_id: user.id,
-        p_product_id: product.id
+        p_product_id: product.id,
+        p_email: redeemEmail.trim()
       });
 
       if (error) throw error;
@@ -106,6 +143,7 @@ const GiftCards = () => {
       const result = data as { success: boolean; message: string };
       if (result.success) {
         toast.success("Redemption submitted! We'll process it within 24-48 hours.");
+        setRedeemEmail(""); // Clear email after successful submission
         await Promise.all([
           fetchBalance(user.id),
           fetchPurchases(user.id)
@@ -190,6 +228,30 @@ const GiftCards = () => {
 
           {/* Browse Tab */}
           <TabsContent value="browse" className="space-y-3">
+            {/* Email Input Section */}
+            <Card className="p-4 bg-card border-border/50">
+              <div className="space-y-2">
+                <Label htmlFor="redeem-email" className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-primary" />
+                  Email Address
+                </Label>
+                <Input
+                  id="redeem-email"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={redeemEmail}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className={emailError ? "border-destructive" : ""}
+                />
+                {emailError && (
+                  <p className="text-xs text-destructive">{emailError}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  This email will be used to send your redeem code after verification.
+                </p>
+              </div>
+            </Card>
+
             <h3 className="text-sm font-semibold text-muted-foreground">Available Rewards</h3>
             
             {products.length === 0 ? (
@@ -204,6 +266,7 @@ const GiftCards = () => {
                   const requiredCoins = Math.floor(product.price * 100);
                   const canAfford = totalCoins >= requiredCoins;
                   const denominationValue = Math.floor(product.denomination);
+                  const canRedeem = canAfford && isEmailValid;
                   
                   return (
                     <Card key={product.id} className={`p-4 bg-card border-border/50 ${!canAfford ? 'opacity-60' : ''}`}>
@@ -222,11 +285,12 @@ const GiftCards = () => {
                           </div>
                           <Button
                             size="sm"
-                            disabled={!canAfford || redeeming === product.id}
+                            disabled={!canRedeem || redeeming === product.id}
                             onClick={() => handleRedeem(product)}
                             className="text-xs h-7"
+                            title={!isEmailValid ? "Enter a valid email first" : !canAfford ? "Insufficient coins" : ""}
                           >
-                            {redeeming === product.id ? "Processing..." : canAfford ? "Redeem" : "Need More"}
+                            {redeeming === product.id ? "Processing..." : canAfford ? (isEmailValid ? "Redeem" : "Enter Email") : "Need More"}
                           </Button>
                         </div>
                       </div>
