@@ -70,6 +70,7 @@ interface GiftCardPurchase {
   status: string;
   redemption_code: string | null;
   created_at: string;
+  email: string | null;
   product?: GiftCardProduct;
 }
 
@@ -107,6 +108,7 @@ const AdminDashboard = () => {
   const [newProductPrice, setNewProductPrice] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [purchaseEmailFilter, setPurchaseEmailFilter] = useState("");
 
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -809,11 +811,18 @@ const AdminDashboard = () => {
 
             <div className="border-t border-border pt-4 space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase">Purchase Requests ({giftCardPurchases.length})</p>
+              <Input 
+                placeholder="Search by email..." 
+                value={purchaseEmailFilter} 
+                onChange={(e) => setPurchaseEmailFilter(e.target.value)} 
+                className="h-8 text-xs mb-2" 
+              />
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border text-left text-muted-foreground">
                       <th className="py-2 pr-2 font-medium">User</th>
+                      <th className="py-2 pr-2 font-medium">Email</th>
                       <th className="py-2 pr-2 font-medium">Product</th>
                       <th className="py-2 pr-2 font-medium">Paid</th>
                       <th className="py-2 pr-2 font-medium">Status</th>
@@ -821,22 +830,62 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {giftCardPurchases.map(p => (
-                      <tr key={p.id} className="border-b border-border/50">
-                        <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                        <td className="py-2 pr-2">{p.product?.name || "-"}</td>
-                        <td className="py-2 pr-2">{Number(p.amount_paid).toFixed(0)} val</td>
-                        <td className="py-2 pr-2">{p.status}</td>
-                        <td className="py-2">
-                          {p.status === "pending" && (
-                            <span className="flex gap-2">
-                              <button onClick={() => handleUpdatePurchaseStatus(p.id, "processing")} className="text-xs text-yellow-500 hover:underline">Process</button>
-                              <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {giftCardPurchases
+                      .filter(p => !purchaseEmailFilter || (p.email && p.email.toLowerCase().includes(purchaseEmailFilter.toLowerCase())))
+                      .sort((a, b) => {
+                        // Sort pending first
+                        if (a.status === "pending" && b.status !== "pending") return -1;
+                        if (a.status !== "pending" && b.status === "pending") return 1;
+                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                      })
+                      .map(p => {
+                        const isEmailMissing = !p.email || !p.email.trim();
+                        const isEmailInvalid = p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email);
+                        const hasEmailIssue = isEmailMissing || isEmailInvalid;
+                        
+                        return (
+                          <tr key={p.id} className={`border-b border-border/50 ${hasEmailIssue ? "bg-destructive/10" : ""}`}>
+                            <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                            <td className={`py-2 pr-2 ${hasEmailIssue ? "text-destructive font-medium" : ""}`}>
+                              {isEmailMissing ? (
+                                <span className="text-destructive italic">Missing</span>
+                              ) : isEmailInvalid ? (
+                                <span className="text-destructive">{p.email} ⚠️</span>
+                              ) : (
+                                p.email
+                              )}
+                            </td>
+                            <td className="py-2 pr-2">{p.product?.name || "-"}</td>
+                            <td className="py-2 pr-2">{Number(p.amount_paid).toFixed(0)} val</td>
+                            <td className="py-2 pr-2">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                p.status === "pending" ? "bg-warning/20 text-warning" :
+                                p.status === "processing" ? "bg-blue-500/20 text-blue-500" :
+                                p.status === "completed" ? "bg-success/20 text-success" :
+                                p.status === "rejected" ? "bg-destructive/20 text-destructive" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className="py-2">
+                              {p.status === "pending" && (
+                                <span className="flex gap-2">
+                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "processing")} className="text-xs text-yellow-500 hover:underline">Process</button>
+                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
+                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
+                                </span>
+                              )}
+                              {p.status === "processing" && (
+                                <span className="flex gap-2">
+                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
+                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
