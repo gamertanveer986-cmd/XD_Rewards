@@ -104,6 +104,36 @@ export type Database = {
         }
         Relationships: []
       }
+      gamification_config: {
+        Row: {
+          config_json: Json
+          feature_key: string
+          feature_name: string
+          id: string
+          is_enabled: boolean | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          config_json?: Json
+          feature_key: string
+          feature_name: string
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          config_json?: Json
+          feature_key?: string
+          feature_name?: string
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       gift_card_products: {
         Row: {
           brand: string
@@ -220,6 +250,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_prompt_at: string | null
+          notifications_enabled: boolean | null
+          prompt_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_prompt_at?: string | null
+          notifications_enabled?: boolean | null
+          prompt_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_prompt_at?: string | null
+          notifications_enabled?: boolean | null
+          prompt_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -268,6 +328,99 @@ export type Database = {
         }
         Relationships: []
       }
+      social_task_submissions: {
+        Row: {
+          admin_notes: string | null
+          id: string
+          platform: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reward_amount: number | null
+          screenshot_url: string
+          status: string | null
+          submitted_at: string | null
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          id?: string
+          platform?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reward_amount?: number | null
+          screenshot_url: string
+          status?: string | null
+          submitted_at?: string | null
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          id?: string
+          platform?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reward_amount?: number | null
+          screenshot_url?: string
+          status?: string | null
+          submitted_at?: string | null
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      spin_history: {
+        Row: {
+          device_fingerprint: string | null
+          id: string
+          ip_hash: string | null
+          reward_amount: number
+          spun_at: string | null
+          user_id: string
+        }
+        Insert: {
+          device_fingerprint?: string | null
+          id?: string
+          ip_hash?: string | null
+          reward_amount: number
+          spun_at?: string | null
+          user_id: string
+        }
+        Update: {
+          device_fingerprint?: string | null
+          id?: string
+          ip_hash?: string | null
+          reward_amount?: number
+          spun_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      task_progress: {
+        Row: {
+          id: string
+          last_milestone_claimed: number | null
+          tasks_completed: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_milestone_claimed?: number | null
+          tasks_completed?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_milestone_claimed?: number | null
+          tasks_completed?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -291,6 +444,33 @@ export type Database = {
           description?: string | null
           id?: string
           transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_description: string | null
+          badge_key: string
+          badge_name: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_description?: string | null
+          badge_key: string
+          badge_name: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_description?: string | null
+          badge_key?: string
+          badge_name?: string
+          earned_at?: string | null
+          id?: string
           user_id?: string
         }
         Relationships: []
@@ -451,6 +631,24 @@ export type Database = {
         Args: { p_referral_code: string; p_user_id: string }
         Returns: Json
       }
+      approve_social_task: {
+        Args: {
+          p_admin_notes?: string
+          p_approved: boolean
+          p_submission_id: string
+        }
+        Returns: Json
+      }
+      award_badge: {
+        Args: {
+          p_badge_description?: string
+          p_badge_key: string
+          p_badge_name: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      check_and_award_badges: { Args: { p_user_id: string }; Returns: Json }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -484,6 +682,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_task_progress: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       purchase_gift_card:
         | { Args: { p_product_id: string; p_user_id: string }; Returns: Json }
         | {
@@ -498,6 +700,7 @@ export type Database = {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
       }
+      spin_wheel: { Args: { p_user_id: string }; Returns: Json }
       verify_admin_access: { Args: never; Returns: boolean }
     }
     Enums: {
