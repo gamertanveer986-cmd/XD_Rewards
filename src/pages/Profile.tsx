@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import AppLayout from "@/components/AppLayout";
-import { User, Calendar, Hash, Award, Shield, Clock, AlertCircle, Instagram, Star, MessageSquare } from "lucide-react";
+import { User, Calendar, Hash, Award, Shield, Clock, AlertCircle, Instagram, Star, MessageSquare, Bell, BellOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
+import UserBadges from "@/components/UserBadges";
 import { toast } from "sonner";
 
 const Profile = () => {
@@ -16,6 +18,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [followingInstagram, setFollowingInstagram] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,6 +35,18 @@ const Profile = () => {
         .eq("user_id", session.user.id)
         .single();
       setProfile(data);
+      
+      // Get notification preferences
+      const { data: notifPref } = await supabase
+        .from("notification_preferences")
+        .select("notifications_enabled")
+        .eq("user_id", session.user.id)
+        .single();
+      
+      if (notifPref) {
+        setNotificationsEnabled(notifPref.notifications_enabled);
+      }
+      
       setLoading(false);
     };
     checkAuth();
@@ -133,6 +148,13 @@ const Profile = () => {
             <p className="text-[10px] text-muted-foreground">Referrals</p>
           </Card>
         </div>
+
+        {/* Badges Section */}
+        {user && (
+          <Card className="p-4 bg-card border-border/50">
+            <UserBadges userId={user.id} variant="full" showEmpty />
+          </Card>
+        )}
 
         {/* Profile Details */}
         <div className="space-y-3">
@@ -284,6 +306,41 @@ const Profile = () => {
           <p className="text-xs text-muted-foreground text-center">
             One mobile device can register only ONE account. Multiple sign-ups from the same device are blocked for abuse prevention.
           </p>
+        </Card>
+
+        {/* Notification Settings */}
+        <Card className="p-4 bg-card border-border/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {notificationsEnabled ? (
+                <Bell className="w-5 h-5 text-success" />
+              ) : (
+                <BellOff className="w-5 h-5 text-muted-foreground" />
+              )}
+              <div>
+                <p className="text-sm font-medium">Push Notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  {notificationsEnabled ? "Enabled" : "Disabled"}
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={notificationsEnabled}
+              onCheckedChange={async (checked) => {
+                if (user) {
+                  await supabase
+                    .from("notification_preferences")
+                    .upsert({
+                      user_id: user.id,
+                      notifications_enabled: checked,
+                      updated_at: new Date().toISOString(),
+                    }, { onConflict: "user_id" });
+                  setNotificationsEnabled(checked);
+                  toast.success(checked ? "Notifications enabled" : "Notifications disabled");
+                }
+              }}
+            />
+          </div>
         </Card>
 
         {/* Disclaimer */}

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 interface XDCoinProps {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   showLabel?: boolean;
   amount?: number;
@@ -9,6 +9,7 @@ interface XDCoinProps {
 
 const XDCoin = ({ size = "md", className, showLabel = false, amount }: XDCoinProps) => {
   const sizeClasses = {
+    xs: "w-3 h-3 text-[6px]",
     sm: "w-4 h-4 text-[8px]",
     md: "w-6 h-6 text-[10px]",
     lg: "w-8 h-8 text-xs",

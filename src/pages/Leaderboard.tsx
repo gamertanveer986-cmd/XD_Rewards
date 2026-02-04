@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
+import UserBadges from "@/components/UserBadges";
 
 interface LeaderboardUser {
   rank_position: number;

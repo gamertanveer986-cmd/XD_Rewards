@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import AdminGamification from "@/components/AdminGamification";
 
 interface UserProfile {
   id: string;
@@ -74,7 +75,7 @@ interface GiftCardPurchase {
   product?: GiftCardProduct;
 }
 
-type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob" | "support";
+type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob" | "support" | "gamification";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -430,6 +431,7 @@ const AdminDashboard = () => {
     { key: "payments", label: "Payments" },
     { key: "daily", label: "Daily" },
     { key: "giftcards", label: "Cards" },
+    { key: "gamification", label: "Games" },
     { key: "roles", label: "Roles" },
     { key: "notifications", label: "Notify" },
     { key: "support", label: "Support" },
@@ -1009,6 +1011,11 @@ const AdminDashboard = () => {
               {actionLoading ? "Saving..." : "Save Configuration"}
             </button>
           </div>
+        )}
+
+        {/* Gamification */}
+        {activeTab === "gamification" && (
+          <AdminGamification />
         )}
       </div>
     </div>
