@@ -41,6 +41,18 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_users: {
+        Row: {
+          user_id: string
+        }
+        Insert: {
+          user_id: string
+        }
+        Update: {
+          user_id?: string
+        }
+        Relationships: []
+      }
       admob_config: {
         Row: {
           app_id: string

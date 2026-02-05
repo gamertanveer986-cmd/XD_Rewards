@@ -17,7 +17,6 @@ const Profile = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [followingInstagram, setFollowingInstagram] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
@@ -64,12 +63,6 @@ const Profile = () => {
       month: "short",
       day: "numeric"
     });
-  };
-
-  const handleInstagramFollow = () => {
-    window.open("https://www.instagram.com/xd_rewards_official", "_blank");
-    toast.info("Follow verified? Reward will be credited after admin verification within 24 hours.");
-    setFollowingInstagram(true);
   };
 
   const handleSendFeedback = () => {
@@ -226,30 +219,28 @@ const Profile = () => {
           </Card>
         </div>
 
-        {/* Instagram Follow Section */}
+        {/* Instagram Information Section */}
         <Card className="p-4 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/30">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0">
               <Instagram className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm">Follow Us on Instagram</h4>
+              <h4 className="font-semibold text-sm">Official Instagram Page</h4>
               <p className="text-xs text-muted-foreground mt-1">
-                Get 50 in-app coins (entertainment value only) after verified follow
+                This is our official Instagram page. You can join it for updates and announcements only. Following is optional and does not provide any rewards or coins.
               </p>
               <Button 
                 size="sm" 
-                className="mt-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
-                onClick={handleInstagramFollow}
+                variant="outline"
+                className="mt-2"
+                onClick={() => window.open("https://www.instagram.com/xd_rewards_official", "_blank")}
               >
                 <Instagram className="w-4 h-4 mr-1" />
-                {followingInstagram ? "Verification Pending" : "Follow @xd_rewards_official"}
+                Visit @xd_rewards_official
               </Button>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-3">
-            Social media rewards are optional and subject to verification. Rewards may change or be removed at any time.
-          </p>
         </Card>
 
         {/* Feedback Section */}
