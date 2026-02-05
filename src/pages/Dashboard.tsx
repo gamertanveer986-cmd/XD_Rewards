@@ -11,9 +11,7 @@ import ProfileSetup from "@/components/ProfileSetup";
 import DailyRewards from "@/components/DailyRewards";
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
-import SpinWheel from "@/components/SpinWheel";
 import TaskProgress from "@/components/TaskProgress";
-import SocialTasks from "@/components/SocialTasks";
 import NotificationPermission from "@/components/NotificationPermission";
 import { Play, Users, Eye, Copy, Share2 } from "lucide-react";
 
@@ -232,19 +230,9 @@ const Dashboard = () => {
           <DailyRewards userId={user.id} onClaim={() => fetchProfile(user.id)} />
         )}
 
-        {/* Spin Wheel */}
-        {user && (
-          <SpinWheel userId={user.id} onSpin={() => fetchProfile(user.id)} />
-        )}
-
         {/* Task Progress */}
         {user && (
           <TaskProgress userId={user.id} />
-        )}
-
-        {/* Social Tasks */}
-        {user && (
-          <SocialTasks userId={user.id} onComplete={() => fetchProfile(user.id)} />
         )}
 
         {/* Fast Reward Task CTA */}
