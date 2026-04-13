@@ -138,6 +138,27 @@
     100% { opacity: 0.5; }
   }
 
+  .animate-coin-fly {
+    animation: coin-fly 1.2s ease-out forwards;
+  }
+
+  @keyframes coin-fly {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-60px) translateX(var(--coin-x, 0)) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-120px) translateX(var(--coin-x, 0)) scale(0.5); }
+  }
+
+  .animate-coin-text {
+    animation: coin-text 1.5s ease-out forwards;
+  }
+
+  @keyframes coin-text {
+    0% { opacity: 0; transform: translateY(20px) scale(0.8); }
+    30% { opacity: 1; transform: translateY(-10px) scale(1.1); }
+    60% { opacity: 1; transform: translateY(-20px) scale(1); }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.9); }
+  }
+
   /* Mobile App Safe Areas */
   .safe-area-top {
     padding-top: env(safe-area-inset-top, 0px);
