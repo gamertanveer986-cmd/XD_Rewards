@@ -8,6 +8,7 @@ import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import ProfileSetup from "@/components/ProfileSetup";
 import XDCoin from "@/components/XDCoin";
 import TaskProgress from "@/components/TaskProgress";
+import Disclaimer from "@/components/Disclaimer";
 import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
 import RecentActivity from "@/components/RecentActivity";
