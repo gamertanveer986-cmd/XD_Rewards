@@ -7,6 +7,9 @@ import Auth from "./pages/Auth";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import Dashboard from "./pages/Dashboard";
+import Earn from "./pages/Earn";
+import DailyBonus from "./pages/DailyBonus";
+import Referral from "./pages/Referral";
 import Wallet from "./pages/Wallet";
 import GiftCards from "./pages/GiftCards";
 import Leaderboard from "./pages/Leaderboard";
@@ -28,12 +31,14 @@ const App = () => (
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/earn" element={<Earn />} />
+          <Route path="/daily-bonus" element={<DailyBonus />} />
+          <Route path="/referral" element={<Referral />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/gift-cards" element={<GiftCards />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/support" element={<Support />} />
           <Route path="/profile" element={<Profile />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
