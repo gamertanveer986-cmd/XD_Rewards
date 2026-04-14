@@ -6,18 +6,22 @@ import { Button } from "@/components/ui/button";
 import AppLayout from "@/components/AppLayout";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 import { Copy, Share2, Users, TrendingUp, Gift } from "lucide-react";
 
 const Referral = () => {
   const navigate = useNavigate();
+  const { isGuest } = useGuest();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) { setLoading(false); return; }
       const { data } = await supabase
         .from("user_profiles")
         .select("*")
@@ -27,7 +31,7 @@ const Referral = () => {
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const copyCode = () => {
     if (profile?.referral_code) {

@@ -5,21 +5,25 @@ import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
 import DailyRewards from "@/components/DailyRewards";
 import Disclaimer from "@/components/Disclaimer";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 
 const DailyBonus = () => {
   const navigate = useNavigate();
+  const { isGuest } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) { setLoading(false); return; }
       setUser(session.user);
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   if (loading) {
     return (
