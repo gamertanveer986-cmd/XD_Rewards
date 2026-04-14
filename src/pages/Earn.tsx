@@ -7,6 +7,8 @@ import AppLayout from "@/components/AppLayout";
 import WatchAdModal from "@/components/WatchAdModal";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 import { Zap, Clock, CheckCircle, Target, TrendingUp, Shield } from "lucide-react";
 
