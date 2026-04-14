@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Mail, ChevronDown, ChevronUp, HelpCircle, Shield, Smartphone, FileText, ExternalLink, Lock, AlertTriangle } from "lucide-react";
+import { Mail, ChevronDown, ChevronUp, HelpCircle, Shield, Smartphone, FileText, ExternalLink, Lock, AlertTriangle, Info } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 
 const faqs = [
   {

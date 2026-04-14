@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppLayout from "@/components/AppLayout";
-import { Gift, ShoppingCart, Clock, AlertCircle, Mail } from "lucide-react";
+import { Gift, ShoppingCart, Clock, AlertCircle, Mail, Info } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 
 interface GiftCardProduct {
