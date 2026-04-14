@@ -64,6 +64,7 @@ const Referral = () => {
 
   return (
     <AppLayout title="Referral Program">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
         {/* Referral Code Card */}
         <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 relative overflow-hidden">
