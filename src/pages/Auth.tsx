@@ -10,7 +10,8 @@ import SplashScreen from "@/components/SplashScreen";
 import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
-import { Shield, ArrowLeft, Mail } from "lucide-react";
+import { Shield, ArrowLeft, Mail, Eye } from "lucide-react";
+import { useGuest } from "@/contexts/GuestContext";
 
 const Auth = () => {
   const navigate = useNavigate();
