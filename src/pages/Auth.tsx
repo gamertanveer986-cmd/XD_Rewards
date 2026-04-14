@@ -446,7 +446,19 @@ const Auth = () => {
           </div>
         </Card>
 
-        {/* Transparency Policy Button - Moved to bottom with smaller text */}
+        {/* Continue as Guest */}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            enterGuestMode();
+            navigate("/dashboard");
+          }}
+          className="w-full text-muted-foreground hover:text-foreground gap-2 h-11"
+        >
+          <Eye className="w-4 h-4" />
+          Continue as Guest
+        </Button>
+
         <Button
           onClick={() => setShowPolicyModal(true)}
           variant="outline"
