@@ -35,6 +35,7 @@ const DailyBonus = () => {
 
   return (
     <AppLayout title="Daily Bonus">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
         {user && (
           <DailyRewards userId={user.id} />
