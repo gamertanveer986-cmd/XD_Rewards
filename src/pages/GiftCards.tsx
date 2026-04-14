@@ -188,7 +188,14 @@ const GiftCards = () => {
 
   return (
     <AppLayout title="Rewards">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
+        {isGuest && (
+          <Card className="p-4 bg-card border-border/50 flex items-center gap-3">
+            <Info className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-sm text-muted-foreground">Login required to redeem rewards</p>
+          </Card>
+        )}
         {/* Balance Card */}
         <Card className="p-4 bg-gradient-to-r from-primary/20 to-transparent border-primary/30">
           <div className="flex items-center justify-between">

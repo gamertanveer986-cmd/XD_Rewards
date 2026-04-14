@@ -127,36 +127,44 @@ const Leaderboard = () => {
 
   return (
     <AppLayout title="Top XD Coin Collectors">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
-        {/* My Referral Card */}
-        <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-xs text-muted-foreground">Your Referral Code</p>
-              <p className="text-2xl font-bold tracking-widest text-primary">
-                {myProfile?.referral_code || "—"}
-              </p>
+        {/* My Referral Card - hidden for guests */}
+        {!isGuest ? (
+          <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Your Referral Code</p>
+                <p className="text-2xl font-bold tracking-widest text-primary">
+                  {myProfile?.referral_code || "—"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="icon" variant="outline" onClick={copyReferralCode} className="h-9 w-9">
+                  <Copy className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="default" onClick={shareReferralCode} className="h-9 w-9">
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="icon" variant="outline" onClick={copyReferralCode} className="h-9 w-9">
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button size="icon" variant="default" onClick={shareReferralCode} className="h-9 w-9">
-                <Share2 className="w-4 h-4" />
-              </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-background/50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold">{myProfile?.referrals_count || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Referrals</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold">#{myRank || "—"}</p>
+                <p className="text-[10px] text-muted-foreground">Your Rank</p>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-background/50 rounded-lg p-2 text-center">
-              <p className="text-lg font-bold">{myProfile?.referrals_count || 0}</p>
-              <p className="text-[10px] text-muted-foreground">Referrals</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-2 text-center">
-              <p className="text-lg font-bold">#{myRank || "—"}</p>
-              <p className="text-[10px] text-muted-foreground">Your Rank</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ) : (
+          <Card className="p-4 bg-card border-border/50 flex items-center gap-3">
+            <Info className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-sm text-muted-foreground">Login to track your rank</p>
+          </Card>
+        )}
 
         <Tabs defaultValue="coins" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
