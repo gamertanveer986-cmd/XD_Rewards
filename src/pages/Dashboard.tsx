@@ -58,7 +58,7 @@ const Dashboard = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session && !isGuest) { navigate("/auth"); }
-      else {
+      else if (session) {
         setUser(session.user);
         fetchProfile(session.user.id);
         checkAdminRole(session.user.id);
