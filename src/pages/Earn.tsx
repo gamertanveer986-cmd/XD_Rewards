@@ -72,7 +72,7 @@ const Earn = () => {
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   // Cooldown timers
   useEffect(() => {

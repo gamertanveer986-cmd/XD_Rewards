@@ -65,7 +65,7 @@ const Dashboard = () => {
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
