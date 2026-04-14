@@ -15,6 +15,7 @@ import { useGuest } from "@/contexts/GuestContext";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { enterGuestMode } = useGuest();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
