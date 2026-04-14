@@ -35,6 +35,7 @@ interface GiftCardPurchase {
 }
 
 const GiftCards = () => {
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -67,8 +68,10 @@ const GiftCards = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) {
+        await fetchProducts();
+        setLoading(false);
         return;
       }
       setUser(session.user);
@@ -81,7 +84,7 @@ const GiftCards = () => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const fetchProducts = async () => {
     const { data } = await supabase

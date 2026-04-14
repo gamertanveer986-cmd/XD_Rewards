@@ -33,6 +33,7 @@ const faqs = [
 ];
 
 const Support = () => {
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -40,11 +41,11 @@ const Support = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   if (loading) {
     return (

@@ -25,6 +25,7 @@ interface LeaderboardUser {
 }
 
 const Leaderboard = () => {
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
@@ -35,8 +36,12 @@ const Leaderboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) {
+        // Fetch leaderboard without user context
+        const { data: topUsers } = await supabase.rpc("get_public_leaderboard", { limit_count: 50 });
+        if (topUsers) setLeaderboard(topUsers as LeaderboardUser[]);
+        setLoading(false);
         return;
       }
       setCurrentUser(session.user);
@@ -44,7 +49,7 @@ const Leaderboard = () => {
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const fetchLeaderboard = async (userId: string) => {
     // Use the secure RPC function that doesn't expose user_id
