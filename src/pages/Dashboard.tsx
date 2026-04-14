@@ -57,7 +57,7 @@ const Dashboard = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) { navigate("/auth"); }
+      if (!session && !isGuest) { navigate("/auth"); }
       else {
         setUser(session.user);
         fetchProfile(session.user.id);
