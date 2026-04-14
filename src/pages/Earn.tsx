@@ -131,6 +131,7 @@ const Earn = () => {
 
   return (
     <AppLayout title="Earn XD Coins">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
         {/* Stats Header */}
         <Card className="p-4 bg-gradient-to-r from-primary/15 via-card to-card border-primary/20">
