@@ -7,6 +7,8 @@ import AppLayout from "@/components/AppLayout";
 import WatchAdModal from "@/components/WatchAdModal";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 import { Zap, Clock, CheckCircle, Target, TrendingUp, Shield } from "lucide-react";
 
@@ -46,6 +48,7 @@ const TASKS: TaskConfig[] = [
 
 const Earn = () => {
   const navigate = useNavigate();
+  const { isGuest } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAdModal, setShowAdModal] = useState(false);
@@ -56,7 +59,8 @@ const Earn = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) { setLoading(false); return; }
       setUser(session.user);
       setIsEmailVerified(session.user.email_confirmed_at != null);
       const { data } = await supabase
@@ -68,7 +72,7 @@ const Earn = () => {
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   // Cooldown timers
   useEffect(() => {
@@ -86,6 +90,10 @@ const Earn = () => {
   }, []);
 
   const handleTaskClick = (task: TaskConfig) => {
+    if (isGuest) {
+      toast.error("Login required to save progress or redeem rewards");
+      return;
+    }
     if (!isEmailVerified) {
       toast.error("Please verify your email first");
       return;
@@ -123,6 +131,7 @@ const Earn = () => {
 
   return (
     <AppLayout title="Earn XD Coins">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
         {/* Stats Header */}
         <Card className="p-4 bg-gradient-to-r from-primary/15 via-card to-card border-primary/20">

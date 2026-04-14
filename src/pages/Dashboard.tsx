@@ -12,10 +12,13 @@ import Disclaimer from "@/components/Disclaimer";
 import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
 import RecentActivity from "@/components/RecentActivity";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { Zap, Gift, Users, Award, ChevronRight, TrendingUp } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { isGuest } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -45,7 +48,8 @@ const Dashboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) { setLoading(false); return; }
       setUser(session.user);
       await Promise.all([fetchProfile(session.user.id), checkAdminRole(session.user.id)]);
       setLoading(false);
@@ -53,15 +57,15 @@ const Dashboard = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) { navigate("/auth"); }
-      else {
+      if (!session && !isGuest) { navigate("/auth"); }
+      else if (session) {
         setUser(session.user);
         fetchProfile(session.user.id);
         checkAdminRole(session.user.id);
       }
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -102,8 +106,9 @@ const Dashboard = () => {
   ];
 
   return (
-    <AppLayout title="XD REWARDS" showAdmin={isAdmin} showLogout onLogout={handleLogout}>
-      <EmailVerificationBanner />
+    <AppLayout title="XD REWARDS" showAdmin={isAdmin} showLogout={!isGuest} onLogout={handleLogout}>
+      <GuestBanner />
+      {!isGuest && <EmailVerificationBanner />}
 
       <div className="px-4 py-4 space-y-4">
         {/* Hero Balance Card */}

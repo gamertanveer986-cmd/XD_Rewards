@@ -10,10 +10,12 @@ import SplashScreen from "@/components/SplashScreen";
 import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
-import { Shield, ArrowLeft, Mail } from "lucide-react";
+import { Shield, ArrowLeft, Mail, Eye } from "lucide-react";
+import { useGuest } from "@/contexts/GuestContext";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { enterGuestMode } = useGuest();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -444,7 +446,19 @@ const Auth = () => {
           </div>
         </Card>
 
-        {/* Transparency Policy Button - Moved to bottom with smaller text */}
+        {/* Continue as Guest */}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            enterGuestMode();
+            navigate("/dashboard");
+          }}
+          className="w-full text-muted-foreground hover:text-foreground gap-2 h-11"
+        >
+          <Eye className="w-4 h-4" />
+          Continue as Guest
+        </Button>
+
         <Button
           onClick={() => setShowPolicyModal(true)}
           variant="outline"
