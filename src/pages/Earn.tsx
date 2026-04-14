@@ -90,6 +90,10 @@ const Earn = () => {
   }, []);
 
   const handleTaskClick = (task: TaskConfig) => {
+    if (isGuest) {
+      toast.error("Login required to save progress or redeem rewards");
+      return;
+    }
     if (!isEmailVerified) {
       toast.error("Please verify your email first");
       return;
