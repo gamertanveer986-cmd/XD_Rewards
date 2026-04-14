@@ -12,10 +12,13 @@ import Disclaimer from "@/components/Disclaimer";
 import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
 import RecentActivity from "@/components/RecentActivity";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { Zap, Gift, Users, Award, ChevronRight, TrendingUp } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { isGuest } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
