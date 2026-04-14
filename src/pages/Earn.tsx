@@ -48,6 +48,7 @@ const TASKS: TaskConfig[] = [
 
 const Earn = () => {
   const navigate = useNavigate();
+  const { isGuest } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAdModal, setShowAdModal] = useState(false);
@@ -58,7 +59,8 @@ const Earn = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) { setLoading(false); return; }
       setUser(session.user);
       setIsEmailVerified(session.user.email_confirmed_at != null);
       const { data } = await supabase
