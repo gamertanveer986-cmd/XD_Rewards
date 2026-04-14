@@ -278,7 +278,7 @@ const GiftCards = () => {
                   const requiredCoins = Math.floor(product.price * 100);
                   const canAfford = totalCoins >= requiredCoins;
                   const denominationValue = Math.floor(product.denomination);
-                  const canRedeem = canAfford && isEmailValid;
+                  const canRedeem = canAfford && isEmailValid && !isGuest;
                   
                   return (
                     <Card key={product.id} className={`p-4 bg-card border-border/50 ${!canAfford ? 'opacity-60' : ''}`}>
