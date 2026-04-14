@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Mail, ChevronDown, ChevronUp, HelpCircle, Shield, Smartphone, FileText, ExternalLink, Lock, AlertTriangle } from "lucide-react";
+import { Mail, ChevronDown, ChevronUp, HelpCircle, Shield, Smartphone, FileText, ExternalLink, Lock, AlertTriangle, Info } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 
 const faqs = [
   {
@@ -31,6 +33,7 @@ const faqs = [
 ];
 
 const Support = () => {
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -38,11 +41,11 @@ const Support = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   if (loading) {
     return (
@@ -54,7 +57,14 @@ const Support = () => {
 
   return (
     <AppLayout title="Support">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
+        {isGuest && (
+          <Card className="p-4 bg-card border-border/50 flex items-center gap-3">
+            <Info className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-sm text-muted-foreground">Login required to contact support</p>
+          </Card>
+        )}
         {/* Header */}
         <Card className="p-6 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30 text-center">
           <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">

@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppLayout from "@/components/AppLayout";
-import { Gift, ShoppingCart, Clock, AlertCircle, Mail } from "lucide-react";
+import { Gift, ShoppingCart, Clock, AlertCircle, Mail, Info } from "lucide-react";
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 
 interface GiftCardProduct {
@@ -33,6 +35,7 @@ interface GiftCardPurchase {
 }
 
 const GiftCards = () => {
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -65,8 +68,10 @@ const GiftCards = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) {
+        await fetchProducts();
+        setLoading(false);
         return;
       }
       setUser(session.user);
@@ -79,7 +84,7 @@ const GiftCards = () => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const fetchProducts = async () => {
     const { data } = await supabase
@@ -183,7 +188,14 @@ const GiftCards = () => {
 
   return (
     <AppLayout title="Rewards">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
+        {isGuest && (
+          <Card className="p-4 bg-card border-border/50 flex items-center gap-3">
+            <Info className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-sm text-muted-foreground">Login required to redeem rewards</p>
+          </Card>
+        )}
         {/* Balance Card */}
         <Card className="p-4 bg-gradient-to-r from-primary/20 to-transparent border-primary/30">
           <div className="flex items-center justify-between">
@@ -266,7 +278,7 @@ const GiftCards = () => {
                   const requiredCoins = Math.floor(product.price * 100);
                   const canAfford = totalCoins >= requiredCoins;
                   const denominationValue = Math.floor(product.denomination);
-                  const canRedeem = canAfford && isEmailValid;
+                  const canRedeem = canAfford && isEmailValid && !isGuest;
                   
                   return (
                     <Card key={product.id} className={`p-4 bg-card border-border/50 ${!canAfford ? 'opacity-60' : ''}`}>

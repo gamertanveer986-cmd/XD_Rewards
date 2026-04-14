@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Trophy, Medal, Crown, Users, Share2, Copy } from "lucide-react";
+import { Trophy, Medal, Crown, Users, Share2, Copy, Info } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
 import UserBadges from "@/components/UserBadges";
+import GuestBanner from "@/components/GuestBanner";
+import { useGuest } from "@/contexts/GuestContext";
 
 interface LeaderboardUser {
   rank_position: number;
@@ -23,6 +25,7 @@ interface LeaderboardUser {
 }
 
 const Leaderboard = () => {
+  const { isGuest } = useGuest();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
@@ -33,8 +36,12 @@ const Leaderboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) {
+        // Fetch leaderboard without user context
+        const { data: topUsers } = await supabase.rpc("get_public_leaderboard", { limit_count: 50 });
+        if (topUsers) setLeaderboard(topUsers as LeaderboardUser[]);
+        setLoading(false);
         return;
       }
       setCurrentUser(session.user);
@@ -42,7 +49,7 @@ const Leaderboard = () => {
       setLoading(false);
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const fetchLeaderboard = async (userId: string) => {
     // Use the secure RPC function that doesn't expose user_id
@@ -120,36 +127,44 @@ const Leaderboard = () => {
 
   return (
     <AppLayout title="Top XD Coin Collectors">
+      <GuestBanner />
       <div className="px-4 py-4 space-y-4">
-        {/* My Referral Card */}
-        <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-xs text-muted-foreground">Your Referral Code</p>
-              <p className="text-2xl font-bold tracking-widest text-primary">
-                {myProfile?.referral_code || "—"}
-              </p>
+        {/* My Referral Card - hidden for guests */}
+        {!isGuest ? (
+          <Card className="p-4 bg-gradient-to-br from-primary/20 via-card to-card border-primary/30">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Your Referral Code</p>
+                <p className="text-2xl font-bold tracking-widest text-primary">
+                  {myProfile?.referral_code || "—"}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="icon" variant="outline" onClick={copyReferralCode} className="h-9 w-9">
+                  <Copy className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="default" onClick={shareReferralCode} className="h-9 w-9">
+                  <Share2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="icon" variant="outline" onClick={copyReferralCode} className="h-9 w-9">
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button size="icon" variant="default" onClick={shareReferralCode} className="h-9 w-9">
-                <Share2 className="w-4 h-4" />
-              </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-background/50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold">{myProfile?.referrals_count || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Referrals</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-2 text-center">
+                <p className="text-lg font-bold">#{myRank || "—"}</p>
+                <p className="text-[10px] text-muted-foreground">Your Rank</p>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-background/50 rounded-lg p-2 text-center">
-              <p className="text-lg font-bold">{myProfile?.referrals_count || 0}</p>
-              <p className="text-[10px] text-muted-foreground">Referrals</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-2 text-center">
-              <p className="text-lg font-bold">#{myRank || "—"}</p>
-              <p className="text-[10px] text-muted-foreground">Your Rank</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ) : (
+          <Card className="p-4 bg-card border-border/50 flex items-center gap-3">
+            <Info className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-sm text-muted-foreground">Login to track your rank</p>
+          </Card>
+        )}
 
         <Tabs defaultValue="coins" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
