@@ -48,7 +48,8 @@ const Dashboard = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { navigate("/auth"); return; }
+      if (!session && !isGuest) { navigate("/auth"); return; }
+      if (isGuest) { setLoading(false); return; }
       setUser(session.user);
       await Promise.all([fetchProfile(session.user.id), checkAdminRole(session.user.id)]);
       setLoading(false);
