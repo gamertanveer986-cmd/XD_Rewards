@@ -902,6 +902,7 @@ const AdminDashboard = () => {
                                     const code = "XDR-" + Math.random().toString(36).substring(2, 8).toUpperCase() + "-" + Date.now().toString(36).toUpperCase().slice(-4);
                                     handleUpdatePurchaseStatus(p.id, "completed", code);
                                   }} className="text-xs text-green-500 hover:underline">Approve</button>
+                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
                                 </span>
                               )}
                             </td>
