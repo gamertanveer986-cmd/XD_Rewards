@@ -532,22 +532,37 @@ const AdminDashboard = () => {
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="py-2 pr-2 font-medium">User</th>
-                    <th className="py-2 pr-2 font-medium">UPI</th>
+                    <th className="py-2 pr-2 font-medium">Name</th>
                     <th className="py-2 pr-2 font-medium">Earnings</th>
-                    <th className="py-2 pr-2 font-medium">Balance</th>
-                    <th className="py-2 font-medium">Status</th>
+                    <th className="py-2 pr-2 font-medium">Status</th>
+                    <th className="py-2 font-medium">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProfiles.slice(0, 50).map(p => (
-                    <tr key={p.id} className="border-b border-border/50">
-                      <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                      <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
-                      <td className="py-2 pr-2">{Number(p.total_earnings).toFixed(2)} val</td>
-                      <td className="py-2 pr-2">{Number(p.withdrawable_balance).toFixed(2)} val</td>
-                      <td className="py-2">{p.payment_status || "pending"}</td>
-                    </tr>
-                  ))}
+                  {filteredProfiles.slice(0, 50).map(p => {
+                    const isBanned = p.payment_status === "suspended";
+                    return (
+                      <tr key={p.id} className={`border-b border-border/50 ${isBanned ? "bg-destructive/10" : ""}`}>
+                        <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="py-2 pr-2">{p.display_name || "-"}</td>
+                        <td className="py-2 pr-2">{Number(p.total_earnings).toFixed(2)} val</td>
+                        <td className="py-2 pr-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${isBanned ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success"}`}>
+                            {isBanned ? "Banned" : "Active"}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <button
+                            onClick={() => handleUpdatePaymentStatus(p.user_id, isBanned ? "pending" : "suspended")}
+                            disabled={actionLoading}
+                            className={`text-xs hover:underline ${isBanned ? "text-success" : "text-destructive"}`}
+                          >
+                            {isBanned ? "Unban" : "Ban"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -874,13 +889,19 @@ const AdminDashboard = () => {
                               {p.status === "pending" && (
                                 <span className="flex gap-2">
                                   <button onClick={() => handleUpdatePurchaseStatus(p.id, "processing")} className="text-xs text-yellow-500 hover:underline">Process</button>
-                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
+                                   <button onClick={() => {
+                                    const code = "XDR-" + Math.random().toString(36).substring(2, 8).toUpperCase() + "-" + Date.now().toString(36).toUpperCase().slice(-4);
+                                    handleUpdatePurchaseStatus(p.id, "completed", code);
+                                  }} className="text-xs text-green-500 hover:underline">Approve</button>
                                   <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
                                 </span>
                               )}
                               {p.status === "processing" && (
                                 <span className="flex gap-2">
-                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
+                                  <button onClick={() => {
+                                    const code = "XDR-" + Math.random().toString(36).substring(2, 8).toUpperCase() + "-" + Date.now().toString(36).toUpperCase().slice(-4);
+                                    handleUpdatePurchaseStatus(p.id, "completed", code);
+                                  }} className="text-xs text-green-500 hover:underline">Approve</button>
                                   <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
                                 </span>
                               )}

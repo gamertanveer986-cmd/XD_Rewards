@@ -8,6 +8,7 @@ import WatchAdModal from "@/components/WatchAdModal";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
 import GuestBanner from "@/components/GuestBanner";
+import ScratchCard from "@/components/ScratchCard";
 import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 import { Zap, Clock, CheckCircle, Target, TrendingUp, Shield } from "lucide-react";
@@ -20,7 +21,7 @@ interface TaskConfig {
   icon: typeof Zap;
   color: string;
   bg: string;
-  cooldown: number; // seconds
+  cooldown: number;
 }
 
 const TASKS: TaskConfig[] = [
@@ -74,7 +75,6 @@ const Earn = () => {
     checkAuth();
   }, [navigate, isGuest]);
 
-  // Cooldown timers
   useEffect(() => {
     const interval = setInterval(() => {
       setCooldowns(prev => {
@@ -91,7 +91,7 @@ const Earn = () => {
 
   const handleTaskClick = (task: TaskConfig) => {
     if (isGuest) {
-      toast.error("Login required to save progress or redeem rewards");
+      toast.error("Signup required to earn and redeem rewards");
       return;
     }
     if (!isEmailVerified) {
@@ -106,7 +106,6 @@ const Earn = () => {
   };
 
   const handleAdComplete = () => {
-    // Set cooldown for the task
     setCooldowns(prev => ({ ...prev, watch_ad: 15, complete_task: 15 }));
     if (user) {
       supabase
@@ -153,6 +152,22 @@ const Earn = () => {
           </div>
         </Card>
 
+        {/* Scratch Card */}
+        <ScratchCard
+          userId={user?.id || null}
+          isGuest={isGuest}
+          onRewardClaimed={() => {
+            if (user) {
+              supabase
+                .from("user_profiles")
+                .select("*")
+                .eq("user_id", user.id)
+                .single()
+                .then(({ data }) => setProfile(data));
+            }
+          }}
+        />
+
         {/* Available Tasks */}
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-muted-foreground px-1 flex items-center gap-2">
@@ -163,6 +178,7 @@ const Earn = () => {
           {TASKS.map((task) => {
             const isOnCooldown = !!cooldowns[task.id];
             const Icon = task.icon;
+            const canStart = !isGuest && isEmailVerified;
             
             return (
               <Card 
@@ -186,10 +202,10 @@ const Earn = () => {
                   <Button
                     size="sm"
                     className={`shrink-0 px-5 h-10 font-semibold ${
-                      isOnCooldown ? "" : "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+                      isOnCooldown ? "" : canStart ? "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25" : ""
                     }`}
-                    variant={isOnCooldown ? "secondary" : "default"}
-                    disabled={isOnCooldown || !isEmailVerified}
+                    variant={isOnCooldown || !canStart ? "secondary" : "default"}
+                    disabled={isOnCooldown}
                     onClick={() => handleTaskClick(task)}
                   >
                     {isOnCooldown ? (
@@ -197,6 +213,8 @@ const Earn = () => {
                         <Clock className="w-3.5 h-3.5" />
                         {cooldowns[task.id]}s
                       </span>
+                    ) : isGuest ? (
+                      "Login"
                     ) : !isEmailVerified ? (
                       "Verify Email"
                     ) : (
