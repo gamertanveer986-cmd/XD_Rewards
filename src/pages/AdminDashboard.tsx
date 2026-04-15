@@ -889,14 +889,19 @@ const AdminDashboard = () => {
                               {p.status === "pending" && (
                                 <span className="flex gap-2">
                                   <button onClick={() => handleUpdatePurchaseStatus(p.id, "processing")} className="text-xs text-yellow-500 hover:underline">Process</button>
-                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
+                                   <button onClick={() => {
+                                    const code = "XDR-" + Math.random().toString(36).substring(2, 8).toUpperCase() + "-" + Date.now().toString(36).toUpperCase().slice(-4);
+                                    handleUpdatePurchaseStatus(p.id, "completed", code);
+                                  }} className="text-xs text-green-500 hover:underline">Approve</button>
                                   <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
                                 </span>
                               )}
                               {p.status === "processing" && (
                                 <span className="flex gap-2">
-                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "completed", "CODE_" + Date.now())} className="text-xs text-green-500 hover:underline">Complete</button>
-                                  <button onClick={() => handleUpdatePurchaseStatus(p.id, "rejected")} className="text-xs text-destructive hover:underline">Reject</button>
+                                  <button onClick={() => {
+                                    const code = "XDR-" + Math.random().toString(36).substring(2, 8).toUpperCase() + "-" + Date.now().toString(36).toUpperCase().slice(-4);
+                                    handleUpdatePurchaseStatus(p.id, "completed", code);
+                                  }} className="text-xs text-green-500 hover:underline">Approve</button>
                                 </span>
                               )}
                             </td>
