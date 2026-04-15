@@ -532,22 +532,37 @@ const AdminDashboard = () => {
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="py-2 pr-2 font-medium">User</th>
-                    <th className="py-2 pr-2 font-medium">UPI</th>
+                    <th className="py-2 pr-2 font-medium">Name</th>
                     <th className="py-2 pr-2 font-medium">Earnings</th>
-                    <th className="py-2 pr-2 font-medium">Balance</th>
-                    <th className="py-2 font-medium">Status</th>
+                    <th className="py-2 pr-2 font-medium">Status</th>
+                    <th className="py-2 font-medium">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProfiles.slice(0, 50).map(p => (
-                    <tr key={p.id} className="border-b border-border/50">
-                      <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
-                      <td className="py-2 pr-2 text-primary">{p.upi_id || "-"}</td>
-                      <td className="py-2 pr-2">{Number(p.total_earnings).toFixed(2)} val</td>
-                      <td className="py-2 pr-2">{Number(p.withdrawable_balance).toFixed(2)} val</td>
-                      <td className="py-2">{p.payment_status || "pending"}</td>
-                    </tr>
-                  ))}
+                  {filteredProfiles.slice(0, 50).map(p => {
+                    const isBanned = p.payment_status === "suspended";
+                    return (
+                      <tr key={p.id} className={`border-b border-border/50 ${isBanned ? "bg-destructive/10" : ""}`}>
+                        <td className="py-2 pr-2 font-mono">{p.user_id.slice(0, 8)}</td>
+                        <td className="py-2 pr-2">{p.display_name || "-"}</td>
+                        <td className="py-2 pr-2">{Number(p.total_earnings).toFixed(2)} val</td>
+                        <td className="py-2 pr-2">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] ${isBanned ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success"}`}>
+                            {isBanned ? "Banned" : "Active"}
+                          </span>
+                        </td>
+                        <td className="py-2">
+                          <button
+                            onClick={() => handleUpdatePaymentStatus(p.user_id, isBanned ? "pending" : "suspended")}
+                            disabled={actionLoading}
+                            className={`text-xs hover:underline ${isBanned ? "text-success" : "text-destructive"}`}
+                          >
+                            {isBanned ? "Unban" : "Ban"}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
