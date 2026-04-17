@@ -1,53 +1,84 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { 
-  initializeAdMob, 
-  prepareRewardedAd, 
-  showRewardedAd, 
-  setupAdListeners
+import {
+  initializeAdMob,
+  prepareRewardedAd,
+  showRewardedAd,
+  setupAdListeners,
 } from '@/lib/admob';
 
 export function useAdMob() {
   const [isAdReady, setIsAdReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isNative, setIsNative] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
+  const rewardEarnedRef = useRef(false);
+
+  const loadRewardedAd = useCallback(async () => {
+    if (!Capacitor.isNativePlatform()) return;
+    setIsLoading(true);
+    const result = await prepareRewardedAd();
+    if (result) {
+      setIsAdReady(true);
+    } else {
+      setIsAdReady(false);
+    }
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     const platform = Capacitor.getPlatform();
     const native = platform === 'android' || platform === 'ios';
     setIsNative(native);
 
-    if (native) {
-      initializeAdMob().then(() => {
-        loadRewardedAd();
-      });
+    if (!native) return;
+
+    let mounted = true;
+
+    (async () => {
+      const ok = await initializeAdMob();
+      if (!ok) {
+        if (mounted) setInitError('AdMob failed to initialize');
+        return;
+      }
 
       setupAdListeners({
-        onAdLoaded: () => {
-          setIsAdReady(true);
-          setIsLoading(false);
+        onRewardEarned: () => {
+          rewardEarnedRef.current = true;
         },
-        onAdFailed: () => {
-          setIsAdReady(false);
-          setIsLoading(false);
+        onAdLoaded: () => {
+          if (mounted) {
+            setIsAdReady(true);
+            setIsLoading(false);
+          }
+        },
+        onAdFailed: (err) => {
+          console.error('[useAdMob] Ad failed to load:', err);
+          if (mounted) {
+            setIsAdReady(false);
+            setIsLoading(false);
+            // Auto-retry once after 5 seconds
+            setTimeout(() => {
+              if (mounted) loadRewardedAd();
+            }, 5000);
+          }
         },
         onAdDismissed: () => {
-          setIsAdReady(false);
-          // Prepare next ad
-          loadRewardedAd();
+          if (mounted) {
+            setIsAdReady(false);
+            // Prepare next ad
+            loadRewardedAd();
+          }
         },
       });
-    }
-  }, []);
 
-  const loadRewardedAd = useCallback(async () => {
-    setIsLoading(true);
-    const result = await prepareRewardedAd();
-    if (result) {
-      setIsAdReady(true);
-    }
-    setIsLoading(false);
-  }, []);
+      await loadRewardedAd();
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [loadRewardedAd]);
 
   const watchAd = useCallback(async (): Promise<{ success: boolean; reward?: { type: string; amount: number } }> => {
     if (!isNative) {
@@ -61,11 +92,20 @@ export function useAdMob() {
 
     if (!isAdReady) {
       await loadRewardedAd();
+      // Give it a moment to load
+      await new Promise((r) => setTimeout(r, 1500));
     }
 
+    rewardEarnedRef.current = false;
     const reward = await showRewardedAd();
+
+    // showRewardVideoAd resolves with the reward when user completes ad.
+    // If null, check the listener flag as backup.
     if (reward) {
       return { success: true, reward: { type: reward.type, amount: reward.amount } };
+    }
+    if (rewardEarnedRef.current) {
+      return { success: true, reward: { type: 'coins', amount: 1 } };
     }
     return { success: false };
   }, [isNative, isAdReady, loadRewardedAd]);
@@ -74,6 +114,7 @@ export function useAdMob() {
     isAdReady,
     isLoading,
     isNative,
+    initError,
     watchAd,
     loadRewardedAd,
   };
