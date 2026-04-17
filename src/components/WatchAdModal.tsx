@@ -127,7 +127,10 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
                   Rewards are not guaranteed and depend on system conditions.
                 </p>
               </div>
-              {isNative && !isAdReady && (
+              {isNative && initError && (
+                <p className="text-sm text-destructive">{initError}. Please reopen the app.</p>
+              )}
+              {isNative && !initError && !isAdReady && (
                 <p className="text-sm text-muted-foreground">
                   {isLoading ? "Loading task..." : "Preparing task..."}
                 </p>
