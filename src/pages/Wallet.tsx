@@ -66,15 +66,18 @@ const Wallet = () => {
         </Card>
 
         {/* Coin Value Info */}
-        <Card className="p-3 bg-primary/10 border-primary/30">
+        <Card className="p-3 bg-primary/10 border-primary/30 space-y-1">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Conversion Rate:</span>
             <span className="font-bold">1000 XD Coins = 10 value</span>
           </div>
-          <div className="flex items-center justify-between text-sm mt-1">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Min. Withdrawal:</span>
-            <span className="font-bold">5000 XD Coins (50 value)</span>
+            <span className="font-bold">1000 XD Coins (10 value)</span>
           </div>
+          <p className="text-[10px] text-muted-foreground pt-1 border-t border-border/30 mt-2">
+            Rewards are sent only via redeem codes to your email. No UPI or bank transfer. Processing: 24–48 hours.
+          </p>
         </Card>
 
         {/* Coins Breakdown */}
@@ -88,7 +91,7 @@ const Wallet = () => {
                 </div>
                 <div>
                   <p className="font-medium text-sm">Welcome Bonus</p>
-                  <p className="text-xs text-muted-foreground">10 value bonus</p>
+                  <p className="text-xs text-muted-foreground">10 value · not withdrawable</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
