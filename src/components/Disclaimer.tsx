@@ -9,7 +9,7 @@ const Disclaimer = ({ variant = "full" }: DisclaimerProps) => {
   if (variant === "footer") {
     return (
       <div className="text-[10px] text-muted-foreground text-center px-4 py-3 bg-muted/20 border-t border-border/30">
-        <p>In-app rewards are for entertainment purposes only and do not represent guaranteed real money.</p>
+        <p>This app does not guarantee earnings. Rewards are promotional and subject to approval.</p>
       </div>
     );
   }
