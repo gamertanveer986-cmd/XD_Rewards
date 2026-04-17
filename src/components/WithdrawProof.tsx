@@ -20,18 +20,26 @@ const maskName = (name?: string | null, fallbackEmail?: string | null) => {
 
 const WithdrawProof = () => {
   const [proofs, setProofs] = useState<ProofEntry[]>([]);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("gift_card_purchases")
-        .select("id, amount_paid, status, processed_at, created_at, email, product:gift_card_products(name)")
-        .eq("status", "completed")
-        .order("processed_at", { ascending: false, nullsFirst: false })
-        .limit(8);
+      const [recentRes, allRes] = await Promise.all([
+        supabase
+          .from("gift_card_purchases")
+          .select("id, amount_paid, status, processed_at, created_at, email, product:gift_card_products(name)")
+          .eq("status", "completed")
+          .order("processed_at", { ascending: false, nullsFirst: false })
+          .limit(8),
+        supabase
+          .from("gift_card_purchases")
+          .select("amount_paid", { count: "exact" })
+          .eq("status", "completed"),
+      ]);
 
-      const list: ProofEntry[] = (data || []).map((p: any) => ({
+      const list: ProofEntry[] = (recentRes.data || []).map((p: any) => ({
         id: p.id,
         name: maskName(null, p.email),
         reward: p.product?.name || "Reward",
@@ -39,6 +47,10 @@ const WithdrawProof = () => {
         date: p.processed_at || p.created_at,
       }));
       setProofs(list);
+
+      const sum = (allRes.data || []).reduce((acc: number, r: any) => acc + Number(r.amount_paid || 0), 0);
+      setTotalPaid(sum);
+      setTotalCount(allRes.count || 0);
       setLoading(false);
     };
     load();
