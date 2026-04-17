@@ -11,6 +11,7 @@ import { Gift, ShoppingCart, Clock, AlertCircle, Mail, Info } from "lucide-react
 import Disclaimer from "@/components/Disclaimer";
 import XDCoin from "@/components/XDCoin";
 import GuestBanner from "@/components/GuestBanner";
+import WithdrawProof from "@/components/WithdrawProof";
 import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 
@@ -386,6 +387,9 @@ const GiftCards = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Withdraw Proof */}
+        <WithdrawProof />
 
         {/* Disclaimer */}
         <Disclaimer />
