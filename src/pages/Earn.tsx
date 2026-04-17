@@ -8,7 +8,6 @@ import WatchAdModal from "@/components/WatchAdModal";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
 import GuestBanner from "@/components/GuestBanner";
-import ScratchCard from "@/components/ScratchCard";
 import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
 import { Zap, Clock, CheckCircle, Target, TrendingUp, Shield } from "lucide-react";
@@ -152,21 +151,15 @@ const Earn = () => {
           </div>
         </Card>
 
-        {/* Scratch Card */}
-        <ScratchCard
-          userId={user?.id || null}
-          isGuest={isGuest}
-          onRewardClaimed={() => {
-            if (user) {
-              supabase
-                .from("user_profiles")
-                .select("*")
-                .eq("user_id", user.id)
-                .single()
-                .then(({ data }) => setProfile(data));
-            }
-          }}
-        />
+        {/* Transparency Notice */}
+        <Card className="p-3 bg-primary/5 border-primary/20">
+          <p className="text-xs text-foreground/80 leading-relaxed">
+            Users earn XD Coins by watching ads. Rewards are based on valid activity only.
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1.5">
+            Conversion: <span className="font-semibold text-foreground">1000 XD Coins = 10 value</span>
+          </p>
+        </Card>
 
         {/* Available Tasks */}
         <div className="space-y-3">
