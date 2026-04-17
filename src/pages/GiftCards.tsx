@@ -210,17 +210,22 @@ const GiftCards = () => {
           </div>
         </Card>
 
-        {/* Min Withdrawal Notice */}
+        {/* Redeem Rules Notice */}
         <Card className="p-3 bg-warning/10 border-warning/30">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">
-                Minimum 5000 XD Coins (50 value) required for redemption.
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                Rewards are promotional and subject to availability and verification. 
-                Gift cards or codes are not guaranteed cash rewards.
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-foreground">Redeem Rules</p>
+              <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc pl-4">
+                <li>Conversion: 1000 XD Coins = 10 value</li>
+                <li>Minimum withdrawal: 10 value (1000 XD Coins)</li>
+                <li>Rewards are sent only via redeem codes to your email</li>
+                <li>No UPI or direct bank transfer is provided</li>
+                <li>Processing time: 24–48 hours (manual approval required)</li>
+                <li>Signup bonus (10 value) is not withdrawable</li>
+              </ul>
+              <p className="text-[10px] text-destructive/90 font-medium pt-1">
+                This app does not guarantee earnings. Rewards are promotional and subject to approval.
               </p>
             </div>
           </div>
@@ -315,10 +320,10 @@ const GiftCards = () => {
             {/* Info notice */}
             <Card className="p-4 bg-muted/30 border-border/50">
               <p className="text-xs text-muted-foreground text-center mb-2">
-                Rewards subject to availability and verification. Processing time: 24-48 hours.
+                Redeem codes are sent to your email after manual approval. Processing time: 24–48 hours.
               </p>
               <p className="text-[10px] text-muted-foreground text-center">
-                Gift cards or codes are not guaranteed cash rewards. All redemptions are for in-app entertainment value only.
+                This app does not guarantee earnings. Rewards are promotional and subject to approval.
               </p>
             </Card>
           </TabsContent>
