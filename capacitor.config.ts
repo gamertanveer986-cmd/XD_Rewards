@@ -10,7 +10,8 @@ const config: CapacitorConfig = {
   },
   plugins: {
     AdMob: {
-      appId: 'ca-app-pub-3054032487800382~8724927542',
+      appId: 'ca-app-pub-4367114791552152~5768719388',
+      // Test devices added at runtime via initializeForTesting flag
     }
   }
 };
