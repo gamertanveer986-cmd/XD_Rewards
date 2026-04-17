@@ -66,6 +66,28 @@ const WithdrawProof = () => {
         <span className="text-[10px] text-muted-foreground">Recently approved</span>
       </div>
 
+      {/* Total Paid Out Counter */}
+      <Card className="p-4 bg-gradient-to-br from-success/15 via-card to-card border-success/30 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-success/10 rounded-full blur-2xl -mr-8 -mt-8" />
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Paid Out</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <XDCoin size="sm" />
+              <p className="text-2xl font-bold text-success">
+                {loading ? "—" : (totalPaid * 100).toLocaleString()}
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {loading ? "Loading…" : `${totalCount.toLocaleString()} approved redemption${totalCount === 1 ? "" : "s"} to date`}
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-6 h-6 text-success" />
+          </div>
+        </div>
+      </Card>
+
       {loading ? (
         <Card className="p-6 text-center bg-card border-border/50">
           <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
