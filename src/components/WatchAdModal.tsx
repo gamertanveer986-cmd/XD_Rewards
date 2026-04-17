@@ -18,7 +18,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
   const [isWatching, setIsWatching] = useState(false);
   const [progress, setProgress] = useState(0);
   const [adCompleted, setAdCompleted] = useState(false);
-  const { watchAd, isAdReady, isLoading, isNative } = useAdMob();
+  const { watchAd, isAdReady, isLoading, isNative, initError } = useAdMob();
 
   const handleWatchAd = async () => {
     setIsWatching(true);
