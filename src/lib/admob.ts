@@ -1,117 +1,114 @@
 import { AdMob, RewardAdOptions, AdLoadInfo, AdMobRewardItem, RewardAdPluginEvents } from '@capacitor-community/admob';
 import { supabase } from '@/integrations/supabase/client';
 
-// Cached config
+// Cached config (cleared whenever admin updates settings)
 let cachedConfig: { rewardedAdUnitId: string; isTesting: boolean; appId: string } | null = null;
 let isInitialized = false;
 
-// Google's official test Ad Unit IDs (use when isTesting=true to avoid policy violations)
+// Google's official test Ad Unit ID — only used when admin explicitly enables "is_testing"
 const TEST_REWARDED_AD_UNIT_ID = 'ca-app-pub-3940256099942544/5224354917';
 
-// Production fallback (matches the configured publisher in admob_config table)
-const FALLBACK_APP_ID = 'ca-app-pub-4367114791552152~5768719388';
-const FALLBACK_REWARDED_AD_UNIT_ID = 'ca-app-pub-4367114791552152/4105457386';
-
-// Fetch AdMob config from database
+/**
+ * Fetch AdMob config from database. NO hardcoded production fallback —
+ * if the admin has not configured it, this throws so the UI can show an error.
+ */
 export async function getAdmobConfig(): Promise<{ rewardedAdUnitId: string; isTesting: boolean; appId: string }> {
   if (cachedConfig) {
+    console.log('[AdMob] Using cached config:', cachedConfig);
     return cachedConfig;
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('admob_config')
-      .select('app_id, rewarded_ad_unit_id, is_testing')
-      .limit(1)
-      .single();
+  const { data, error } = await supabase
+    .from('admob_config')
+    .select('app_id, rewarded_ad_unit_id, is_testing')
+    .limit(1)
+    .maybeSingle();
 
-    if (error || !data) {
-      console.warn('[AdMob] Using fallback config:', error?.message);
-      cachedConfig = {
-        appId: FALLBACK_APP_ID,
-        rewardedAdUnitId: FALLBACK_REWARDED_AD_UNIT_ID,
-        isTesting: false,
-      };
-      return cachedConfig;
-    }
-
-    cachedConfig = {
-      appId: data.app_id || FALLBACK_APP_ID,
-      rewardedAdUnitId: data.rewarded_ad_unit_id || FALLBACK_REWARDED_AD_UNIT_ID,
-      isTesting: data.is_testing || false,
-    };
-
-    console.log('[AdMob] Config loaded:', cachedConfig);
-    return cachedConfig;
-  } catch (error) {
-    console.error('[AdMob] Error fetching config:', error);
-    cachedConfig = {
-      appId: FALLBACK_APP_ID,
-      rewardedAdUnitId: FALLBACK_REWARDED_AD_UNIT_ID,
-      isTesting: false,
-    };
-    return cachedConfig;
+  if (error) {
+    console.error('[AdMob] Failed to fetch config from database:', error);
+    throw new Error(`AdMob config fetch failed: ${error.message}`);
   }
+
+  if (!data || !data.app_id || !data.rewarded_ad_unit_id) {
+    console.error('[AdMob] No AdMob config found in database. Admin must configure it.');
+    throw new Error('AdMob is not configured. Please contact admin.');
+  }
+
+  cachedConfig = {
+    appId: data.app_id,
+    rewardedAdUnitId: data.rewarded_ad_unit_id,
+    isTesting: data.is_testing ?? false,
+  };
+
+  console.log('[AdMob] ✅ Config loaded from database:', {
+    appId: cachedConfig.appId,
+    rewardedAdUnitId: cachedConfig.rewardedAdUnitId,
+    isTesting: cachedConfig.isTesting,
+  });
+  return cachedConfig;
 }
 
-// Clear cached config (call when admin updates settings)
+/** Clear cached config — call this from admin panel after saving new IDs */
 export function clearAdmobConfigCache(): void {
+  console.log('[AdMob] 🔄 Cache cleared — next ad load will fetch fresh config');
   cachedConfig = null;
   isInitialized = false;
 }
 
 export async function initializeAdMob(): Promise<boolean> {
   if (isInitialized) {
-    console.log('[AdMob] Already initialized');
+    console.log('[AdMob] Already initialized — skipping');
     return true;
   }
 
   try {
     const config = await getAdmobConfig();
 
+    console.log('[AdMob] Initializing SDK with App ID:', config.appId, '| Testing:', config.isTesting);
+
     await AdMob.initialize({
       initializeForTesting: config.isTesting,
-      // Empty array = no specific test devices; SDK uses emulator detection
       testingDevices: [],
     });
 
-    // Request tracking authorization on iOS 14+ (no-op on Android)
+    // iOS 14+ tracking authorization (no-op on Android)
     try {
       const trackingInfo = await AdMob.trackingAuthorizationStatus();
       if (trackingInfo.status === 'notDetermined') {
         await AdMob.requestTrackingAuthorization();
       }
-    } catch (err) {
-      // Not supported on this platform — safe to ignore
-      console.log('[AdMob] Tracking authorization not available');
+    } catch {
+      console.log('[AdMob] Tracking authorization not available on this platform');
     }
 
     isInitialized = true;
-    console.log('[AdMob] Initialized successfully with app ID:', config.appId);
+    console.log('[AdMob] ✅ Initialized successfully with App ID:', config.appId);
     return true;
   } catch (error) {
-    console.error('[AdMob] Initialization failed:', error);
+    console.error('[AdMob] ❌ Initialization failed:', error);
     return false;
   }
 }
 
 export async function prepareRewardedAd(): Promise<AdLoadInfo | null> {
-  const config = await getAdmobConfig();
-
-  // When testing, use Google's official test ad unit to guarantee fill
-  const adId = config.isTesting ? TEST_REWARDED_AD_UNIT_ID : config.rewardedAdUnitId;
-
-  const options: RewardAdOptions = {
-    adId,
-    isTesting: config.isTesting,
-  };
-
   try {
+    const config = await getAdmobConfig();
+
+    // When testing flag is on, use Google's official test ad unit to guarantee fill
+    const adId = config.isTesting ? TEST_REWARDED_AD_UNIT_ID : config.rewardedAdUnitId;
+
+    console.log('[AdMob] Preparing rewarded ad → adId:', adId, '| testing:', config.isTesting);
+
+    const options: RewardAdOptions = {
+      adId,
+      isTesting: config.isTesting,
+    };
+
     const result = await AdMob.prepareRewardVideoAd(options);
-    console.log('[AdMob] Rewarded ad prepared with adId:', adId, result);
+    console.log('[AdMob] ✅ Rewarded ad prepared:', result);
     return result;
   } catch (error) {
-    console.error('[AdMob] Failed to prepare rewarded ad:', error);
+    console.error('[AdMob] ❌ Failed to prepare rewarded ad:', error);
     return null;
   }
 }
@@ -119,10 +116,10 @@ export async function prepareRewardedAd(): Promise<AdLoadInfo | null> {
 export async function showRewardedAd(): Promise<AdMobRewardItem | null> {
   try {
     const result = await AdMob.showRewardVideoAd();
-    console.log('[AdMob] Rewarded ad completed:', result);
+    console.log('[AdMob] ✅ Rewarded ad completed:', result);
     return result;
   } catch (error) {
-    console.error('[AdMob] Failed to show rewarded ad:', error);
+    console.error('[AdMob] ❌ Failed to show rewarded ad:', error);
     return null;
   }
 }
@@ -135,12 +132,12 @@ export function setupAdListeners(callbacks: {
   onAdDismissed?: () => void;
 }) {
   AdMob.addListener(RewardAdPluginEvents.Rewarded, (reward: AdMobRewardItem) => {
-    console.log('[AdMob] Reward earned:', reward);
+    console.log('[AdMob] 🎁 Reward earned:', reward);
     callbacks.onRewardEarned?.(reward);
   });
 
   AdMob.addListener(RewardAdPluginEvents.Loaded, () => {
-    console.log('[AdMob] Rewarded ad loaded');
+    console.log('[AdMob] Rewarded ad loaded event fired');
     callbacks.onAdLoaded?.();
   });
 
