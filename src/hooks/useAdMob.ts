@@ -84,43 +84,38 @@ export function useAdMob() {
   }, [loadRewardedAd]);
 
   const watchAd = useCallback(async (): Promise<{ success: boolean; reward?: { type: string; amount: number }; error?: string }> => {
+    // STRICT: Ads only work on native platforms. NO simulation, NO fake rewards.
     if (!isNative) {
-      // Web simulation for testing
-      console.log('[useAdMob] Web simulation: granting reward after 3s');
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({ success: true, reward: { type: 'coins', amount: 1 } });
-        }, 3000);
-      });
+      console.warn('[useAdMob] ❌ Cannot show ad — not on native platform');
+      return { success: false, error: 'Ads only work in the mobile app.' };
     }
 
-    // Ensure SDK is initialized
     if (!isAdReady) {
-      console.log('[useAdMob] Ad not ready, attempting to load now...');
-      const loaded = await loadRewardedAd();
-      if (!loaded) {
-        return { success: false, error: 'Ad failed to load. Please try again.' };
-      }
+      console.warn('[useAdMob] ❌ Ad not ready — refusing to show');
+      return { success: false, error: 'Ad not ready. Please wait and try again.' };
     }
 
     rewardEarnedRef.current = null;
+    console.log('[useAdMob] 🎬 Calling showRewardedAd — waiting for real Rewarded event');
 
     try {
       const reward = await showRewardedAd();
-      // showRewardVideoAd resolves with the reward when user completes the ad
+      // Only grant if we got a real reward from AdMob (either from promise or listener)
       if (reward && reward.amount > 0) {
+        console.log('[useAdMob] ✅ Real reward from showRewardedAd promise:', reward);
         return { success: true, reward: { type: reward.type, amount: reward.amount } };
       }
-      // Fallback: check the listener-captured reward
       if (rewardEarnedRef.current) {
+        console.log('[useAdMob] ✅ Real reward from listener:', rewardEarnedRef.current);
         return { success: true, reward: rewardEarnedRef.current };
       }
-      return { success: false, error: 'Ad was closed before completion.' };
+      console.warn('[useAdMob] ❌ Ad closed without reward event — NO reward granted');
+      return { success: false, error: 'Ad was closed before completion. No reward given.' };
     } catch (err: any) {
-      console.error('[useAdMob] showRewardedAd error:', err);
+      console.error('[useAdMob] ❌ showRewardedAd error:', err);
       return { success: false, error: err?.message || 'Failed to show ad.' };
     }
-  }, [isNative, isAdReady, loadRewardedAd]);
+  }, [isNative, isAdReady]);
 
   return {
     isAdReady,
