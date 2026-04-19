@@ -12,18 +12,27 @@ export function useAdMob() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNative, setIsNative] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
-  const rewardEarnedRef = useRef(false);
+  const rewardEarnedRef = useRef<{ type: string; amount: number } | null>(null);
+  const initializedRef = useRef(false);
 
-  const loadRewardedAd = useCallback(async () => {
-    if (!Capacitor.isNativePlatform()) return;
+  const loadRewardedAd = useCallback(async (): Promise<boolean> => {
+    if (!Capacitor.isNativePlatform()) return false;
+    console.log('[useAdMob] loadRewardedAd called');
     setIsLoading(true);
-    const result = await prepareRewardedAd();
-    if (result) {
+    try {
+      await prepareRewardedAd();
+      // prepareRewardVideoAd resolves when ad is loaded
       setIsAdReady(true);
-    } else {
+      setIsLoading(false);
+      console.log('[useAdMob] ✅ Ad ready to show');
+      return true;
+    } catch (err: any) {
+      console.error('[useAdMob] ❌ Failed to load ad:', err);
       setIsAdReady(false);
+      setIsLoading(false);
+      setInitError(err?.message || 'Failed to load ad');
+      return false;
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -31,47 +40,41 @@ export function useAdMob() {
     const native = platform === 'android' || platform === 'ios';
     setIsNative(native);
 
-    if (!native) return;
+    if (!native) {
+      console.log('[useAdMob] Web platform — ads will be simulated');
+      return;
+    }
+
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
     let mounted = true;
 
     (async () => {
+      console.log('[useAdMob] Starting AdMob init on native platform:', platform);
       const ok = await initializeAdMob();
       if (!ok) {
-        if (mounted) setInitError('AdMob failed to initialize');
+        if (mounted) setInitError('AdMob failed to initialize. Check config.');
         return;
       }
 
+      // Attach listeners once. The reward listener captures the reward as backup.
       setupAdListeners({
-        onRewardEarned: () => {
-          rewardEarnedRef.current = true;
-        },
-        onAdLoaded: () => {
-          if (mounted) {
-            setIsAdReady(true);
-            setIsLoading(false);
-          }
-        },
-        onAdFailed: (err) => {
-          console.error('[useAdMob] Ad failed to load:', err);
-          if (mounted) {
-            setIsAdReady(false);
-            setIsLoading(false);
-            // Auto-retry once after 5 seconds
-            setTimeout(() => {
-              if (mounted) loadRewardedAd();
-            }, 5000);
-          }
+        onRewardEarned: (reward) => {
+          rewardEarnedRef.current = { type: reward.type, amount: reward.amount };
         },
         onAdDismissed: () => {
           if (mounted) {
             setIsAdReady(false);
-            // Prepare next ad
+            // Auto-prepare next ad
             loadRewardedAd();
           }
         },
+        // We rely on prepareRewardedAd's promise instead of Loaded/FailedToLoad events
+        // for state — events still fire and log for debugging.
       });
 
+      // Pre-load the first ad
       await loadRewardedAd();
     })();
 
@@ -80,9 +83,10 @@ export function useAdMob() {
     };
   }, [loadRewardedAd]);
 
-  const watchAd = useCallback(async (): Promise<{ success: boolean; reward?: { type: string; amount: number } }> => {
+  const watchAd = useCallback(async (): Promise<{ success: boolean; reward?: { type: string; amount: number }; error?: string }> => {
     if (!isNative) {
-      // Simulate ad watching on web for testing
+      // Web simulation for testing
+      console.log('[useAdMob] Web simulation: granting reward after 3s');
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve({ success: true, reward: { type: 'coins', amount: 1 } });
@@ -90,24 +94,32 @@ export function useAdMob() {
       });
     }
 
+    // Ensure SDK is initialized
     if (!isAdReady) {
-      await loadRewardedAd();
-      // Give it a moment to load
-      await new Promise((r) => setTimeout(r, 1500));
+      console.log('[useAdMob] Ad not ready, attempting to load now...');
+      const loaded = await loadRewardedAd();
+      if (!loaded) {
+        return { success: false, error: 'Ad failed to load. Please try again.' };
+      }
     }
 
-    rewardEarnedRef.current = false;
-    const reward = await showRewardedAd();
+    rewardEarnedRef.current = null;
 
-    // showRewardVideoAd resolves with the reward when user completes ad.
-    // If null, check the listener flag as backup.
-    if (reward) {
-      return { success: true, reward: { type: reward.type, amount: reward.amount } };
+    try {
+      const reward = await showRewardedAd();
+      // showRewardVideoAd resolves with the reward when user completes the ad
+      if (reward && reward.amount > 0) {
+        return { success: true, reward: { type: reward.type, amount: reward.amount } };
+      }
+      // Fallback: check the listener-captured reward
+      if (rewardEarnedRef.current) {
+        return { success: true, reward: rewardEarnedRef.current };
+      }
+      return { success: false, error: 'Ad was closed before completion.' };
+    } catch (err: any) {
+      console.error('[useAdMob] showRewardedAd error:', err);
+      return { success: false, error: err?.message || 'Failed to show ad.' };
     }
-    if (rewardEarnedRef.current) {
-      return { success: true, reward: { type: 'coins', amount: 1 } };
-    }
-    return { success: false };
   }, [isNative, isAdReady, loadRewardedAd]);
 
   return {
