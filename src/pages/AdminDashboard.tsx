@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import AdminGamification from "@/components/AdminGamification";
+import { clearAdmobConfigCache } from "@/lib/admob";
 
 interface UserProfile {
   id: string;
@@ -266,12 +267,24 @@ const AdminDashboard = () => {
       updated_at: new Date().toISOString(),
       updated_by: user?.id
     };
+    let saveError: any = null;
     if (existing) {
-      await supabase.from("admob_config").update(configData).eq("id", existing.id);
+      const { error } = await supabase.from("admob_config").update(configData).eq("id", existing.id);
+      saveError = error;
     } else {
-      await supabase.from("admob_config").insert(configData);
+      const { error } = await supabase.from("admob_config").insert(configData);
+      saveError = error;
     }
-    toast.success("AdMob config saved");
+    if (saveError) {
+      console.error("[Admin] Failed to save AdMob config:", saveError);
+      toast.error("Failed to save: " + saveError.message);
+      setActionLoading(false);
+      return;
+    }
+    // Invalidate the in-memory cache so next ad load fetches fresh values
+    clearAdmobConfigCache();
+    console.log("[Admin] ✅ AdMob config saved & cache cleared:", configData);
+    toast.success("AdMob config saved — new IDs are now live");
     setActionLoading(false);
   };
 
