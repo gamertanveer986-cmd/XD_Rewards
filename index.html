@@ -15,6 +15,14 @@
     <meta name="theme-color" content="#000000" />
     <meta name="format-detection" content="telephone=no" />
 
+    <!-- Preconnect to font origins to speed up FCP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Non-blocking Google Fonts load -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" /></noscript>
+
     <meta property="og:title" content="XD REWARDS - Entertainment Rewards App" />
     <meta property="og:description" content="Collect points by watching ads, daily bonuses, and referrals. An entertainment app designed purely for fun and engagement." />
     <meta property="og:type" content="website" />
