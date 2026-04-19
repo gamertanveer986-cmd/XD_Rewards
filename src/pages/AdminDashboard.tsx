@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import AdminGamification from "@/components/AdminGamification";
+import { clearAdmobConfigCache } from "@/lib/admob";
 
 interface UserProfile {
   id: string;
