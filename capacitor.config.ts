@@ -10,8 +10,9 @@ const config: CapacitorConfig = {
   },
   plugins: {
     AdMob: {
-      appId: 'ca-app-pub-4367114791552152~5768719388',
-      // Test devices added at runtime via initializeForTesting flag
+      // Google's official TEST App ID — matches admob_config.app_id when is_testing=true.
+      // For production builds, change this to your real App ID and set is_testing=false in admin.
+      appId: 'ca-app-pub-3940256099942544~3347511713',
     }
   }
 };

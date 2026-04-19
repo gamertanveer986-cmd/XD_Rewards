@@ -32,7 +32,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
         await recordAdView();
         setAdCompleted(true);
       } else {
-        toast.error("Task failed to load. Please try again.");
+        toast.error(result.error || "Ad failed to load. Please try again.");
       }
       setIsWatching(false);
     } else {

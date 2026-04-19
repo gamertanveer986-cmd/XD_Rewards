@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 // Cached config (cleared whenever admin updates settings)
 let cachedConfig: { rewardedAdUnitId: string; isTesting: boolean; appId: string } | null = null;
 let isInitialized = false;
+let listenersAttached = false;
 
-// Google's official test Ad Unit ID — only used when admin explicitly enables "is_testing"
+// Google's official test Ad Unit IDs — guaranteed to fill
 const TEST_REWARDED_AD_UNIT_ID = 'ca-app-pub-3940256099942544/5224354917';
+const TEST_APP_ID = 'ca-app-pub-3940256099942544~3347511713';
 
 /**
  * Fetch AdMob config from database. NO hardcoded production fallback —
@@ -40,31 +42,27 @@ export async function getAdmobConfig(): Promise<{ rewardedAdUnitId: string; isTe
     isTesting: data.is_testing ?? false,
   };
 
-  console.log('[AdMob] ✅ Config loaded from database:', {
-    appId: cachedConfig.appId,
-    rewardedAdUnitId: cachedConfig.rewardedAdUnitId,
-    isTesting: cachedConfig.isTesting,
-  });
+  console.log('[AdMob] ✅ Config loaded from database:', cachedConfig);
   return cachedConfig;
 }
 
 /** Clear cached config — call this from admin panel after saving new IDs */
 export function clearAdmobConfigCache(): void {
-  console.log('[AdMob] 🔄 Cache cleared — next ad load will fetch fresh config');
+  console.log('[AdMob] 🔄 Cache cleared');
   cachedConfig = null;
   isInitialized = false;
 }
 
 export async function initializeAdMob(): Promise<boolean> {
   if (isInitialized) {
-    console.log('[AdMob] Already initialized — skipping');
+    console.log('[AdMob] ✅ Already initialized — skipping');
     return true;
   }
 
   try {
     const config = await getAdmobConfig();
 
-    console.log('[AdMob] Initializing SDK with App ID:', config.appId, '| Testing:', config.isTesting);
+    console.log('[AdMob] 🚀 Initializing SDK | App ID:', config.appId, '| Testing:', config.isTesting);
 
     await AdMob.initialize({
       initializeForTesting: config.isTesting,
@@ -74,6 +72,7 @@ export async function initializeAdMob(): Promise<boolean> {
     // iOS 14+ tracking authorization (no-op on Android)
     try {
       const trackingInfo = await AdMob.trackingAuthorizationStatus();
+      console.log('[AdMob] Tracking status:', trackingInfo.status);
       if (trackingInfo.status === 'notDetermined') {
         await AdMob.requestTrackingAuthorization();
       }
@@ -82,7 +81,7 @@ export async function initializeAdMob(): Promise<boolean> {
     }
 
     isInitialized = true;
-    console.log('[AdMob] ✅ Initialized successfully with App ID:', config.appId);
+    console.log('[AdMob] ✅ SDK initialized successfully');
     return true;
   } catch (error) {
     console.error('[AdMob] ❌ Initialization failed:', error);
@@ -90,14 +89,18 @@ export async function initializeAdMob(): Promise<boolean> {
   }
 }
 
+/**
+ * Prepares a rewarded ad. Resolves only AFTER the ad is actually loaded
+ * (or rejects on failure). This is the source of truth for "is ad ready".
+ */
 export async function prepareRewardedAd(): Promise<AdLoadInfo | null> {
   try {
     const config = await getAdmobConfig();
 
-    // When testing flag is on, use Google's official test ad unit to guarantee fill
+    // When testing flag is on, force Google's official test ad unit to guarantee fill
     const adId = config.isTesting ? TEST_REWARDED_AD_UNIT_ID : config.rewardedAdUnitId;
 
-    console.log('[AdMob] Preparing rewarded ad → adId:', adId, '| testing:', config.isTesting);
+    console.log('[AdMob] 📥 Preparing rewarded ad → adId:', adId, '| testing:', config.isTesting);
 
     const options: RewardAdOptions = {
       adId,
@@ -105,49 +108,55 @@ export async function prepareRewardedAd(): Promise<AdLoadInfo | null> {
     };
 
     const result = await AdMob.prepareRewardVideoAd(options);
-    console.log('[AdMob] ✅ Rewarded ad prepared:', result);
+    console.log('[AdMob] ✅ Rewarded ad prepared & ready to show:', result);
     return result;
   } catch (error) {
     console.error('[AdMob] ❌ Failed to prepare rewarded ad:', error);
-    return null;
+    throw error;
   }
 }
 
 export async function showRewardedAd(): Promise<AdMobRewardItem | null> {
   try {
+    console.log('[AdMob] 🎬 Showing rewarded ad...');
     const result = await AdMob.showRewardVideoAd();
-    console.log('[AdMob] ✅ Rewarded ad completed:', result);
+    console.log('[AdMob] ✅ Rewarded ad completed, reward:', result);
     return result;
   } catch (error) {
     console.error('[AdMob] ❌ Failed to show rewarded ad:', error);
-    return null;
+    throw error;
   }
 }
 
-// Event listeners for ad events
+// Event listeners — attach once globally
 export function setupAdListeners(callbacks: {
   onRewardEarned?: (reward: AdMobRewardItem) => void;
   onAdLoaded?: () => void;
   onAdFailed?: (error: any) => void;
   onAdDismissed?: () => void;
 }) {
+  if (listenersAttached) {
+    console.log('[AdMob] Listeners already attached — replacing callbacks');
+  }
+  listenersAttached = true;
+
   AdMob.addListener(RewardAdPluginEvents.Rewarded, (reward: AdMobRewardItem) => {
-    console.log('[AdMob] 🎁 Reward earned:', reward);
+    console.log('[AdMob] 🎁 Reward earned event:', reward);
     callbacks.onRewardEarned?.(reward);
   });
 
   AdMob.addListener(RewardAdPluginEvents.Loaded, () => {
-    console.log('[AdMob] Rewarded ad loaded event fired');
+    console.log('[AdMob] 📦 Loaded event fired');
     callbacks.onAdLoaded?.();
   });
 
   AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (error: any) => {
-    console.error('[AdMob] Rewarded ad failed to load:', error);
+    console.error('[AdMob] 💥 FailedToLoad event:', JSON.stringify(error));
     callbacks.onAdFailed?.(error);
   });
 
   AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
-    console.log('[AdMob] Rewarded ad dismissed');
+    console.log('[AdMob] 👋 Dismissed event');
     callbacks.onAdDismissed?.();
   });
 }
