@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import AppLayout from "@/components/AppLayout";
-import { User, Calendar, Hash, Award, Shield, Clock, AlertCircle, Instagram, Star, MessageSquare, Bell, BellOff } from "lucide-react";
+import { User, Calendar, Hash, Award, Shield, Clock, AlertCircle, Star, MessageSquare, Bell, BellOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import XDCoin from "@/components/XDCoin";
 import Disclaimer from "@/components/Disclaimer";
@@ -219,29 +219,6 @@ const Profile = () => {
           </Card>
         </div>
 
-        {/* Instagram Information Section */}
-        <Card className="p-4 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border-pink-500/30">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shrink-0">
-              <Instagram className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-sm">Official Instagram Page</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                This is our official Instagram page. You can join it for updates and announcements only. Following is optional and does not provide any rewards or coins.
-              </p>
-              <Button 
-                size="sm" 
-                variant="outline"
-                className="mt-2"
-                onClick={() => window.open("https://www.instagram.com/xd_rewards_official", "_blank")}
-              >
-                <Instagram className="w-4 h-4 mr-1" />
-                Visit @xd_rewards_official
-              </Button>
-            </div>
-          </div>
-        </Card>
 
         {/* Feedback Section */}
         <Card className="p-4 bg-card border-border/50">
