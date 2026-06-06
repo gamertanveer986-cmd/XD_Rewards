@@ -528,6 +528,14 @@ const Auth = () => {
 
       {/* Policy Modal */}
       <PolicyModal isOpen={showPolicyModal} onClose={() => setShowPolicyModal(false)} />
+
+      <DeviceLockedDialog
+        open={deviceLock.open}
+        onClose={() => setDeviceLock((s) => ({ ...s, open: false }))}
+        code={deviceLock.code}
+        message={deviceLock.message}
+        email={email}
+      />
     </div>
   );
 };
