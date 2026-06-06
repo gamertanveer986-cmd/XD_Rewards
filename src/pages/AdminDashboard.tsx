@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import AdminGamification from "@/components/AdminGamification";
+import AdminDeviceRegistrations from "@/components/AdminDeviceRegistrations";
 import { clearAdmobConfigCache } from "@/lib/admob";
 
 interface UserProfile {
@@ -76,7 +77,7 @@ interface GiftCardPurchase {
   product?: GiftCardProduct;
 }
 
-type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob" | "support" | "gamification";
+type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob" | "support" | "gamification" | "devices";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -448,6 +449,7 @@ const AdminDashboard = () => {
     { key: "roles", label: "Roles" },
     { key: "notifications", label: "Notify" },
     { key: "support", label: "Support" },
+    { key: "devices", label: "Devices" },
     { key: "admob", label: "AdMob" }
   ];
 
