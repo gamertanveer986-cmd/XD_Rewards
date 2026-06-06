@@ -1018,6 +1018,10 @@ const AdminDashboard = () => {
         )}
 
         {/* AdMob */}
+        {activeTab === "devices" && (
+          <AdminDeviceRegistrations />
+        )}
+
         {activeTab === "admob" && (
           <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground uppercase">AdMob Configuration</p>
