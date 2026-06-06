@@ -116,6 +116,33 @@ export type Database = {
         }
         Relationships: []
       }
+      device_registrations: {
+        Row: {
+          created_at: string
+          device_id_hash: string
+          id: string
+          platform: string
+          unlinked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id_hash: string
+          id?: string
+          platform?: string
+          unlinked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id_hash?: string
+          id?: string
+          platform?: string
+          unlinked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       gamification_config: {
         Row: {
           config_json: Json
@@ -639,6 +666,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_unlink_device: {
+        Args: { p_registration_id: string }
+        Returns: Json
+      }
       apply_referral_code: {
         Args: { p_referral_code: string; p_user_id: string }
         Returns: Json
@@ -661,6 +692,10 @@ export type Database = {
         Returns: boolean
       }
       check_and_award_badges: { Args: { p_user_id: string }; Returns: Json }
+      check_and_register_device: {
+        Args: { p_device_id_hash: string; p_platform?: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           p_endpoint: string

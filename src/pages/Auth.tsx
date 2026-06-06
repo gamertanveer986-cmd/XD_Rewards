@@ -12,6 +12,9 @@ import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
 import { Shield, ArrowLeft, Mail, Eye } from "lucide-react";
 import { useGuest } from "@/contexts/GuestContext";
+import { checkAndRegisterDevice } from "@/lib/deviceCheck";
+
+
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -80,10 +83,19 @@ const Auth = () => {
           password,
         });
         if (error) throw error;
+
+        // Enforce one-device-one-account on native mobile
+        const deviceCheck = await checkAndRegisterDevice();
+        if (!deviceCheck.success) {
+          await supabase.auth.signOut();
+          toast.error(deviceCheck.message || "This device is not allowed for this account.");
+          return;
+        }
+
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -94,6 +106,18 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+
+        // If a session was returned (auto-confirm on), verify the device immediately.
+        // Otherwise the device check runs on first login after email verification.
+        if (signUpData.session) {
+          const deviceCheck = await checkAndRegisterDevice();
+          if (!deviceCheck.success) {
+            await supabase.auth.signOut();
+            toast.error(deviceCheck.message || "This device already has an account. Only one account per device is allowed.");
+            return;
+          }
+        }
+
         setSignupSuccess(true);
       }
     } catch (error: any) {
