@@ -13,6 +13,7 @@ import { z } from "zod";
 import { Shield, ArrowLeft, Mail, Eye } from "lucide-react";
 import { useGuest } from "@/contexts/GuestContext";
 import { checkAndRegisterDevice } from "@/lib/deviceCheck";
+import DeviceLockedDialog, { type DeviceLockCode } from "@/components/DeviceLockedDialog";
 
 
 
@@ -30,6 +31,10 @@ const Auth = () => {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [deviceLock, setDeviceLock] = useState<{ open: boolean; code: DeviceLockCode; message?: string }>({
+    open: false,
+    code: "UNKNOWN",
+  });
 
   // Check if user is already logged in
   useEffect(() => {
@@ -88,7 +93,11 @@ const Auth = () => {
         const deviceCheck = await checkAndRegisterDevice();
         if (!deviceCheck.success) {
           await supabase.auth.signOut();
-          toast.error(deviceCheck.message || "This device is not allowed for this account.");
+          setDeviceLock({
+            open: true,
+            code: (deviceCheck.code as DeviceLockCode) || "UNKNOWN",
+            message: deviceCheck.message,
+          });
           return;
         }
 
@@ -113,7 +122,11 @@ const Auth = () => {
           const deviceCheck = await checkAndRegisterDevice();
           if (!deviceCheck.success) {
             await supabase.auth.signOut();
-            toast.error(deviceCheck.message || "This device already has an account. Only one account per device is allowed.");
+            setDeviceLock({
+              open: true,
+              code: (deviceCheck.code as DeviceLockCode) || "DEVICE_IN_USE",
+              message: deviceCheck.message,
+            });
             return;
           }
         }
