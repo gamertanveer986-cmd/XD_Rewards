@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, X, Shield, Info, FileText, Mail, ExternalLink, User } from "lucide-react";
+import { Menu, ShieldCheck, BadgeCheck, FileText, Mail, ExternalLink, User, Coins, Clock, Sparkles } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -15,72 +15,86 @@ const HamburgerMenu = () => {
           <Menu className="w-6 h-6" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[350px]">
+      <SheetContent side="left" className="w-[300px] sm:w-[350px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-left">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-red-700 rounded-xl flex items-center justify-center">
-              <span className="text-xl font-black text-primary-foreground">X</span>
+            <div className="w-10 h-10 bg-trust-gradient rounded-xl flex items-center justify-center shadow-trust">
+              <span className="text-xl font-black text-white">X</span>
             </div>
             <div>
-              <p className="font-bold">XD REWARDS</p>
-              <p className="text-xs text-muted-foreground font-normal">Entertainment Platform</p>
+              <p className="font-bold text-gradient-trust">XD REWARDS</p>
+              <p className="text-[10px] text-muted-foreground font-normal">Transparent · Verified · Secure</p>
             </div>
           </SheetTitle>
         </SheetHeader>
-        
+
         <div className="mt-6 space-y-4">
-          {/* Profile Button */}
+          {/* Profile */}
           <Button
             variant="outline"
             className="w-full justify-start gap-2"
-            onClick={() => {
-              navigate("/profile");
-              setIsOpen(false);
-            }}
+            onClick={() => { navigate("/profile"); setIsOpen(false); }}
           >
             <User className="w-4 h-4" />
             My Profile
           </Button>
 
-          {/* About Section */}
+          {/* About Us */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-              <Info className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" style={{ color: "hsl(var(--trust-amber))" }} />
               About Us
             </h3>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                XD Rewards is a rewards-based entertainment platform where users earn entertainment coins by engaging with tasks and activities.
+            <div className="rounded-xl p-4 bg-trust-gradient text-white shadow-trust">
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80 mb-1">Brand Identity</p>
+              <p className="text-sm font-bold leading-snug mb-2">
+                100% Transparent, Fraud-free, and Secure Entertainment Platform.
+              </p>
+              <p className="text-[11px] leading-relaxed opacity-90">
+                XD Rewards is a 100% transparent and verified platform. We are committed to honesty and provide
+                clear, fair earning opportunities for our users. You can trust our process, as every reward is
+                verified and processed with full integrity.
               </p>
             </div>
           </div>
 
           {/* Official Policy */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
-              <Shield className="w-4 h-4" />
+            <h3 className="text-sm font-semibold flex items-center gap-2 text-gradient-trust">
+              <ShieldCheck className="w-4 h-4" style={{ color: "hsl(var(--trust-purple-glow))" }} />
               XD REWARDS OFFICIAL POLICY
             </h3>
-            
+
             <div className="space-y-2 text-sm">
-              <div className="flex items-start gap-2 p-2 bg-success/10 rounded-lg">
-                <span className="text-success">✓</span>
-                <p className="text-muted-foreground">
-                  <strong className="text-success">100% Genuine:</strong> Transparent and fraud-free platform.
+              <div className="flex items-start gap-2 p-2.5 bg-trust-soft border border-trust rounded-lg">
+                <BadgeCheck className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--trust-amber))" }} />
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-foreground">Verified & Fraud-free:</strong> Every reward is checked by our integrity team.
                 </p>
               </div>
-              
-              <div className="flex items-start gap-2 p-2 bg-primary/10 rounded-lg">
-                <Shield className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <p className="text-muted-foreground">
-                  <strong className="text-primary">No Gambling:</strong> 100% free app. No deposits required.
+
+              <div className="flex items-start gap-2 p-2.5 bg-trust-soft border border-trust rounded-lg">
+                <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--trust-purple-glow))" }} />
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-foreground">No Gambling:</strong> 100% free app. No deposits required.
                 </p>
               </div>
-              
-              <div className="flex items-start gap-2 p-2 bg-warning/10 rounded-lg">
-                <span className="text-warning">🎁</span>
-                <p className="text-muted-foreground">
-                  <strong className="text-warning">Redeem Feature:</strong> Redeem XD Coins for rewards. 1000 XD Coins = 10 value. Minimum: 50 value.
+
+              <div className="flex items-start gap-2 p-2.5 bg-trust-soft border border-trust rounded-lg">
+                <Coins className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--trust-amber))" }} />
+                <div className="text-xs text-muted-foreground">
+                  <strong className="text-foreground">Redeem Rules:</strong>
+                  <ul className="mt-1 space-y-0.5">
+                    <li>• 1000 XD Coins = ₹10 INR</li>
+                    <li>• Minimum withdrawal: ₹50 (5000 XD Coins)</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 p-2.5 bg-trust-soft border border-trust rounded-lg">
+                <Clock className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--trust-purple-glow))" }} />
+                <p className="text-xs text-muted-foreground">
+                  <strong className="text-foreground">Processing:</strong> Rewards are processed within 48 hours after manual verification of tasks.
                 </p>
               </div>
             </div>
@@ -88,14 +102,10 @@ const HamburgerMenu = () => {
 
           {/* Links */}
           <div className="space-y-2 pt-4 border-t border-border">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-2"
-              asChild
-            >
-              <a 
-                href="https://docs.google.com/document/d/1YrPSE23jfwKsz7h5PK7nrFqgqG2D6HOt6MlB0cJINPA/edit?usp=drivesdk" 
-                target="_blank" 
+            <Button variant="outline" className="w-full justify-start gap-2" asChild>
+              <a
+                href="https://docs.google.com/document/d/1YrPSE23jfwKsz7h5PK7nrFqgqG2D6HOt6MlB0cJINPA/edit?usp=drivesdk"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 <FileText className="w-4 h-4" />
@@ -103,24 +113,20 @@ const HamburgerMenu = () => {
                 <ExternalLink className="w-3 h-3 ml-auto" />
               </a>
             </Button>
-            
+
             <Button
               variant="outline"
               className="w-full justify-start gap-2"
-              onClick={() => {
-                navigate("/support");
-                setIsOpen(false);
-              }}
+              onClick={() => { navigate("/support"); setIsOpen(false); }}
             >
               <Mail className="w-4 h-4" />
               Support & FAQ
             </Button>
           </div>
 
-          {/* Footer Disclaimer */}
           <div className="pt-4 border-t border-border">
             <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-              In-app rewards are for entertainment purposes only and do not represent guaranteed real money. Rewards are promotional and subject to availability and verification.
+              Every reward on XD Rewards is verified and processed with full integrity within 48 hours of task verification.
             </p>
           </div>
         </div>
