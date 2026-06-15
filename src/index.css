@@ -56,6 +56,15 @@
     --gradient-dark: linear-gradient(180deg, hsl(0 0% 0%), hsl(0 0% 5%));
     --gradient-red-glow: linear-gradient(135deg, hsl(0 84% 60% / 0.2), hsl(0 84% 40% / 0.1));
 
+    /* Premium Trust Palette: Deep Purple + Neon Amber + Charcoal */
+    --trust-purple: 266 83% 28%;
+    --trust-purple-glow: 266 90% 55%;
+    --trust-amber: 38 100% 55%;
+    --trust-charcoal: 240 6% 8%;
+    --gradient-trust: linear-gradient(135deg, hsl(var(--trust-charcoal)) 0%, hsl(var(--trust-purple)) 60%, hsl(var(--trust-amber)) 130%);
+    --gradient-trust-soft: linear-gradient(135deg, hsl(var(--trust-purple) / 0.18), hsl(var(--trust-amber) / 0.12));
+    --shadow-trust: 0 12px 40px -8px hsl(var(--trust-purple) / 0.55), 0 0 0 1px hsl(var(--trust-amber) / 0.15) inset;
+
     /* Shadows and glows */
     --shadow-red-glow: 0 0 40px hsl(0 84% 60% / 0.3);
     --shadow-red-strong: 0 0 60px hsl(0 84% 60% / 0.5);
@@ -86,6 +95,18 @@
   .text-gradient-red {
     @apply bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent;
   }
+
+  .text-gradient-trust {
+    background: linear-gradient(135deg, hsl(var(--trust-amber)) 0%, hsl(var(--trust-purple-glow)) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .bg-trust-gradient { background: var(--gradient-trust); }
+  .bg-trust-soft { background: var(--gradient-trust-soft); }
+  .border-trust { border-color: hsl(var(--trust-amber) / 0.35); }
+  .shadow-trust { box-shadow: var(--shadow-trust); }
 
   .glow-red {
     text-shadow: 0 0 20px hsl(0 84% 60% / 0.5);
