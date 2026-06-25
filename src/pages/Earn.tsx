@@ -89,11 +89,7 @@ const Earn = () => {
   }, []);
 
   const handleTaskClick = (task: TaskConfig) => {
-    if (isGuest) {
-      toast.error("Signup required to earn and redeem rewards");
-      return;
-    }
-    if (!isEmailVerified) {
+    if (!isGuest && !isEmailVerified) {
       toast.error("Please verify your email first");
       return;
     }
@@ -104,7 +100,7 @@ const Earn = () => {
     setShowAdModal(true);
   };
 
-  const handleAdComplete = () => {
+  const handleAdComplete = (_coins: number) => {
     setCooldowns(prev => ({ ...prev, watch_ad: 15, complete_task: 15 }));
     if (user) {
       supabase
