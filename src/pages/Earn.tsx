@@ -48,13 +48,14 @@ const TASKS: TaskConfig[] = [
 
 const Earn = () => {
   const navigate = useNavigate();
-  const { isGuest } = useGuest();
+  const { isGuest, guestCoins } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAdModal, setShowAdModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [guestTasksToday, setGuestTasksToday] = useState(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -102,6 +103,10 @@ const Earn = () => {
 
   const handleAdComplete = (_coins: number) => {
     setCooldowns(prev => ({ ...prev, watch_ad: 15, complete_task: 15 }));
+    if (isGuest) {
+      setGuestTasksToday(n => n + 1);
+      return;
+    }
     if (user) {
       supabase
         .from("user_profiles")
@@ -112,8 +117,8 @@ const Earn = () => {
     }
   };
 
-  const totalCoins = Math.floor((profile?.total_earnings || 0) * 100);
-  const tasksToday = profile?.ads_watched || 0;
+  const totalCoins = isGuest ? guestCoins : Math.floor((profile?.total_earnings || 0) * 100);
+  const tasksToday = isGuest ? guestTasksToday : (profile?.ads_watched || 0);
 
   if (loading) {
     return (
@@ -167,7 +172,7 @@ const Earn = () => {
           {TASKS.map((task) => {
             const isOnCooldown = !!cooldowns[task.id];
             const Icon = task.icon;
-            const canStart = !isGuest && isEmailVerified;
+            const canStart = isGuest || isEmailVerified;
             
             return (
               <Card 
@@ -202,9 +207,7 @@ const Earn = () => {
                         <Clock className="w-3.5 h-3.5" />
                         {cooldowns[task.id]}s
                       </span>
-                    ) : isGuest ? (
-                      "Login"
-                    ) : !isEmailVerified ? (
+                    ) : !isGuest && !isEmailVerified ? (
                       "Verify Email"
                     ) : (
                       "Start"
@@ -266,14 +269,12 @@ const Earn = () => {
         <Disclaimer variant="compact" />
       </div>
 
-      {user && (
-        <WatchAdModal
-          isOpen={showAdModal}
-          onClose={() => setShowAdModal(false)}
-          userId={user.id}
-          onAdComplete={handleAdComplete}
-        />
-      )}
+      <WatchAdModal
+        isOpen={showAdModal}
+        onClose={() => setShowAdModal(false)}
+        userId={user?.id ?? null}
+        onAdComplete={handleAdComplete}
+      />
     </AppLayout>
   );
 };
