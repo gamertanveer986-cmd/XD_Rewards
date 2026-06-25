@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import AdminGamification from "@/components/AdminGamification";
 import AdminDeviceRegistrations from "@/components/AdminDeviceRegistrations";
-import { clearAdmobConfigCache } from "@/lib/admob";
+
 
 interface UserProfile {
   id: string;
@@ -77,7 +77,7 @@ interface GiftCardPurchase {
   product?: GiftCardProduct;
 }
 
-type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "admob" | "support" | "gamification" | "devices";
+type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "support" | "gamification" | "devices";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -94,11 +94,6 @@ const AdminDashboard = () => {
 
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
-  const [admobAppId, setAdmobAppId] = useState("");
-  const [admobRewardedAdUnitId, setAdmobRewardedAdUnitId] = useState("");
-  const [admobBannerAdUnitId, setAdmobBannerAdUnitId] = useState("");
-  const [admobInterstitialAdUnitId, setAdmobInterstitialAdUnitId] = useState("");
-  const [admobIsTesting, setAdmobIsTesting] = useState(false);
   const [dailyRewards, setDailyRewards] = useState<DailyReward[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [giftCardProducts, setGiftCardProducts] = useState<GiftCardProduct[]>([]);
@@ -175,7 +170,7 @@ const AdminDashboard = () => {
   }, []);
 
   const loadAllDataInternal = async () => {
-    await Promise.all([loadData(), loadAdmobConfig(), loadDailyRewards(), loadGiftCardsData()]);
+    await Promise.all([loadData(), loadDailyRewards(), loadGiftCardsData()]);
   };
 
   const loadAllData = async () => {
@@ -203,16 +198,6 @@ const AdminDashboard = () => {
     setStats({ totalUsers: profilesData?.length || 0, totalEarnings, totalWithdrawals, totalAdsWatched, pendingPayments, totalPayable });
   };
 
-  const loadAdmobConfig = async () => {
-    const { data } = await supabase.from("admob_config").select("*").limit(1).maybeSingle();
-    if (data) {
-      setAdmobAppId(data.app_id || "");
-      setAdmobRewardedAdUnitId(data.rewarded_ad_unit_id || "");
-      setAdmobBannerAdUnitId(data.banner_ad_unit_id || "");
-      setAdmobInterstitialAdUnitId(data.interstitial_ad_unit_id || "");
-      setAdmobIsTesting(data.is_testing || false);
-    }
-  };
 
   const loadDailyRewards = async () => {
     const { data } = await supabase.from("daily_rewards").select("*").order("total_claimed", { ascending: false });
@@ -251,43 +236,6 @@ const AdminDashboard = () => {
     setActionLoading(false);
   };
 
-  const handleSaveAdmobConfig = async () => {
-    if (!admobAppId.trim() || !admobRewardedAdUnitId.trim()) {
-      toast.error("App ID and Rewarded Unit ID required");
-      return;
-    }
-    setActionLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: existing } = await supabase.from("admob_config").select("id").limit(1).maybeSingle();
-    const configData = {
-      app_id: admobAppId,
-      rewarded_ad_unit_id: admobRewardedAdUnitId,
-      banner_ad_unit_id: admobBannerAdUnitId || null,
-      interstitial_ad_unit_id: admobInterstitialAdUnitId || null,
-      is_testing: admobIsTesting,
-      updated_at: new Date().toISOString(),
-      updated_by: user?.id
-    };
-    let saveError: any = null;
-    if (existing) {
-      const { error } = await supabase.from("admob_config").update(configData).eq("id", existing.id);
-      saveError = error;
-    } else {
-      const { error } = await supabase.from("admob_config").insert(configData);
-      saveError = error;
-    }
-    if (saveError) {
-      console.error("[Admin] Failed to save AdMob config:", saveError);
-      toast.error("Failed to save: " + saveError.message);
-      setActionLoading(false);
-      return;
-    }
-    // Invalidate the in-memory cache so next ad load fetches fresh values
-    clearAdmobConfigCache();
-    console.log("[Admin] ✅ AdMob config saved & cache cleared:", configData);
-    toast.success("AdMob config saved — new IDs are now live");
-    setActionLoading(false);
-  };
 
   const handleUpdatePaymentStatus = async (userId: string, status: string) => {
     setActionLoading(true);
@@ -449,8 +397,7 @@ const AdminDashboard = () => {
     { key: "roles", label: "Roles" },
     { key: "notifications", label: "Notify" },
     { key: "support", label: "Support" },
-    { key: "devices", label: "Devices" },
-    { key: "admob", label: "AdMob" }
+    { key: "devices", label: "Devices" }
   ];
 
   // Show loading state while checking access
@@ -1017,40 +964,8 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* AdMob */}
         {activeTab === "devices" && (
           <AdminDeviceRegistrations />
-        )}
-
-        {activeTab === "admob" && (
-          <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase">AdMob Configuration</p>
-            <div className="space-y-2">
-              <div>
-                <label className="text-[10px] text-muted-foreground uppercase">App ID *</label>
-                <Input placeholder="ca-app-pub-xxxxxxxx~xxxxxxxxxx" value={admobAppId} onChange={(e) => setAdmobAppId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground uppercase">Rewarded Ad Unit ID *</label>
-                <Input placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" value={admobRewardedAdUnitId} onChange={(e) => setAdmobRewardedAdUnitId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground uppercase">Banner Ad Unit ID</label>
-                <Input placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" value={admobBannerAdUnitId} onChange={(e) => setAdmobBannerAdUnitId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
-              </div>
-              <div>
-                <label className="text-[10px] text-muted-foreground uppercase">Interstitial Ad Unit ID</label>
-                <Input placeholder="ca-app-pub-xxxxxxxx/xxxxxxxxxx" value={admobInterstitialAdUnitId} onChange={(e) => setAdmobInterstitialAdUnitId(e.target.value)} className="h-8 text-xs font-mono mt-1" />
-              </div>
-              <div className="flex items-center gap-2 pt-1">
-                <input type="checkbox" id="test-mode" checked={admobIsTesting} onChange={(e) => setAdmobIsTesting(e.target.checked)} className="w-4 h-4 rounded border-border" />
-                <label htmlFor="test-mode" className="text-xs">Enable Test Mode</label>
-              </div>
-            </div>
-            <button onClick={handleSaveAdmobConfig} disabled={actionLoading} className="w-full py-2 bg-primary text-primary-foreground text-xs rounded disabled:opacity-50">
-              {actionLoading ? "Saving..." : "Save Configuration"}
-            </button>
-          </div>
         )}
 
         {/* Gamification */}
