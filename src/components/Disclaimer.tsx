@@ -16,8 +16,8 @@ const Disclaimer = ({ variant = "full" }: DisclaimerProps) => {
 
   if (variant === "coins") {
     return (
-      <div className="text-[10px] text-muted-foreground text-center px-3 py-2 bg-trust-soft border border-trust rounded-lg">
-        <p>1000 XD Coins = ₹10 INR. Rewards are processed within 48 hours after manual verification.</p>
+      <div className="text-[10px] text-muted-foreground text-center px-3 py-2 bg-card border border-border rounded-lg">
+        <p>1000 XD Coins = ₹10 INR · Processed within 48 hours after manual verification.</p>
       </div>
     );
   }
@@ -25,20 +25,20 @@ const Disclaimer = ({ variant = "full" }: DisclaimerProps) => {
   if (variant === "compact") {
     return (
       <div className="flex items-start gap-2 text-[10px] text-muted-foreground px-4 py-2">
-        <BadgeCheck className="w-3 h-3 shrink-0 mt-0.5" style={{ color: "hsl(var(--trust-amber))" }} />
+        <BadgeCheck className="w-3 h-3 shrink-0 mt-0.5 text-primary" />
         <p>100% transparent and verified platform. Rewards are processed within 48 hours after manual verification of tasks.</p>
       </div>
     );
   }
 
   return (
-    <Card className="p-4 bg-trust-soft border-trust shadow-trust">
+    <Card className="p-4 surface-elevated border-border">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-full bg-trust-gradient flex items-center justify-center shrink-0">
-          <ShieldCheck className="w-4 h-4 text-white" />
+        <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+          <ShieldCheck className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <h4 className="font-semibold text-sm mb-1 text-gradient-trust">Our Trust Commitment</h4>
+          <h4 className="font-semibold text-sm mb-1">Our Trust Commitment</h4>
           <p className="text-xs text-muted-foreground leading-relaxed">
             XD Rewards is a 100% transparent and verified platform. We are committed to honesty and provide clear,
             fair earning opportunities for our users. Every reward is verified and processed within 48 hours with full integrity.
