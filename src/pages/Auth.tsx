@@ -347,45 +347,30 @@ const Auth = () => {
 
       <div className="flex-1 flex flex-col px-6 py-8 relative z-10">
         {/* Header */}
-        <div className="text-center mb-6 pt-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-red-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-3xl font-black text-primary-foreground">X</span>
+        <div className="text-center mb-8 pt-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-[hsl(0_70%_38%)] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-[0_0_28px_hsl(0_65%_51%/0.5)]">
+            <span className="text-2xl font-black text-primary-foreground tracking-tight">XD</span>
           </div>
-          <h1 className="text-3xl font-bold text-gradient-red glow-red mb-2">
-            XD REWARDS
+          <h1 className="text-2xl font-bold tracking-[0.22em] text-foreground">
+            XD&nbsp;REWARDS
           </h1>
-          <p className="text-muted-foreground text-sm">Collect • Play • Enjoy</p>
-        </div>
-
-        {/* Features - Compact */}
-        <div className="flex justify-center gap-6 mb-6">
-          <div className="text-center">
-            <p className="text-lg font-bold text-success">10</p>
-            <p className="text-[10px] text-muted-foreground">XD Coins/Task</p>
-          </div>
-          <div className="w-px bg-border" />
-          <div className="text-center">
-            <p className="text-lg font-bold text-primary">10</p>
-            <p className="text-[10px] text-muted-foreground">Value Bonus</p>
-          </div>
-          <div className="w-px bg-border" />
-          <div className="text-center">
-            <p className="text-lg font-bold">5</p>
-            <p className="text-[10px] text-muted-foreground">Value/Referral</p>
-          </div>
+          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground mt-1.5">
+            Premium Rewards Platform
+          </p>
         </div>
 
         {/* Auth Card */}
-        <Card className="p-6 bg-card/90 border-border/50 backdrop-blur-sm">
+        <Card className="p-6 surface-elevated border-border">
           <div className="space-y-5">
             <div className="text-center">
               <h2 className="text-xl font-bold mb-1">
                 {isLogin ? "Welcome Back" : "Create Account"}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {isLogin ? "Login to continue collecting" : "Sign up and get 10 value bonus (1000 XD Coins)"}
+                {isLogin ? "Sign in to continue" : "Join XD Rewards in seconds"}
               </p>
             </div>
+
 
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">

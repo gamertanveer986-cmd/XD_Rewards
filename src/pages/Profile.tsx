@@ -8,7 +8,7 @@ import AppLayout from "@/components/AppLayout";
 import { User, Calendar, Hash, Award, Shield, Clock, AlertCircle, Star, MessageSquare, Bell, BellOff } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import XDCoin from "@/components/XDCoin";
-import Disclaimer from "@/components/Disclaimer";
+// Disclaimer/legal text consolidated into Settings page.
 import UserBadges from "@/components/UserBadges";
 import { toast } from "sonner";
 
@@ -244,37 +244,8 @@ const Profile = () => {
           </div>
         </Card>
 
-        {/* Anti-Fraud Notice */}
-        <Card className="p-4 bg-destructive/5 border-destructive/20">
-          <div className="flex items-start gap-2">
-            <Shield className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-sm">Anti-Fraud & Safety Notice</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                XD Rewards uses automated and manual systems to detect bots, auto-clickers, and unfair activity. 
-                Violations may lead to account suspension without prior notice.
-              </p>
-            </div>
-          </div>
-        </Card>
+        {/* Legal/usage notices live in Settings → Privacy & Policy. Keep Profile clean. */}
 
-        {/* Limits Notice */}
-        <Card className="p-4 bg-muted/30 border-border/50">
-          <h4 className="font-medium text-sm mb-2">Usage Limits</h4>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <p>• Maximum withdrawals per day: 3</p>
-            <p>• Maximum value per day: 20 value</p>
-            <p>• Maximum tasks per day: 200</p>
-            <p>• Limits may change based on activity</p>
-          </div>
-        </Card>
-
-        {/* Single Device Notice */}
-        <Card className="p-3 bg-muted/30 border-border/50">
-          <p className="text-xs text-muted-foreground text-center">
-            One mobile device can register only ONE account. Multiple sign-ups from the same device are blocked for abuse prevention.
-          </p>
-        </Card>
 
         {/* Notification Settings */}
         <Card className="p-4 bg-card border-border/50">
@@ -310,10 +281,8 @@ const Profile = () => {
             />
           </div>
         </Card>
-
-        {/* Disclaimer */}
-        <Disclaimer variant="compact" />
       </div>
+
     </AppLayout>
   );
 };

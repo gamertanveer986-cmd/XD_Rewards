@@ -191,24 +191,24 @@ const Support = () => {
           </Card>
         </div>
 
-        {/* Our App */}
+        {/* Send Feedback */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground px-1">Our App</h2>
-          <Card className="p-4 bg-trust-soft border-trust">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-2xl bg-trust-gradient flex items-center justify-center shrink-0 shadow-trust">
-                <Smartphone className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm">XD Rewards App</h3>
-                <p className="text-xs text-muted-foreground">Our official app will be available here.</p>
-              </div>
-            </div>
-            <div className="bg-background/40 rounded-lg p-3 text-center border border-trust">
-              <p className="text-xs text-muted-foreground">[APP URL WILL BE ADDED HERE]</p>
-            </div>
+          <h2 className="text-sm font-semibold text-muted-foreground px-1">Send Feedback</h2>
+          <Card className="p-4 surface-elevated border-border">
+            <p className="text-xs text-muted-foreground mb-3">
+              Have a suggestion, idea, or bug to report? Share it with our team — every message is read.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full border-border"
+              onClick={() => { window.location.href = "mailto:dxreward@gmail.com?subject=XD%20Rewards%20Feedback"; }}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Send Feedback Email
+            </Button>
           </Card>
         </div>
+
 
         {/* Policies */}
         <div className="space-y-3">
