@@ -1,210 +1,60 @@
-/* Outfit font is loaded via <link> in index.html (non-blocking) for better FCP */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* XD REWARDS Design System - Premium Black + Red Theme */
+/* XD REWARDS — Premium Fintech Design System
+   Dark Mode (#121212), Deep Crimson (#D32F2F) accent only, Inter typography. */
 
 @layer base {
   :root {
-    /* Pure black background with red accents */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    /* Fintech-grade dark canvas */
+    --background: 0 0% 7%;            /* #121212 */
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 10%;                 /* #1A1A1A */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Vibrant red primary */
-    --primary: 0 84% 60%;
+    /* Deep Crimson — single brand accent */
+    --primary: 0 65% 51%;             /* #D32F2F */
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 70% 60%;
 
-    /* Dark red secondary */
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 0 0% 13%;            /* #212121 surface raised */
+    --secondary-foreground: 0 0% 98%;
 
-    /* Muted grays */
     --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted-foreground: 0 0% 64%;
 
-    /* Red accent */
-    --accent: 0 84% 60%;
+    --accent: 0 65% 51%;
     --accent-foreground: 0 0% 100%;
 
-    /* Success green */
-    --success: 142 76% 36%;
+    /* Pro success green for withdraw proofs */
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning amber */
-    --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 0%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 65% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 15%;
-    --ring: 0 84% 60%;
+    --border: 0 0% 17%;               /* #2A2A2A hairline */
+    --input: 0 0% 13%;
+    --ring: 0 65% 51%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 45%));
-    --gradient-dark: linear-gradient(180deg, hsl(0 0% 0%), hsl(0 0% 5%));
-    --gradient-red-glow: linear-gradient(135deg, hsl(0 84% 60% / 0.2), hsl(0 84% 40% / 0.1));
+    /* Premium effects */
+    --gradient-primary: linear-gradient(135deg, hsl(0 65% 51%), hsl(0 70% 42%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 10%), hsl(0 0% 8%));
+    --shadow-crimson: 0 0 24px hsl(0 65% 51% / 0.28);
+    --shadow-crimson-strong: 0 0 48px hsl(0 65% 51% / 0.45);
+    --shadow-elevated: 0 8px 32px -8px hsl(0 0% 0% / 0.6), 0 0 0 1px hsl(0 0% 100% / 0.04) inset;
 
-    /* Premium Trust Palette: Deep Purple + Neon Amber + Charcoal */
-    --trust-purple: 266 83% 28%;
-    --trust-purple-glow: 266 90% 55%;
-    --trust-amber: 38 100% 55%;
-    --trust-charcoal: 240 6% 8%;
-    --gradient-trust: linear-gradient(135deg, hsl(var(--trust-charcoal)) 0%, hsl(var(--trust-purple)) 60%, hsl(var(--trust-amber)) 130%);
-    --gradient-trust-soft: linear-gradient(135deg, hsl(var(--trust-purple) / 0.18), hsl(var(--trust-amber) / 0.12));
-    --shadow-trust: 0 12px 40px -8px hsl(var(--trust-purple) / 0.55), 0 0 0 1px hsl(var(--trust-amber) / 0.15) inset;
-
-    /* Shadows and glows */
-    --shadow-red-glow: 0 0 40px hsl(0 84% 60% / 0.3);
-    --shadow-red-strong: 0 0 60px hsl(0 84% 60% / 0.5);
-    --shadow-card: 0 10px 30px hsl(0 0% 0% / 0.5);
-
-    /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Outfit', sans-serif;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-  }
-}
-
-@layer utilities {
-  .text-gradient-red {
-    @apply bg-gradient-to-r from-primary to-red-500 bg-clip-text text-transparent;
-  }
-
-  .text-gradient-trust {
-    background: linear-gradient(135deg, hsl(var(--trust-amber)) 0%, hsl(var(--trust-purple-glow)) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .bg-trust-gradient { background: var(--gradient-trust); }
-  .bg-trust-soft { background: var(--gradient-trust-soft); }
-  .border-trust { border-color: hsl(var(--trust-amber) / 0.35); }
-  .shadow-trust { box-shadow: var(--shadow-trust); }
-
-  .glow-red {
-    text-shadow: 0 0 20px hsl(0 84% 60% / 0.5);
-  }
-
-  .card-glow {
-    box-shadow: 0 0 20px hsl(0 84% 60% / 0.2), 0 10px 30px hsl(0 0% 0% / 0.5);
-  }
-
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px hsl(0 84% 60% / 0.3); }
-    50% { box-shadow: 0 0 40px hsl(0 84% 60% / 0.6); }
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.6s ease-out;
-  }
-
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-counter {
-    animation: counter 2s ease-out infinite;
-  }
-
-  @keyframes counter {
-    0% { opacity: 0.5; }
-    50% { opacity: 1; }
-    100% { opacity: 0.5; }
-  }
-
-  .animate-coin-fly {
-    animation: coin-fly 1.2s ease-out forwards;
-  }
-
-  @keyframes coin-fly {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    50% { opacity: 1; transform: translateY(-60px) translateX(var(--coin-x, 0)) scale(1.2); }
-    100% { opacity: 0; transform: translateY(-120px) translateX(var(--coin-x, 0)) scale(0.5); }
-  }
-
-  .animate-coin-text {
-    animation: coin-text 1.5s ease-out forwards;
-  }
-
-  @keyframes coin-text {
-    0% { opacity: 0; transform: translateY(20px) scale(0.8); }
-    30% { opacity: 1; transform: translateY(-10px) scale(1.1); }
-    60% { opacity: 1; transform: translateY(-20px) scale(1); }
-    100% { opacity: 0; transform: translateY(-40px) scale(0.9); }
-  }
-
-  /* Mobile App Safe Areas */
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  .safe-area-left {
-    padding-left: env(safe-area-inset-left, 0px);
-  }
-
-  .safe-area-right {
-    padding-right: env(safe-area-inset-right, 0px);
-  }
-
-  /* Hide scrollbar for mobile app feel */
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
   }
 }
 
@@ -215,19 +65,92 @@
 
   html, body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     user-select: none;
   }
 
-  /* Allow text selection in inputs */
-  input, textarea {
-    user-select: text;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 
-  /* Smooth scrolling */
-  main {
-    -webkit-overflow-scrolling: touch;
+  input, textarea { user-select: text; }
+  main { -webkit-overflow-scrolling: touch; }
+}
+
+@layer utilities {
+  .text-gradient-crimson {
+    background: linear-gradient(135deg, hsl(0 70% 60%), hsl(0 65% 45%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
+
+  /* Back-compat aliases (legacy classes used across screens) */
+  .text-gradient-red { @apply text-gradient-crimson; }
+  .text-gradient-trust { @apply text-gradient-crimson; }
+  .bg-trust-gradient { background: var(--gradient-primary); }
+  .bg-trust-soft { background: hsl(0 65% 51% / 0.08); }
+  .border-trust { border-color: hsl(0 65% 51% / 0.25); }
+  .shadow-trust { box-shadow: var(--shadow-crimson); }
+
+  .glow-crimson { text-shadow: 0 0 24px hsl(0 65% 51% / 0.5); }
+  .glow-red { @apply glow-crimson; }
+
+  .card-glow { box-shadow: var(--shadow-elevated); }
+
+  .surface-elevated {
+    background: var(--gradient-surface);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .animate-float { animation: float 3s ease-in-out infinite; }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .animate-pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 18px hsl(0 65% 51% / 0.25); }
+    50% { box-shadow: 0 0 36px hsl(0 65% 51% / 0.55); }
+  }
+
+  .animate-slide-up { animation: slide-up 0.5s ease-out; }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-coin-fly { animation: coin-fly 1.2s ease-out forwards; }
+  @keyframes coin-fly {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-60px) translateX(var(--coin-x, 0)) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-120px) translateX(var(--coin-x, 0)) scale(0.5); }
+  }
+
+  .animate-coin-text { animation: coin-text 1.5s ease-out forwards; }
+  @keyframes coin-text {
+    0% { opacity: 0; transform: translateY(20px) scale(0.8); }
+    30% { opacity: 1; transform: translateY(-10px) scale(1.1); }
+    60% { opacity: 1; transform: translateY(-20px) scale(1); }
+    100% { opacity: 0; transform: translateY(-40px) scale(0.9); }
+  }
+
+  /* Greyscale for locked achievements */
+  .grayscale-locked { filter: grayscale(1) brightness(0.55); opacity: 0.6; }
+
+  /* Mobile App Safe Areas */
+  .safe-area-top { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-area-left { padding-left: env(safe-area-inset-left, 0px); }
+  .safe-area-right { padding-right: env(safe-area-inset-right, 0px); }
+
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
 }

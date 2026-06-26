@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Disclaimer from "@/components/Disclaimer";
+// Disclaimer text consolidated into Settings page.
 import XDCoin from "@/components/XDCoin";
 import UserBadges from "@/components/UserBadges";
 import GuestBanner from "@/components/GuestBanner";
@@ -328,33 +328,23 @@ const Leaderboard = () => {
         </Tabs>
 
         {/* Info Card */}
-        <Card className="p-4 bg-primary/10 border-primary/20">
+        <Card className="p-4 surface-elevated border-border">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
               <Trophy className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">500 XD Coins per referral!</h4>
+              <h4 className="font-medium text-sm">Earn 500 XD Coins per referral</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Share your code and earn when friends join (5 value each)
+                Share your code and grow your weekly rank.
               </p>
             </div>
           </div>
         </Card>
-
-        {/* Leaderboard Disclaimer */}
-        <Card className="p-3 bg-muted/30 border-border/50">
-          <p className="text-[10px] text-muted-foreground text-center">
-            Rankings are for engagement display only. They do not guarantee or affect reward eligibility.
-            Leaderboard rewards are promotional and verified. No guaranteed rewards.
-          </p>
-        </Card>
-
-        {/* Disclaimer */}
-        <Disclaimer variant="compact" />
       </div>
     </AppLayout>
   );
 };
 
 export default Leaderboard;
+

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { lazy, Suspense } from "react";
 import Auth from "./pages/Auth";
+import TermsAgreementGate from "@/components/TermsAgreementGate";
 
 // Code-split all non-landing routes to reduce initial JS bundle size.
 // /auth is the landing route so it stays eagerly imported above.
@@ -20,6 +21,7 @@ const GiftCards = lazy(() => import("./pages/GiftCards"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Support = lazy(() => import("./pages/Support"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -36,24 +38,27 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/auth" replace />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/earn" element={<Earn />} />
-            <Route path="/daily-bonus" element={<DailyBonus />} />
-            <Route path="/referral" element={<Referral />} />
-            <Route path="/wallet" element={<Wallet />} />
-            <Route path="/gift-cards" element={<GiftCards />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <TermsAgreementGate>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Navigate to="/auth" replace />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/earn" element={<Earn />} />
+              <Route path="/daily-bonus" element={<DailyBonus />} />
+              <Route path="/referral" element={<Referral />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/gift-cards" element={<GiftCards />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </TermsAgreementGate>
       </BrowserRouter>
       </GuestProvider>
     </TooltipProvider>

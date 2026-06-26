@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { Award, Star, Users, Calendar, Trophy, Loader2 } from "lucide-react";
+import { Award, Star, Users, Calendar, Trophy, Loader2, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface UserBadge {
@@ -25,12 +25,13 @@ const BADGE_ICONS: Record<string, typeof Award> = {
   task_champion: Trophy,
 };
 
-const BADGE_COLORS: Record<string, string> = {
-  first_withdrawal: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  referral_master: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  login_streak: "bg-green-500/20 text-green-400 border-green-500/30",
-  task_champion: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-};
+// Full gallery catalog — locked entries render greyscale, unlocked render with crimson glow.
+const BADGE_CATALOG: { key: string; name: string; description: string }[] = [
+  { key: "first_withdrawal", name: "First Withdrawal", description: "Completed your first reward redemption" },
+  { key: "referral_master", name: "Referral Master", description: "Invited 10+ friends to XD Rewards" },
+  { key: "login_streak", name: "7-Day Streak", description: "Claimed daily bonus 7 days in a row" },
+  { key: "task_champion", name: "Task Champion", description: "Completed 100 verified tasks" },
+];
 
 const UserBadges = ({ userId, variant = "full", showEmpty = false }: UserBadgesProps) => {
   const [badges, setBadges] = useState<UserBadge[]>([]);
@@ -48,7 +49,6 @@ const UserBadges = ({ userId, variant = "full", showEmpty = false }: UserBadgesP
         if (error) throw error;
         setBadges(data || []);
 
-        // Check for new badges
         await supabase.rpc("check_and_award_badges", { p_user_id: userId });
       } catch (error) {
         console.error("Error fetching badges:", error);
@@ -68,9 +68,7 @@ const UserBadges = ({ userId, variant = "full", showEmpty = false }: UserBadgesP
     );
   }
 
-  if (badges.length === 0 && !showEmpty) {
-    return null;
-  }
+  const earnedKeys = new Set(badges.map((b) => b.badge_key));
 
   if (variant === "inline") {
     return (
@@ -78,12 +76,10 @@ const UserBadges = ({ userId, variant = "full", showEmpty = false }: UserBadgesP
         <TooltipProvider>
           {badges.map((badge) => {
             const Icon = BADGE_ICONS[badge.badge_key] || Award;
-            const colorClass = BADGE_COLORS[badge.badge_key] || "bg-primary/20 text-primary border-primary/30";
-
             return (
               <Tooltip key={badge.id}>
                 <TooltipTrigger>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${colorClass} border`}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center bg-primary/15 text-primary border border-primary/30 shadow-[0_0_10px_hsl(0_65%_51%/0.35)]">
                     <Icon className="w-3 h-3" />
                   </div>
                 </TooltipTrigger>
@@ -106,10 +102,12 @@ const UserBadges = ({ userId, variant = "full", showEmpty = false }: UserBadgesP
       <div className="flex flex-wrap gap-1.5">
         {badges.map((badge) => {
           const Icon = BADGE_ICONS[badge.badge_key] || Award;
-          const colorClass = BADGE_COLORS[badge.badge_key] || "bg-primary/20 text-primary border-primary/30";
-
           return (
-            <Badge key={badge.id} variant="outline" className={`${colorClass} px-2 py-0.5`}>
+            <Badge
+              key={badge.id}
+              variant="outline"
+              className="bg-primary/10 text-primary border-primary/30 px-2 py-0.5 shadow-[0_0_10px_hsl(0_65%_51%/0.3)]"
+            >
               <Icon className="w-3 h-3 mr-1" />
               <span className="text-[10px]">{badge.badge_name}</span>
             </Badge>
@@ -122,47 +120,45 @@ const UserBadges = ({ userId, variant = "full", showEmpty = false }: UserBadgesP
     );
   }
 
-  // Full variant
+  // Full gallery — every catalog entry rendered, locked ones in greyscale.
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Award className="w-4 h-4 text-primary" />
         <h4 className="font-semibold text-sm">Achievements</h4>
         <span className="text-xs text-muted-foreground ml-auto">
-          {badges.length} earned
+          {badges.length} / {BADGE_CATALOG.length} unlocked
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {badges.map((badge) => {
-          const Icon = BADGE_ICONS[badge.badge_key] || Award;
-          const colorClass = BADGE_COLORS[badge.badge_key] || "bg-primary/20 text-primary border-primary/30";
-
+        {BADGE_CATALOG.map((b) => {
+          const unlocked = earnedKeys.has(b.key);
+          const Icon = BADGE_ICONS[b.key] || Award;
           return (
             <div
-              key={badge.id}
-              className={`p-3 rounded-lg border ${colorClass} transition-all hover:scale-105`}
+              key={b.key}
+              className={`relative p-3 rounded-xl border transition-all ${
+                unlocked
+                  ? "bg-primary/8 border-primary/40 shadow-[0_0_18px_hsl(0_65%_51%/0.35)]"
+                  : "bg-card border-border grayscale-locked"
+              }`}
             >
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-background/50 flex items-center justify-center">
-                  <Icon className="w-4 h-4" />
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                  unlocked ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                }`}>
+                  {unlocked ? <Icon className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{badge.badge_name}</p>
-                  <p className="text-[10px] opacity-70 truncate">{badge.badge_description}</p>
+                  <p className="text-xs font-semibold truncate">{b.name}</p>
+                  <p className="text-[10px] opacity-70 truncate">{b.description}</p>
                 </div>
               </div>
             </div>
           );
         })}
       </div>
-
-      {badges.length === 0 && showEmpty && (
-        <div className="text-center py-4 text-muted-foreground">
-          <Award className="w-8 h-8 mx-auto mb-2 opacity-30" />
-          <p className="text-xs">Complete tasks to earn badges!</p>
-        </div>
-      )}
     </div>
   );
 };
