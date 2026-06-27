@@ -246,18 +246,8 @@ const Earn = () => {
           </div>
         </Card>
 
-        {/* Anti-fraud notice */}
-        <Card className="p-3 bg-destructive/5 border-destructive/20">
-          <div className="flex items-start gap-2">
-            <Shield className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <p className="text-[10px] text-muted-foreground">
-              Automated clicking, bots, or suspicious patterns will result in account suspension. Play fair!
-            </p>
-          </div>
-        </Card>
-
-        <Disclaimer variant="compact" />
       </div>
+
 
       <WatchAdModal
         isOpen={showAdModal}
