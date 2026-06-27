@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import AppLayout from "@/components/AppLayout";
 import WatchAdModal from "@/components/WatchAdModal";
 import XDCoin from "@/components/XDCoin";
-import Disclaimer from "@/components/Disclaimer";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
-import { Zap, Clock, CheckCircle, Target, TrendingUp, Shield } from "lucide-react";
+import { Zap, Clock, CheckCircle, Target, TrendingUp } from "lucide-react";
 
 interface TaskConfig {
   id: string;
@@ -152,15 +151,6 @@ const Earn = () => {
           </div>
         </Card>
 
-        {/* Transparency Notice */}
-        <Card className="p-3 bg-primary/5 border-primary/20">
-          <p className="text-xs text-foreground/80 leading-relaxed">
-            Users earn XD Coins by watching ads. Rewards are based on valid activity only.
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1.5">
-            Conversion: <span className="font-semibold text-foreground">1000 XD Coins = 10 value</span>
-          </p>
-        </Card>
 
         {/* Available Tasks */}
         <div className="space-y-3">
@@ -256,18 +246,8 @@ const Earn = () => {
           </div>
         </Card>
 
-        {/* Anti-fraud notice */}
-        <Card className="p-3 bg-destructive/5 border-destructive/20">
-          <div className="flex items-start gap-2">
-            <Shield className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-            <p className="text-[10px] text-muted-foreground">
-              Automated clicking, bots, or suspicious patterns will result in account suspension. Play fair!
-            </p>
-          </div>
-        </Card>
-
-        <Disclaimer variant="compact" />
       </div>
+
 
       <WatchAdModal
         isOpen={showAdModal}

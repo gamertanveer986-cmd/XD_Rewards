@@ -4,11 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
-import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import ProfileSetup from "@/components/ProfileSetup";
 import XDCoin from "@/components/XDCoin";
 import TaskProgress from "@/components/TaskProgress";
-import Disclaimer from "@/components/Disclaimer";
 import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
 import RecentActivity from "@/components/RecentActivity";
@@ -108,7 +106,8 @@ const Dashboard = () => {
   return (
     <AppLayout title="XD REWARDS" showAdmin={isAdmin} showLogout={!isGuest} onLogout={handleLogout}>
       <GuestBanner />
-      {!isGuest && <EmailVerificationBanner />}
+
+
 
       <div className="px-4 py-4 space-y-4">
         {/* Hero Balance Card */}
@@ -208,13 +207,11 @@ const Dashboard = () => {
           <h3 className="text-sm font-semibold text-muted-foreground px-1">Recent Activity</h3>
           {user && <RecentActivity userId={user.id} />}
         </div>
-
-        {/* Disclaimer */}
-        <Disclaimer />
       </div>
 
       {user && <NotificationPermission userId={user.id} />}
     </AppLayout>
+
   );
 };
 
