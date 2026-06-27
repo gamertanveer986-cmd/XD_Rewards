@@ -304,15 +304,6 @@ const GiftCards = () => {
               </div>
             )}
 
-            {/* Info notice */}
-            <Card className="p-4 bg-muted/30 border-border/50">
-              <p className="text-xs text-muted-foreground text-center mb-2">
-                Redeem codes are sent to your email after manual approval. Processing time: 24–48 hours.
-              </p>
-              <p className="text-[10px] text-muted-foreground text-center">
-                This app does not guarantee earnings. Rewards are promotional and subject to approval.
-              </p>
-            </Card>
           </TabsContent>
 
           {/* History Tab */}
