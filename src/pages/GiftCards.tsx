@@ -210,25 +210,12 @@ const GiftCards = () => {
           </div>
         </Card>
 
-        {/* Redeem Rules Notice */}
-        <Card className="p-3 bg-warning/10 border-warning/30">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-foreground">Redeem Rules</p>
-              <ul className="text-[11px] text-muted-foreground space-y-0.5 list-disc pl-4">
-                <li>Conversion: 1000 XD Coins = 10 value</li>
-                <li>Minimum withdrawal: 10 value (1000 XD Coins)</li>
-                <li>Rewards are sent only via redeem codes to your email</li>
-                <li>No UPI or direct bank transfer is provided</li>
-                <li>Processing time: 24–48 hours (manual approval required)</li>
-                <li>Signup bonus (10 value) is not withdrawable</li>
-              </ul>
-              <p className="text-[10px] text-destructive/90 font-medium pt-1">
-                This app does not guarantee earnings. Rewards are promotional and subject to approval.
-              </p>
-            </div>
-          </div>
+        {/* Minimum Withdrawal */}
+        <Card className="p-3 bg-primary/5 border-primary/30">
+          <p className="text-sm font-semibold text-center">
+            Minimum Withdrawal: <span className="text-primary">₹50 INR</span>{" "}
+            <span className="text-muted-foreground font-normal">(5000 XD Coins)</span>
+          </p>
         </Card>
 
         <Tabs defaultValue="browse" className="w-full">
