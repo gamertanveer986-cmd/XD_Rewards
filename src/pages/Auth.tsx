@@ -116,22 +116,39 @@ const Auth = () => {
         });
         if (error) throw error;
 
-        // If a session was returned (auto-confirm on), verify the device immediately.
-        // Otherwise the device check runs on first login after email verification.
-        if (signUpData.session) {
-          const deviceCheck = await checkAndRegisterDevice();
-          if (!deviceCheck.success) {
-            await supabase.auth.signOut();
-            setDeviceLock({
-              open: true,
-              code: (deviceCheck.code as DeviceLockCode) || "DEVICE_IN_USE",
-              message: deviceCheck.message,
+        // Auto-confirm is enabled — sign in directly if no session was returned.
+        if (!signUpData.session) {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+          if (signInError) throw signInError;
+        }
+
+        const deviceCheck = await checkAndRegisterDevice();
+        if (!deviceCheck.success) {
+          await supabase.auth.signOut();
+          setDeviceLock({
+            open: true,
+            code: (deviceCheck.code as DeviceLockCode) || "DEVICE_IN_USE",
+            message: deviceCheck.message,
+          });
+          return;
+        }
+
+        // Apply referral code (referrer paid on first successful withdrawal)
+        if (referralCode.trim()) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            await supabase.rpc("apply_referral_code", {
+              p_user_id: session.user.id,
+              p_referral_code: referralCode.trim().toUpperCase(),
             });
-            return;
           }
         }
 
-        setSignupSuccess(true);
+        toast.success("Account created! Welcome to XD Rewards.");
+        navigate("/dashboard");
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
