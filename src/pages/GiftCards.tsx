@@ -280,7 +280,7 @@ const GiftCards = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">{product.name}</h4>
-                          <p className="text-xs text-muted-foreground">{denominationValue} value reward</p>
+                          <p className="text-xs text-muted-foreground">₹{denominationValue} INR reward</p>
                         </div>
                         <div className="text-right">
                           <div className="flex items-center gap-1 justify-end mb-1">
