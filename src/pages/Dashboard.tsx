@@ -106,7 +106,8 @@ const Dashboard = () => {
   return (
     <AppLayout title="XD REWARDS" showAdmin={isAdmin} showLogout={!isGuest} onLogout={handleLogout}>
       <GuestBanner />
-      {!isGuest && <EmailVerificationBanner />}
+
+
 
       <div className="px-4 py-4 space-y-4">
         {/* Hero Balance Card */}
