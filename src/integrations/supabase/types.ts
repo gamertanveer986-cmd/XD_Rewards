@@ -557,6 +557,7 @@ export type Database = {
           non_withdrawable_balance: number
           payment_status: string | null
           profile_completed: boolean | null
+          referral_bonus_paid: boolean
           referral_code: string | null
           referrals_count: number
           referred_by: string | null
@@ -565,6 +566,7 @@ export type Database = {
           upi_id: string | null
           user_id: string
           username: string | null
+          weekly_earnings: number
           withdrawable_balance: number
         }
         Insert: {
@@ -577,6 +579,7 @@ export type Database = {
           non_withdrawable_balance?: number
           payment_status?: string | null
           profile_completed?: boolean | null
+          referral_bonus_paid?: boolean
           referral_code?: string | null
           referrals_count?: number
           referred_by?: string | null
@@ -585,6 +588,7 @@ export type Database = {
           upi_id?: string | null
           user_id: string
           username?: string | null
+          weekly_earnings?: number
           withdrawable_balance?: number
         }
         Update: {
@@ -597,6 +601,7 @@ export type Database = {
           non_withdrawable_balance?: number
           payment_status?: string | null
           profile_completed?: boolean | null
+          referral_bonus_paid?: boolean
           referral_code?: string | null
           referrals_count?: number
           referred_by?: string | null
@@ -605,6 +610,7 @@ export type Database = {
           upi_id?: string | null
           user_id?: string
           username?: string | null
+          weekly_earnings?: number
           withdrawable_balance?: number
         }
         Relationships: [
@@ -730,6 +736,10 @@ export type Database = {
         Returns: boolean
       }
       increment_task_progress: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      pay_pending_referral_bonus: {
         Args: { p_user_id: string }
         Returns: undefined
       }
