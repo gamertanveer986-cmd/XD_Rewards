@@ -151,15 +151,6 @@ const Earn = () => {
           </div>
         </Card>
 
-        {/* Transparency Notice */}
-        <Card className="p-3 bg-primary/5 border-primary/20">
-          <p className="text-xs text-foreground/80 leading-relaxed">
-            Users earn XD Coins by watching ads. Rewards are based on valid activity only.
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1.5">
-            Conversion: <span className="font-semibold text-foreground">1000 XD Coins = 10 value</span>
-          </p>
-        </Card>
 
         {/* Available Tasks */}
         <div className="space-y-3">
