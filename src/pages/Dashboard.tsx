@@ -206,11 +206,12 @@ const Dashboard = () => {
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground px-1">Recent Activity</h3>
           {user && <RecentActivity userId={user.id} />}
+        </div>
       </div>
-
 
       {user && <NotificationPermission userId={user.id} />}
     </AppLayout>
+
   );
 };
 
