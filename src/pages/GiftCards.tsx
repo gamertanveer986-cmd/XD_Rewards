@@ -367,11 +367,9 @@ const GiftCards = () => {
 
         {/* Withdraw Proof */}
         <WithdrawProof />
-
-        {/* Disclaimer */}
-        <Disclaimer />
       </div>
     </AppLayout>
+
   );
 };
 
