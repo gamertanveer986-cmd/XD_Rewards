@@ -7,12 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import AppLayout from "@/components/AppLayout";
 import {
   Globe, Volume2, VolumeX, LifeBuoy, ShieldCheck, FileText, ChevronRight,
-  LogOut, BadgeCheck, Coins, Clock, Lock, ExternalLink,
+  LogOut, BadgeCheck, Coins, Lock, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n, { LANGUAGE_STORAGE_KEY } from "@/i18n";
 
 const SOUND_KEY = "xd_sound_enabled";
-const LANG_KEY = "xd_language";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -21,9 +22,10 @@ const LANGUAGES = [
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(i18n.language || "en");
   const [openPolicy, setOpenPolicy] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ const Settings = () => {
       }
       try {
         setSoundEnabled(localStorage.getItem(SOUND_KEY) !== "0");
-        setLanguage(localStorage.getItem(LANG_KEY) || "en");
+        setLanguage(localStorage.getItem(LANGUAGE_STORAGE_KEY) || i18n.language || "en");
       } catch {/* ignore */}
       setLoading(false);
     };
@@ -44,7 +46,7 @@ const Settings = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    toast.success("Signed out");
+    toast.success(t("settings.signedOut"));
     navigate("/auth");
   };
 
@@ -53,10 +55,11 @@ const Settings = () => {
     try { localStorage.setItem(SOUND_KEY, v ? "1" : "0"); } catch {/* ignore */}
   };
 
-  const changeLanguage = (code: string) => {
+  const changeLanguage = async (code: string) => {
     setLanguage(code);
-    try { localStorage.setItem(LANG_KEY, code); } catch {/* ignore */}
-    toast.success("Language preference saved");
+    try { localStorage.setItem(LANGUAGE_STORAGE_KEY, code); } catch {/* ignore */}
+    await i18n.changeLanguage(code);
+    toast.success(i18n.t("settings.languageSaved"));
   };
 
   if (loading) {
