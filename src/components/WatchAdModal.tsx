@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnityAds } from "@/hooks/useUnityAds";
 import { useGuest } from "@/contexts/GuestContext";
-import { CheckCircle, Zap, Play, Volume2, X } from "lucide-react";
+import { CheckCircle, Zap, Play, Volume2, X, RotateCcw, AlertTriangle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface WatchAdModalProps {
   isOpen: boolean;
@@ -16,15 +17,20 @@ interface WatchAdModalProps {
 
 const SIM_AD_SECONDS = 15;
 const GUEST_COINS_PER_AD = 10;
+// Safety net: if the native ad flow never resolves (SDK stuck),
+// automatically reset the button after this many ms.
+const NATIVE_WATCH_TIMEOUT_MS = 30_000;
 
 const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalProps) => {
+  const { t } = useTranslation();
   const { isGuest, addGuestCoins } = useGuest();
-  const { isNative, isReady, isLoading, initError, watch } = useUnityAds();
+  const { isNative, isReady, isLoading, initError, loadError, watch, retry } = useUnityAds();
 
   const [phase, setPhase] = useState<"idle" | "playing" | "done">("idle");
   const [remaining, setRemaining] = useState(SIM_AD_SECONDS);
   const [coinsEarned, setCoinsEarned] = useState(0);
   const timerRef = useRef<number | null>(null);
+  const watchTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -35,16 +41,19 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
         window.clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      if (watchTimeoutRef.current) {
+        window.clearTimeout(watchTimeoutRef.current);
+        watchTimeoutRef.current = null;
+      }
     }
   }, [isOpen]);
 
   const grantReward = async () => {
-    // Guest: session wallet only
     if (isGuest || !userId) {
       addGuestCoins(GUEST_COINS_PER_AD);
       setCoinsEarned(GUEST_COINS_PER_AD);
       setPhase("done");
-      toast.success(`You earned ${GUEST_COINS_PER_AD} XD Coins!`);
+      toast.success(t("ads.earnedToast", { coins: GUEST_COINS_PER_AD }));
       onAdComplete(GUEST_COINS_PER_AD);
       return;
     }
@@ -59,7 +68,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
       const coins = Math.floor((result?.earnings ?? 0) * 100) || GUEST_COINS_PER_AD;
       setCoinsEarned(coins);
       setPhase("done");
-      toast.success(`You earned ${coins} XD Coins!`);
+      toast.success(t("ads.earnedToast", { coins }));
       onAdComplete(coins);
     } catch (err: any) {
       console.error("[WatchAdModal] record_ad_completion failed:", err);
@@ -73,7 +82,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
     setRemaining(SIM_AD_SECONDS);
     if (timerRef.current) window.clearInterval(timerRef.current);
     timerRef.current = window.setInterval(() => {
-      setRemaining(prev => {
+      setRemaining((prev) => {
         if (prev <= 1) {
           if (timerRef.current) {
             window.clearInterval(timerRef.current);
@@ -89,11 +98,31 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
 
   const startNativeAd = async () => {
     setPhase("playing");
-    const res = await watch();
-    if (res.success) {
-      await grantReward();
-    } else {
-      toast.error(res.error || "Ad was not completed.");
+    // Safety net — if SDK never resolves, reset to idle so the button unlocks.
+    if (watchTimeoutRef.current) window.clearTimeout(watchTimeoutRef.current);
+    watchTimeoutRef.current = window.setTimeout(() => {
+      toast.error(t("ads.adFailed"));
+      setPhase("idle");
+    }, NATIVE_WATCH_TIMEOUT_MS);
+
+    try {
+      const res = await watch();
+      if (watchTimeoutRef.current) {
+        window.clearTimeout(watchTimeoutRef.current);
+        watchTimeoutRef.current = null;
+      }
+      if (res.success) {
+        await grantReward();
+      } else {
+        toast.error(res.error || t("ads.adFailed"));
+        setPhase("idle");
+      }
+    } catch (err: any) {
+      if (watchTimeoutRef.current) {
+        window.clearTimeout(watchTimeoutRef.current);
+        watchTimeoutRef.current = null;
+      }
+      toast.error(err?.message || t("ads.adFailed"));
       setPhase("idle");
     }
   };
@@ -103,12 +132,19 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
     else startSimulatedAd();
   };
 
+  const handleRetry = async () => {
+    await retry();
+  };
+
   const handleClose = () => {
-    if (phase === "playing") return; // can't close during ad
+    if (phase === "playing") return;
     onClose();
   };
 
   const progressPct = ((SIM_AD_SECONDS - remaining) / SIM_AD_SECONDS) * 100;
+
+  // Native ad has a hard blocker (init error OR load error AND not ready AND not loading)
+  const hasBlockingError = isNative && (initError || (loadError && !isReady && !isLoading));
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => { if (!o) handleClose(); }}>
@@ -116,11 +152,11 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
         <DialogHeader>
           <DialogTitle className="text-center flex items-center justify-center gap-2">
             {phase === "done" ? (
-              <><CheckCircle className="w-5 h-5 text-success" /> Reward Earned!</>
+              <><CheckCircle className="w-5 h-5 text-success" /> {t("ads.rewardEarned")}</>
             ) : phase === "playing" ? (
-              <>Ad playing…</>
+              <>{t("ads.adPlaying")}</>
             ) : (
-              <><Zap className="w-5 h-5 text-primary" /> Watch Video & Earn Coins</>
+              <><Zap className="w-5 h-5 text-primary" /> {t("ads.watchTitle")}</>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -133,27 +169,52 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
               </div>
               <div className="space-y-1">
                 <p className="font-medium">
-                  {isNative ? "Watch a Unity rewarded ad" : "Watch a short video"}
+                  {isNative ? t("ads.watchNativeSubtitle") : t("ads.watchWebSubtitle")}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Reward is granted only after the video completes.
+                  {t("ads.rewardGrantedNote")}
                 </p>
               </div>
-              {isNative && initError && (
-                <p className="text-xs text-destructive">{initError}</p>
+
+              {hasBlockingError && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-left">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                    <p className="text-xs text-destructive">
+                      {initError || loadError}
+                    </p>
+                  </div>
+                </div>
               )}
-              <Button
-                onClick={handleStart}
-                className="w-full bg-primary hover:bg-primary/90"
-                disabled={isNative && (isLoading || (!isReady && !initError))}
-              >
-                {isNative
-                  ? (isLoading ? "Loading ad…" : isReady ? "Watch Ad" : "Preparing…")
-                  : `Play ${SIM_AD_SECONDS}s Video`}
-              </Button>
+
+              {hasBlockingError ? (
+                <Button
+                  onClick={handleRetry}
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isLoading}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  {isLoading ? t("ads.loadingAd") : t("ads.retryAd")}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleStart}
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isNative && (isLoading || !isReady)}
+                >
+                  {isNative
+                    ? (isLoading
+                        ? t("ads.loadingAd")
+                        : isReady
+                          ? t("ads.watchAd")
+                          : t("ads.preparing"))
+                    : t("ads.playSecondsVideo", { seconds: SIM_AD_SECONDS })}
+                </Button>
+              )}
+
               {!isNative && (
                 <p className="text-[10px] text-muted-foreground">
-                  Simulated player on web — real Unity Ads run in the mobile app.
+                  {t("ads.simulatedNote")}
                 </p>
               )}
             </div>
@@ -184,7 +245,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
                 </div>
               </div>
               <p className="text-xs text-center text-muted-foreground">
-                Please wait — your reward unlocks when the video ends.
+                {t("ads.pleaseWait")}
               </p>
             </div>
           )}
@@ -192,7 +253,7 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
           {phase === "playing" && isNative && (
             <div className="py-8 text-center space-y-3">
               <div className="w-14 h-14 mx-auto border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-muted-foreground">Showing Unity rewarded ad…</p>
+              <p className="text-sm text-muted-foreground">{t("ads.adPlaying")}</p>
             </div>
           )}
 
@@ -205,10 +266,10 @@ const WatchAdModal = ({ isOpen, onClose, userId, onAdComplete }: WatchAdModalPro
                 +{coinsEarned} XD Coins
               </p>
               <p className="text-sm text-muted-foreground">
-                {isGuest ? "Saved to your guest session wallet." : "Added to your balance."}
+                {isGuest ? t("ads.savedGuest") : t("ads.addedBalance")}
               </p>
               <Button onClick={handleClose} variant="outline" className="w-full">
-                Continue
+                {t("common.continue")}
               </Button>
             </div>
           )}

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { GuestProvider } from "@/contexts/GuestContext";
 import { lazy, Suspense } from "react";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import TermsAgreementGate from "@/components/TermsAgreementGate";
 
 // Code-split all non-landing routes to reduce initial JS bundle size.
@@ -43,6 +44,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/auth" replace />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />

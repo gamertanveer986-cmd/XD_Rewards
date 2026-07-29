@@ -1,16 +1,18 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Zap, Trophy, Gift, Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const navItems = [
-    { path: "/dashboard", icon: Home, label: "Home" },
-    { path: "/earn", icon: Zap, label: "Earn" },
-    { path: "/gift-cards", icon: Gift, label: "Redeem" },
-    { path: "/leaderboard", icon: Trophy, label: "Ranks" },
-    { path: "/settings", icon: Settings, label: "Settings" },
+    { path: "/dashboard", icon: Home, label: t("nav.home") },
+    { path: "/earn", icon: Zap, label: t("nav.earn") },
+    { path: "/gift-cards", icon: Gift, label: t("nav.redeem") },
+    { path: "/leaderboard", icon: Trophy, label: t("nav.ranks") },
+    { path: "/settings", icon: Settings, label: t("nav.settings") },
   ];
 
   const isActive = (path: string) => location.pathname === path;
