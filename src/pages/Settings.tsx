@@ -71,15 +71,15 @@ const Settings = () => {
   }
 
   return (
-    <AppLayout title="Settings">
+    <AppLayout title={t("settings.title")}>
       <div className="px-4 py-5 space-y-5">
         {/* Language */}
         <section>
-          <h2 className="text-xs uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2">Language</h2>
+          <h2 className="text-xs uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2">{t("settings.language")}</h2>
           <Card className="p-4 surface-elevated border-border">
             <div className="flex items-center gap-3 mb-3">
               <Globe className="w-5 h-5 text-primary" />
-              <p className="text-sm font-medium">App Language</p>
+              <p className="text-sm font-medium">{t("settings.appLanguage")}</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {LANGUAGES.map((l) => (
@@ -101,7 +101,7 @@ const Settings = () => {
 
         {/* Sound */}
         <section>
-          <h2 className="text-xs uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2">Preferences</h2>
+          <h2 className="text-xs uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2">{t("settings.preferences")}</h2>
           <Card className="p-4 surface-elevated border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -111,9 +111,9 @@ const Settings = () => {
                   <VolumeX className="w-5 h-5 text-muted-foreground" />
                 )}
                 <div>
-                  <p className="text-sm font-medium">Sound Effects</p>
+                  <p className="text-sm font-medium">{t("settings.soundEffects")}</p>
                   <p className="text-xs text-muted-foreground">
-                    {soundEnabled ? "Coin chimes enabled" : "Silent mode"}
+                    {soundEnabled ? t("settings.soundOn") : t("settings.soundOff")}
                   </p>
                 </div>
               </div>
@@ -124,7 +124,7 @@ const Settings = () => {
 
         {/* Help & Support */}
         <section>
-          <h2 className="text-xs uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2">Help</h2>
+          <h2 className="text-xs uppercase tracking-[0.18em] text-muted-foreground px-1 mb-2">{t("settings.help")}</h2>
           <Card className="surface-elevated border-border divide-y divide-border overflow-hidden">
             <button
               onClick={() => navigate("/support")}
@@ -132,7 +132,7 @@ const Settings = () => {
             >
               <div className="flex items-center gap-3">
                 <LifeBuoy className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">Help & Support</span>
+                <span className="text-sm font-medium">{t("settings.helpSupport")}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -142,12 +142,13 @@ const Settings = () => {
             >
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium">Send Feedback</span>
+                <span className="text-sm font-medium">{t("settings.sendFeedback")}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </a>
           </Card>
         </section>
+
 
         {/* Policies */}
         <section>
@@ -250,7 +251,7 @@ const Settings = () => {
             className="w-full h-12 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Log Out
+            {t("settings.logout")}
           </Button>
         </section>
 
