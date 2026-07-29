@@ -36,9 +36,16 @@ const Auth = () => {
     code: "UNKNOWN",
   });
 
-  // Check if user is already logged in
+  // Check if user is already logged in — but NOT during a password recovery flow.
   useEffect(() => {
     const checkSession = async () => {
+      const hash = window.location.hash || "";
+      const isRecovery = hash.includes("type=recovery");
+      if (isRecovery) {
+        // Route recovery links to the dedicated reset page; do not auto-login.
+        navigate("/reset-password" + window.location.hash, { replace: true });
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/dashboard");
@@ -104,6 +111,7 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
+        // Sign up — auto-confirm is enabled server-side, so a session should be returned.
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -116,15 +124,28 @@ const Auth = () => {
         });
         if (error) throw error;
 
-        // Auto-confirm is enabled — sign in directly if no session was returned.
-        if (!signUpData.session) {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-          });
-          if (signInError) throw signInError;
+        // If no session yet (e.g. email confirmation is required for this project),
+        // try password sign-in. If that also fails, surface a clean error instead of hanging.
+        let activeSession = signUpData.session;
+        if (!activeSession) {
+          const { data: signInData, error: signInError } =
+            await supabase.auth.signInWithPassword({
+              email: email.trim(),
+              password,
+            });
+          if (signInError) {
+            // Most common cause: email confirmation required. Tell the user clearly.
+            toast.error(
+              signInError.message?.toLowerCase().includes("confirm")
+                ? "Please confirm your email to continue."
+                : signInError.message || "Could not sign in after signup."
+            );
+            return;
+          }
+          activeSession = signInData.session;
         }
 
+        // Enforce one-device-one-account (no-op on web).
         const deviceCheck = await checkAndRegisterDevice();
         if (!deviceCheck.success) {
           await supabase.auth.signOut();
@@ -136,14 +157,16 @@ const Auth = () => {
           return;
         }
 
-        // Apply referral code (referrer paid on first successful withdrawal)
-        if (referralCode.trim()) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
+        // Apply referral code (referrer paid on first successful withdrawal).
+        if (referralCode.trim() && activeSession) {
+          try {
             await supabase.rpc("apply_referral_code", {
-              p_user_id: session.user.id,
+              p_user_id: activeSession.user.id,
               p_referral_code: referralCode.trim().toUpperCase(),
             });
+          } catch (refErr) {
+            // Non-fatal — user still gets an account.
+            console.warn("[Auth] apply_referral_code failed:", refErr);
           }
         }
 
@@ -151,7 +174,7 @@ const Auth = () => {
         navigate("/dashboard");
       }
     } catch (error: any) {
-      toast.error(error.message || "Authentication failed");
+      toast.error(error?.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
@@ -169,7 +192,7 @@ const Auth = () => {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) throw error;
