@@ -251,7 +251,7 @@ const Settings = () => {
             className="w-full h-12 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            {t("settings.logout")}
+            {t("settings.logOut")}
           </Button>
         </section>
 
