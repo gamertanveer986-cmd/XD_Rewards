@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import AdminGamification from "@/components/AdminGamification";
 import AdminDeviceRegistrations from "@/components/AdminDeviceRegistrations";
+import AdminAIBot from "@/components/AdminAIBot";
 
 
 interface UserProfile {
