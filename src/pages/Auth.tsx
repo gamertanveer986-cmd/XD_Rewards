@@ -536,7 +536,7 @@ const Auth = () => {
           By signing up, you agree to our{" "}
           <button 
             onClick={() => setShowPolicyModal(true)}
-            className="text-primary underline"
+            className="text-primary-readable underline"
           >
             Policy
           </button>
