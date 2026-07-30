@@ -8,6 +8,7 @@ import { lazy, Suspense } from "react";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import TermsAgreementGate from "@/components/TermsAgreementGate";
+import BannedGate from "@/components/BannedGate";
 
 // Code-split all non-landing routes to reduce initial JS bundle size.
 // /auth is the landing route so it stays eagerly imported above.
@@ -40,6 +41,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <TermsAgreementGate>
+          <BannedGate>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Navigate to="/auth" replace />} />
@@ -60,6 +62,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </BannedGate>
         </TermsAgreementGate>
       </BrowserRouter>
       </GuestProvider>
