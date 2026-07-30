@@ -86,6 +86,81 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_bot_alerts: {
+        Row: {
+          action_taken: string
+          ai_reasoning: string | null
+          category: string
+          created_at: string
+          details: string
+          id: string
+          metadata: Json
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          action_taken?: string
+          ai_reasoning?: string | null
+          category?: string
+          created_at?: string
+          details: string
+          id?: string
+          metadata?: Json
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          action_taken?: string
+          ai_reasoning?: string | null
+          category?: string
+          created_at?: string
+          details?: string
+          id?: string
+          metadata?: Json
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_bot_settings: {
+        Row: {
+          config_json: Json
+          created_at: string
+          id: string
+          is_enabled: boolean
+          setting_key: string
+          setting_name: string
+          updated_at: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          setting_key: string
+          setting_name: string
+          updated_at?: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          setting_key?: string
+          setting_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_rewards: {
         Row: {
           created_at: string | null
@@ -514,6 +589,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bans: {
+        Row: {
+          banned_by: string
+          created_at: string
+          evidence: Json
+          id: string
+          is_active: boolean
+          lifted_at: string | null
+          lifted_by: string | null
+          reason: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          banned_by?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          is_active?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          is_active?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           created_at: string | null
@@ -672,6 +786,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_lift_ban: { Args: { p_ban_id: string }; Returns: Json }
       admin_unlink_device: {
         Args: { p_registration_id: string }
         Returns: Json
@@ -739,6 +854,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      is_current_user_banned: { Args: never; Returns: Json }
       pay_pending_referral_bonus: {
         Args: { p_user_id: string }
         Returns: undefined
