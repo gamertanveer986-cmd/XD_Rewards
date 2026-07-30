@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://xd-rewards-official.lovable.app/sitemap.xml
