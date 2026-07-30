@@ -56,8 +56,6 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({} as Record<string, unknown>));
     const cronSecret = (body as { cron_secret?: string }).cron_secret;
-    const authorized = cronSecret === SERVICE_ROLE || (await isAdminRequest(req));
-    if (!authorized) return json({ error: "Unauthorized" }, 401);
 
     // --- Load bot configuration -------------------------------------------
     const { data: settings } = await admin
@@ -66,9 +64,16 @@ Deno.serve(async (req) => {
       .eq("setting_key", "guardian")
       .maybeSingle();
 
+    const storedCronSecret = String((settings?.config_json ?? {}).cron_secret ?? "");
+    const authorized =
+      (!!cronSecret && (cronSecret === SERVICE_ROLE || (!!storedCronSecret && cronSecret === storedCronSecret))) ||
+      (await isAdminRequest(req));
+    if (!authorized) return json({ error: "Unauthorized" }, 401);
+
     if (!settings || !settings.is_enabled) {
       return json({ success: false, message: "AI Guardian is disabled" });
     }
+
 
     const cfg = (settings.config_json ?? {}) as Record<string, unknown>;
     const autoBan = cfg.auto_ban !== false;
