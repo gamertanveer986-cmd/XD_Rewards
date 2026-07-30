@@ -41,6 +41,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <TermsAgreementGate>
+          <BannedGate>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Navigate to="/auth" replace />} />
