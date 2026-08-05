@@ -48,7 +48,8 @@ const Auth = () => {
       }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        const raw = new URLSearchParams(window.location.search).get("next");
+        navigate(raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard");
       }
       setCheckingSession(false);
     };
@@ -56,6 +57,16 @@ const Auth = () => {
   }, [navigate]);
 
   const [signupSuccess, setSignupSuccess] = useState(false);
+
+  // Where to go after auth: honours a same-origin relative ?next= (used by the
+  // OAuth consent flow for agent integrations), otherwise the dashboard.
+  const nextTarget = (): string => {
+    try {
+      const raw = new URLSearchParams(window.location.search).get("next");
+      if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+    } catch {/* ignore */}
+    return "/dashboard";
+  };
 
   const validateForm = (): boolean => {
     setErrors({});
@@ -109,14 +120,14 @@ const Auth = () => {
         }
 
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate(nextTarget());
       } else {
         // Sign up — auto-confirm is enabled server-side, so a session should be returned.
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}${nextTarget()}`,
             data: {
               referral_code: referralCode.trim().toUpperCase() || null,
             },
@@ -171,7 +182,7 @@ const Auth = () => {
         }
 
         toast.success("Account created! Welcome to XD Rewards.");
-        navigate("/dashboard");
+        navigate(nextTarget());
       }
     } catch (error: any) {
       toast.error(error?.message || "Authentication failed");
