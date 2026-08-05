@@ -164,18 +164,82 @@ var get_leaderboard_default = defineTool4({
   }
 });
 
+// src/lib/mcp/tools/list-withdrawals.ts
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.26.1";
+import { z as z3 } from "npm:zod@^3.25.76";
+var COINS_PER_RUPEE2 = 100;
+var PAYOUT_WINDOW_HOURS = 48;
+function estimatePayout(status, createdAt, processedAt) {
+  if (status === "completed") {
+    return { estimated_payout: null, note: processedAt ? `Paid on ${processedAt}` : "Paid" };
+  }
+  if (status === "rejected" || status === "cancelled") {
+    return { estimated_payout: null, note: "Request was not approved" };
+  }
+  const eta = new Date(new Date(createdAt).getTime() + PAYOUT_WINDOW_HOURS * 36e5);
+  const overdue = eta.getTime() < Date.now();
+  return {
+    estimated_payout: eta.toISOString(),
+    note: overdue ? "Under manual verification \u2014 slightly past the usual 48 hour window" : "Processed within 48 hours after manual verification"
+  };
+}
+var list_withdrawals_default = defineTool5({
+  name: "list_withdrawals",
+  title: "List withdrawal requests",
+  description: "List the signed-in user's latest withdrawal / redemption requests with their status and estimated payout time.",
+  inputSchema: {
+    limit: z3.number().int().min(1).max(50).default(10).describe("How many requests to return."),
+    status: z3.string().trim().min(1).optional().describe("Optional status filter, e.g. 'pending' or 'completed'.")
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+  handler: async ({ limit, status }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    let query = supabase.from("gift_card_purchases").select(
+      "id, amount_paid, status, created_at, processed_at, email, product:gift_card_products(name, brand, denomination)"
+    ).eq("user_id", ctx.getUserId()).order("created_at", { ascending: false }).limit(limit ?? 10);
+    if (status) query = query.eq("status", status);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    const withdrawals = (data ?? []).map((row) => {
+      const timing = estimatePayout(row.status, row.created_at, row.processed_at);
+      return {
+        id: row.id,
+        reward: row.product?.name ?? "Reward",
+        brand: row.product?.brand ?? null,
+        amount_inr: Number(row.amount_paid),
+        amount_xd_coins: Math.round(Number(row.amount_paid) * COINS_PER_RUPEE2),
+        status: row.status,
+        requested_at: row.created_at,
+        processed_at: row.processed_at,
+        payout_email: row.email ?? null,
+        ...timing
+      };
+    });
+    const summary = withdrawals.length === 0 ? "No withdrawal requests found." : withdrawals.map(
+      (w) => `${w.reward} \u2014 \u20B9${w.amount_inr} (${w.amount_xd_coins} XD Coins) \xB7 ${w.status} \xB7 requested ${w.requested_at}` + (w.estimated_payout ? ` \xB7 estimated payout by ${w.estimated_payout}` : "") + ` \xB7 ${w.note}`
+    ).join("\n");
+    return {
+      content: [{ type: "text", text: summary }],
+      structuredContent: { withdrawals, minimum_withdrawal_inr: 50, payout_window_hours: PAYOUT_WINDOW_HOURS }
+    };
+  }
+});
+
 // src/lib/mcp/index.ts
 var projectRef = "aqltdrlkrsreprqkbvvo";
 var mcp_default = defineMcp({
   name: "xd-rewards-back",
   title: "XD Rewards back \u{1F3C6}",
   version: "0.1.0",
-  instructions: "Tools for XD Rewards, an entertainment rewards platform where users earn XD Coins (1000 XD Coins = \u20B910 INR). Use `get_wallet_summary` for balances, `list_transactions` for earning history, `list_achievements` for unlocked badges and `get_leaderboard` for the weekly ranking. All tools act as the signed-in user.",
+  instructions: "Tools for XD Rewards, an entertainment rewards platform where users earn XD Coins (1000 XD Coins = \u20B910 INR). Use `get_wallet_summary` for balances, `list_transactions` for earning history, `list_withdrawals` for withdrawal/redemption requests with status and estimated payout time, `list_achievements` for unlocked badges and `get_leaderboard` for the weekly ranking. All tools act as the signed-in user.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"
   }),
-  tools: [get_wallet_summary_default, list_transactions_default, list_achievements_default, get_leaderboard_default]
+  tools: [get_wallet_summary_default, list_transactions_default, list_withdrawals_default, list_achievements_default, get_leaderboard_default]
 });
 
 // lovable-mcp-supabase-entry.ts
