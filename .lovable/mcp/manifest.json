@@ -63,6 +63,36 @@
         "outputSchema": null
       },
       {
+        "name": "list_withdrawals",
+        "title": "List withdrawal requests",
+        "description": "List the signed-in user's latest withdrawal / redemption requests with their status and estimated payout time.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "description": "How many requests to return."
+            },
+            "status": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Optional status filter, e.g. 'pending' or 'completed'."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_achievements",
         "title": "List achievements",
         "description": "List the badges the signed-in user has unlocked in XD Rewards.",
