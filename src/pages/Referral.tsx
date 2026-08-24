@@ -115,7 +115,7 @@ const Referral = () => {
             {[
               { step: "1", text: "Share your code with friends", icon: Share2 },
               { step: "2", text: "Friend signs up using your code", icon: Users },
-              { step: "3", text: "You get 500 XD Coins (5 value)", icon: Gift },
+              { step: "3", text: "You receive 500 XD Coins after your friend's first successful redemption", icon: Gift },
             ].map((item) => (
               <div key={item.step} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
