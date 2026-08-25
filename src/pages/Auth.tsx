@@ -19,7 +19,7 @@ import DeviceLockedDialog, { type DeviceLockCode } from "@/components/DeviceLock
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { enterGuestMode } = useGuest();
+  const { enterGuestMode, exitGuestMode } = useGuest();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -119,6 +119,7 @@ const Auth = () => {
           return;
         }
 
+        exitGuestMode();
         toast.success("Welcome back!");
         navigate(nextTarget());
       } else {
@@ -181,6 +182,7 @@ const Auth = () => {
           }
         }
 
+        exitGuestMode();
         toast.success("Account created! Welcome to XD Rewards.");
         navigate(nextTarget());
       }

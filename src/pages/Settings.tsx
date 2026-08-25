@@ -12,6 +12,8 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import i18n, { LANGUAGE_STORAGE_KEY } from "@/i18n";
+import { useGuest } from "@/contexts/GuestContext";
+import GuestBanner from "@/components/GuestBanner";
 
 const SOUND_KEY = "xd_sound_enabled";
 
@@ -23,6 +25,7 @@ const LANGUAGES = [
 const Settings = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isGuest } = useGuest();
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [language, setLanguage] = useState(i18n.language || "en");
@@ -31,7 +34,7 @@ const Settings = () => {
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session && !isGuest) {
         navigate("/auth");
         return;
       }
@@ -42,7 +45,7 @@ const Settings = () => {
       setLoading(false);
     };
     init();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -72,6 +75,7 @@ const Settings = () => {
 
   return (
     <AppLayout title={t("settings.title")}>
+      <GuestBanner />
       <div className="px-4 py-5 space-y-5">
         {/* Language */}
         <section>
@@ -243,16 +247,26 @@ const Settings = () => {
           </Card>
         </section>
 
-        {/* Logout */}
+        {/* Logout / Login */}
         <section className="pt-4">
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="w-full h-12 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            {t("settings.logOut")}
-          </Button>
+          {isGuest ? (
+            <Button
+              onClick={() => navigate("/auth")}
+              className="w-full h-12 font-semibold"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Login / Sign Up
+            </Button>
+          ) : (
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full h-12 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {t("settings.logOut")}
+            </Button>
+          )}
         </section>
 
         <p className="text-[10px] text-muted-foreground text-center pt-2">

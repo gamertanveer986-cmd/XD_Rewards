@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Gift } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import DailyRewards from "@/components/DailyRewards";
 import Disclaimer from "@/components/Disclaimer";
@@ -37,9 +39,25 @@ const DailyBonus = () => {
     <AppLayout title="Daily Bonus">
       <GuestBanner />
       <div className="px-4 py-4 space-y-4">
-        {user && (
+        {user ? (
           <DailyRewards userId={user.id} />
+        ) : (
+          <Card className="p-5 bg-card border-border/50 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center mx-auto">
+              <Gift className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm">Login to claim your daily bonus</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Build a 7-day streak and earn up to 70 XD Coins every day.
+              </p>
+            </div>
+            <Button onClick={() => navigate("/auth")} className="w-full font-semibold">
+              Login / Sign Up
+            </Button>
+          </Card>
         )}
+
         
         {/* How Streaks Work */}
         <Card className="p-4 bg-card border-border/50">
