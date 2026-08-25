@@ -91,7 +91,7 @@ const Earn = () => {
   };
 
   const handleAdComplete = (_coins: number) => {
-    setCooldowns(prev => ({ ...prev, watch_ad: 15, complete_task: 15 }));
+    setCooldowns(prev => ({ ...prev, watch_ad: 15 }));
     if (isGuest) {
       setGuestTasksToday(n => n + 1);
       return;
@@ -198,6 +198,24 @@ const Earn = () => {
             );
           })}
         </div>
+
+        {/* How It Works */}
+        <Card className="p-4 bg-card border-border/50">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+              <Info className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h4 className="font-medium text-sm">How earning works</h4>
+              <ul className="text-xs text-muted-foreground mt-1 space-y-1 leading-relaxed">
+                <li>• Watch the full ad without skipping to receive your reward.</li>
+                <li>• Coins are credited instantly and verified server-side.</li>
+                <li>• 1000 XD Coins = ₹10 INR · Minimum withdrawal ₹50 INR (5000 XD Coins).</li>
+                <li>• Payouts are processed within 48 hours after manual verification.</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
 
         {/* Daily Progress */}
         <Card className="p-4 bg-card border-border/50">

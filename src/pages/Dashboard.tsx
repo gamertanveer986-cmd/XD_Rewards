@@ -165,8 +165,8 @@ const Dashboard = () => {
             <div className="w-8 h-8 rounded-lg bg-warning/20 flex items-center justify-center mx-auto mb-1">
               <Gift className="w-4 h-4 text-warning" />
             </div>
-            <p className="text-base font-bold">{profile?.referrals_count ? (profile.referrals_count * 500) : 0}</p>
-            <p className="text-[9px] text-muted-foreground">Ref Coins</p>
+            <p className="text-base font-bold">{redeemableCoins.toLocaleString()}</p>
+            <p className="text-[9px] text-muted-foreground">Redeemable</p>
           </Card>
         </div>
 
