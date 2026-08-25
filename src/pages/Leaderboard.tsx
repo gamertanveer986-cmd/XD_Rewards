@@ -196,7 +196,7 @@ const Leaderboard = () => {
 
                 {/* 1st Place */}
                 <div className="flex flex-col items-center">
-                  <Avatar className="w-18 h-18 border-2 border-yellow-500">
+                  <Avatar className="w-20 h-20 border-2 border-yellow-500">
                     <AvatarImage src={topThree[0]?.avatar_url || ""} />
                     <AvatarFallback className="bg-yellow-500/20">
                       {getInitials(topThree[0]?.display_name)}
@@ -210,7 +210,7 @@ const Leaderboard = () => {
                     <XDCoin size="sm" />
                     <p className="text-xs text-muted-foreground">{toCoins(topThree[0]?.total_earnings || 0)}</p>
                   </div>
-                  <div className="w-18 h-24 bg-yellow-500/20 rounded-t-lg mt-1"></div>
+                  <div className="w-20 h-24 bg-yellow-500/20 rounded-t-lg mt-1"></div>
                 </div>
 
                 {/* 3rd Place */}
@@ -336,7 +336,7 @@ const Leaderboard = () => {
             <div>
               <h4 className="font-medium text-sm">Earn 500 XD Coins per referral</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Share your code and grow your weekly rank.
+                Credited after your friend's first successful redemption. Rankings reset every Monday.
               </p>
             </div>
           </div>

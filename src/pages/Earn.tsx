@@ -9,7 +9,7 @@ import XDCoin from "@/components/XDCoin";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
-import { Zap, Clock, CheckCircle, Target, TrendingUp } from "lucide-react";
+import { Zap, Clock, CheckCircle, Target, TrendingUp, Info } from "lucide-react";
 
 interface TaskConfig {
   id: string;
@@ -31,16 +31,6 @@ const TASKS: TaskConfig[] = [
     icon: Zap,
     color: "text-primary",
     bg: "bg-primary/20",
-    cooldown: 15,
-  },
-  {
-    id: "complete_task",
-    title: "Complete Task",
-    description: "Finish a quick activity for coins",
-    reward: 10,
-    icon: Target,
-    color: "text-success",
-    bg: "bg-success/20",
     cooldown: 15,
   },
 ];
