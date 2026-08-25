@@ -182,6 +182,7 @@ const Auth = () => {
           }
         }
 
+        exitGuestMode();
         toast.success("Account created! Welcome to XD Rewards.");
         navigate(nextTarget());
       }
