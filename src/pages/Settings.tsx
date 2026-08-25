@@ -45,7 +45,7 @@ const Settings = () => {
       setLoading(false);
     };
     init();
-  }, [navigate]);
+  }, [navigate, isGuest]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
