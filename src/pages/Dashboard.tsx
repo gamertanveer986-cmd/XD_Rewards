@@ -6,10 +6,8 @@ import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
 import ProfileSetup from "@/components/ProfileSetup";
 import XDCoin from "@/components/XDCoin";
-import TaskProgress from "@/components/TaskProgress";
 import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
-import RecentActivity from "@/components/RecentActivity";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
 import { Zap, Gift, Users, Award, ChevronRight, TrendingUp } from "lucide-react";
@@ -120,7 +118,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm text-muted-foreground">Welcome back,</p>
-                <p className="text-lg font-bold">{profile?.display_name || "User"}</p>
+                <p className="text-lg font-bold">{profile?.display_name || (isGuest ? "Guest" : "User")}</p>
               </div>
               <UserLevelBadge totalCoins={totalCoins} tasksCompleted={tasksCompleted} />
             </div>
@@ -135,7 +133,7 @@ const Dashboard = () => {
                     {totalCoins.toLocaleString()}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Entertainment coins (in-app value only)</p>
+                <p className="text-[10px] text-muted-foreground mt-1">1000 XD Coins = ₹10 INR</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] text-muted-foreground">Redeemable</p>
