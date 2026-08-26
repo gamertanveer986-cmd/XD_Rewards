@@ -73,20 +73,34 @@ const Referral = () => {
             <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-primary" />
             </div>
-            <p className="text-xs text-muted-foreground mb-2">Your Referral Code</p>
-            <p className="text-3xl font-black tracking-[0.3em] text-primary mb-4">
-              {profile?.referral_code || "—"}
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button variant="outline" onClick={copyCode} className="gap-2">
-                <Copy className="w-4 h-4" />
-                Copy Code
-              </Button>
-              <Button onClick={shareCode} className="gap-2 bg-primary hover:bg-primary/90">
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
-            </div>
+            {isGuest ? (
+              <>
+                <p className="text-lg font-bold mb-1">Invite friends, earn 500 XD Coins</p>
+                <p className="text-xs text-muted-foreground mb-4 max-w-[260px] mx-auto">
+                  Login to get your personal referral code and start earning together.
+                </p>
+                <Button onClick={() => navigate("/auth")} className="bg-primary hover:bg-primary/90 font-semibold px-8">
+                  Login / Sign Up
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground mb-2">Your Referral Code</p>
+                <p className="text-3xl font-black tracking-[0.3em] text-primary mb-4">
+                  {profile?.referral_code || "—"}
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button variant="outline" onClick={copyCode} className="gap-2">
+                    <Copy className="w-4 h-4" />
+                    Copy Code
+                  </Button>
+                  <Button onClick={shareCode} className="gap-2 bg-primary hover:bg-primary/90">
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </Card>
 
