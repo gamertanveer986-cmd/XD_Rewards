@@ -6,10 +6,8 @@ import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
 import ProfileSetup from "@/components/ProfileSetup";
 import XDCoin from "@/components/XDCoin";
-import TaskProgress from "@/components/TaskProgress";
 import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
-import RecentActivity from "@/components/RecentActivity";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
 import { Zap, Gift, Users, Award, ChevronRight, TrendingUp } from "lucide-react";
@@ -120,7 +118,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-sm text-muted-foreground">Welcome back,</p>
-                <p className="text-lg font-bold">{profile?.display_name || "User"}</p>
+                <p className="text-lg font-bold">{profile?.display_name || (isGuest ? "Guest" : "User")}</p>
               </div>
               <UserLevelBadge totalCoins={totalCoins} tasksCompleted={tasksCompleted} />
             </div>
@@ -135,7 +133,7 @@ const Dashboard = () => {
                     {totalCoins.toLocaleString()}
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1">Entertainment coins (in-app value only)</p>
+                <p className="text-[10px] text-muted-foreground mt-1">1000 XD Coins = ₹10 INR</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] text-muted-foreground">Redeemable</p>
@@ -170,42 +168,29 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Feature Cards Grid — compact rows */}
+        <div className="grid grid-cols-2 gap-2.5">
           {featureCards.map((card) => {
             const Icon = card.icon;
             return (
               <Card
                 key={card.title}
-                className={`p-4 bg-gradient-to-br ${card.bg} ${card.border} cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]`}
+                className={`p-3 bg-gradient-to-br ${card.bg} ${card.border} cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]`}
                 onClick={() => navigate(card.path)}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`w-10 h-10 rounded-xl bg-background/50 flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 ${card.color}`} />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-background/50 flex items-center justify-center shrink-0">
+                    <Icon className={`w-4 h-4 ${card.color}`} />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-[13px] leading-tight truncate">{card.title}</h3>
+                    <p className="text-[10px] text-muted-foreground truncate">{card.desc}</p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 </div>
-                <h3 className="font-bold text-sm">{card.title}</h3>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{card.desc}</p>
               </Card>
             );
           })}
-        </div>
-
-        {/* User Level Progress */}
-        <Card className="p-4 bg-card border-border/50">
-          <h3 className="text-sm font-semibold mb-3">Your Level</h3>
-          <UserLevelBadge totalCoins={totalCoins} tasksCompleted={tasksCompleted} showDetails />
-        </Card>
-
-        {/* Task Progress */}
-        {user && <TaskProgress userId={user.id} />}
-
-        {/* Recent Activity */}
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground px-1">Recent Activity</h3>
-          {user && <RecentActivity userId={user.id} />}
         </div>
       </div>
 

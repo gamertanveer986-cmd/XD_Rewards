@@ -44,7 +44,7 @@ const AppHeader = ({ showBack = false, showAdmin = false, showLogout = false, on
   }, [isGuest]);
 
   return (
-    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border safe-area-top">
+    <header className="sticky top-0 z-40 bg-background border-b border-border safe-area-top">
       <div className="flex items-center justify-between h-14 px-3 gap-2">
         {/* Left: Back arrow OR username */}
         <div className="flex items-center gap-2 min-w-0 flex-1">

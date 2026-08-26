@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/components/AppLayout";
 import WatchAdModal from "@/components/WatchAdModal";
+import TaskProgress from "@/components/TaskProgress";
 import XDCoin from "@/components/XDCoin";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
@@ -253,6 +254,9 @@ const Earn = () => {
             })}
           </div>
         </Card>
+
+        {/* Task Bonus Progress (moved from Home) */}
+        {user && <TaskProgress userId={user.id} />}
 
       </div>
 

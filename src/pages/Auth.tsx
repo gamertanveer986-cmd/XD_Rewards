@@ -493,7 +493,7 @@ const Auth = () => {
                     maxLength={8}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Your referrer will receive 5 value bonus (500 XD Coins)
+                    Your referrer earns 500 XD Coins after your first successful redemption
                   </p>
                 </div>
               )}
@@ -555,9 +555,9 @@ const Auth = () => {
           </button>
         </p>
 
-        {/* Disclaimer */}
+        {/* Trust note */}
         <p className="text-[10px] text-muted-foreground text-center mt-2 px-4">
-          In-app rewards are for entertainment purposes only and do not represent guaranteed real money.
+          XD Rewards is a 100% transparent and verified entertainment rewards platform. 1000 XD Coins = ₹10 INR.
         </p>
 
         {/* Bottom safe area spacer */}

@@ -205,7 +205,7 @@ const GiftCards = () => {
                 <XDCoin size="lg" />
                 <p className="text-2xl font-bold text-success">{totalCoins.toLocaleString()}</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Entertainment coins (in-app reward value only)</p>
+              <p className="text-xs text-muted-foreground mt-1">1000 XD Coins = ₹10 INR</p>
             </div>
           </div>
         </Card>
@@ -232,7 +232,8 @@ const GiftCards = () => {
 
           {/* Browse Tab */}
           <TabsContent value="browse" className="space-y-3">
-            {/* Email Input Section */}
+            {/* Email Input Section — only relevant for logged-in users who can redeem */}
+            {!isGuest && (
             <Card className="p-4 bg-card border-border/50">
               <div className="space-y-2">
                 <Label htmlFor="redeem-email" className="text-sm font-medium flex items-center gap-2">
@@ -255,6 +256,7 @@ const GiftCards = () => {
                 </p>
               </div>
             </Card>
+            )}
 
             <h3 className="text-sm font-semibold text-muted-foreground">Available Rewards</h3>
             
