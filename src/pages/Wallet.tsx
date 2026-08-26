@@ -60,7 +60,7 @@ const Wallet = () => {
             <XDCoin size="xl" className="mx-auto mb-3" />
             <p className="text-sm text-muted-foreground mb-1">Total XD Coins</p>
             <p className="text-5xl font-bold text-success mb-1">{totalCoins.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mb-2">Entertainment coins (in-app reward value only)</p>
+            <p className="text-xs text-muted-foreground mb-2">1000 XD Coins = ₹10 INR</p>
             <p className="text-xs text-muted-foreground">Redeemable: {redeemableCoins.toLocaleString()} XD Coins</p>
           </div>
         </Card>
