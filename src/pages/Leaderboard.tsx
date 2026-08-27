@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import AppLayout from "@/components/AppLayout";
-import { Trophy, Medal, Crown, Users, Share2, Copy, Info } from "lucide-react";
+import { Trophy, Medal, Crown, Users, Share2, Copy } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppLayout from "@/components/AppLayout";
-import { Gift, ShoppingCart, Clock, Mail, Info } from "lucide-react";
+import { Gift, ShoppingCart, Clock, Mail } from "lucide-react";
 import XDCoin from "@/components/XDCoin";
 import GuestBanner from "@/components/GuestBanner";
 import WithdrawProof from "@/components/WithdrawProof";
