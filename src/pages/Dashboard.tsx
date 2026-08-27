@@ -115,14 +115,12 @@ const Dashboard = () => {
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -ml-8 -mb-8" />
           
           <div className="relative z-10">
-            {/* Top row: greeting + level */}
+            {/* Top row: label + level */}
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Welcome back,</p>
-                <p className="text-lg font-bold">{profile?.display_name || (isGuest ? "Guest" : "User")}</p>
-              </div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Your Balance</p>
               <UserLevelBadge totalCoins={totalCoins} tasksCompleted={tasksCompleted} />
             </div>
+
 
             {/* Balance */}
             <div className="flex items-end justify-between">
