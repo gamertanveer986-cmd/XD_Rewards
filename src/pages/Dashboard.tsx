@@ -95,11 +95,12 @@ const Dashboard = () => {
   const tasksCompleted = profile?.ads_watched || 0;
 
   const featureCards = [
-    { title: "Earn Coins", desc: "Complete tasks", icon: Zap, path: "/earn", color: "text-primary", bg: "from-primary/20 to-primary/5", border: "border-primary/20" },
+    { title: "Earn", desc: "Watch & earn", icon: Zap, path: "/earn", color: "text-primary", bg: "from-primary/20 to-primary/5", border: "border-primary/20" },
     { title: "Daily Bonus", desc: "Claim streak", icon: Gift, path: "/daily-bonus", color: "text-warning", bg: "from-warning/20 to-warning/5", border: "border-warning/20" },
     { title: "Referrals", desc: "Invite friends", icon: Users, path: "/referral", color: "text-success", bg: "from-success/20 to-success/5", border: "border-success/20" },
     { title: "Redeem", desc: "Get rewards", icon: Award, path: "/gift-cards", color: "text-accent", bg: "from-accent/20 to-accent/5", border: "border-accent/20" },
   ];
+
 
   return (
     <AppLayout title="XD REWARDS" showAdmin={isAdmin} showLogout={!isGuest} onLogout={handleLogout}>
@@ -114,19 +115,16 @@ const Dashboard = () => {
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -ml-8 -mb-8" />
           
           <div className="relative z-10">
-            {/* Top row: greeting + level */}
+            {/* Top row: label + level */}
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Welcome back,</p>
-                <p className="text-lg font-bold">{profile?.display_name || (isGuest ? "Guest" : "User")}</p>
-              </div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total XD Coins</p>
               <UserLevelBadge totalCoins={totalCoins} tasksCompleted={tasksCompleted} />
             </div>
 
             {/* Balance */}
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Total XD Coins</p>
+
                 <div className="flex items-center gap-2">
                   <XDCoin size="xl" />
                   <span className="text-4xl font-black text-success tabular-nums animate-slide-up">
@@ -178,16 +176,17 @@ const Dashboard = () => {
                 className={`p-3 bg-gradient-to-br ${card.bg} ${card.border} cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]`}
                 onClick={() => navigate(card.path)}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-lg bg-background/50 flex items-center justify-center shrink-0">
                     <Icon className={`w-4 h-4 ${card.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-[13px] leading-tight truncate">{card.title}</h3>
-                    <p className="text-[10px] text-muted-foreground truncate">{card.desc}</p>
+                    <h3 className="font-semibold text-[13px] leading-tight">{card.title}</h3>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{card.desc}</p>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 </div>
+
               </Card>
             );
           })}
