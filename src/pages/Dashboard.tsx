@@ -177,16 +177,17 @@ const Dashboard = () => {
                 className={`p-3 bg-gradient-to-br ${card.bg} ${card.border} cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]`}
                 onClick={() => navigate(card.path)}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-lg bg-background/50 flex items-center justify-center shrink-0">
                     <Icon className={`w-4 h-4 ${card.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-[13px] leading-tight truncate">{card.title}</h3>
-                    <p className="text-[10px] text-muted-foreground truncate">{card.desc}</p>
+                    <h3 className="font-semibold text-[13px] leading-tight">{card.title}</h3>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{card.desc}</p>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 </div>
+
               </Card>
             );
           })}
