@@ -117,15 +117,14 @@ const Dashboard = () => {
           <div className="relative z-10">
             {/* Top row: label + level */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Your Balance</p>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total XD Coins</p>
               <UserLevelBadge totalCoins={totalCoins} tasksCompleted={tasksCompleted} />
             </div>
-
 
             {/* Balance */}
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Total XD Coins</p>
+
                 <div className="flex items-center gap-2">
                   <XDCoin size="xl" />
                   <span className="text-4xl font-black text-success tabular-nums animate-slide-up">
