@@ -14,6 +14,7 @@ import { Shield, ArrowLeft, Mail, Eye } from "lucide-react";
 import { useGuest } from "@/contexts/GuestContext";
 import { checkAndRegisterDevice } from "@/lib/deviceCheck";
 import DeviceLockedDialog, { type DeviceLockCode } from "@/components/DeviceLockedDialog";
+import { getAuthErrorMessage, withAuthTimeout } from "@/lib/authTimeout";
 
 
 
@@ -39,19 +40,25 @@ const Auth = () => {
   // Check if user is already logged in — but NOT during a password recovery flow.
   useEffect(() => {
     const checkSession = async () => {
-      const hash = window.location.hash || "";
-      const isRecovery = hash.includes("type=recovery");
-      if (isRecovery) {
-        // Route recovery links to the dedicated reset page; do not auto-login.
-        navigate("/reset-password" + window.location.hash, { replace: true });
-        return;
+      try {
+        const hash = window.location.hash || "";
+        const isRecovery = hash.includes("type=recovery");
+        if (isRecovery) {
+          navigate("/reset-password" + window.location.hash, { replace: true });
+          return;
+        }
+
+        const { data: { session }, error } = await withAuthTimeout(supabase.auth.getSession());
+        if (error) throw error;
+        if (session) {
+          const raw = new URLSearchParams(window.location.search).get("next");
+          navigate(raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard");
+        }
+      } catch (error) {
+        toast.error(getAuthErrorMessage(error, "Could not check your session. Please try again."));
+      } finally {
+        setCheckingSession(false);
       }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const raw = new URLSearchParams(window.location.search).get("next");
-        navigate(raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard");
-      }
-      setCheckingSession(false);
     };
     checkSession();
   }, [navigate]);
@@ -101,14 +108,14 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await withAuthTimeout(supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
-        });
+        }));
         if (error) throw error;
 
         // Enforce one-device-one-account on native mobile
-        const deviceCheck = await checkAndRegisterDevice();
+        const deviceCheck = await withAuthTimeout(checkAndRegisterDevice());
         if (!deviceCheck.success) {
           await supabase.auth.signOut();
           setDeviceLock({
@@ -124,7 +131,7 @@ const Auth = () => {
         navigate(nextTarget());
       } else {
         // Sign up — auto-confirm is enabled server-side, so a session should be returned.
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await withAuthTimeout(supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -133,7 +140,7 @@ const Auth = () => {
               referral_code: referralCode.trim().toUpperCase() || null,
             },
           },
-        });
+        }));
         if (error) throw error;
 
         // If no session yet (e.g. email confirmation is required for this project),
@@ -141,10 +148,10 @@ const Auth = () => {
         let activeSession = signUpData.session;
         if (!activeSession) {
           const { data: signInData, error: signInError } =
-            await supabase.auth.signInWithPassword({
+            await withAuthTimeout(supabase.auth.signInWithPassword({
               email: email.trim(),
               password,
-            });
+            }));
           if (signInError) {
             // Most common cause: email confirmation required. Tell the user clearly.
             toast.error(
@@ -158,7 +165,7 @@ const Auth = () => {
         }
 
         // Enforce one-device-one-account (no-op on web).
-        const deviceCheck = await checkAndRegisterDevice();
+        const deviceCheck = await withAuthTimeout(checkAndRegisterDevice());
         if (!deviceCheck.success) {
           await supabase.auth.signOut();
           setDeviceLock({
@@ -186,8 +193,8 @@ const Auth = () => {
         toast.success("Account created! Welcome to XD Rewards.");
         navigate(nextTarget());
       }
-    } catch (error: any) {
-      toast.error(error?.message || "Authentication failed");
+    } catch (error: unknown) {
+      toast.error(getAuthErrorMessage(error, "Authentication failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -204,14 +211,14 @@ const Auth = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error } = await withAuthTimeout(supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
-      });
+      }));
       
       if (error) throw error;
       setResetEmailSent(true);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send reset email");
+    } catch (error: unknown) {
+      toast.error(getAuthErrorMessage(error, "Failed to send reset email"));
     } finally {
       setLoading(false);
     }
