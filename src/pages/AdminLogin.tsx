@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
+import { getAuthErrorMessage, withAuthTimeout } from "@/lib/authTimeout";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -17,19 +18,23 @@ const AdminLogin = () => {
   // Check if admin is already logged in
   useEffect(() => {
     const checkAdminSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if user has admin role
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .maybeSingle();
+      try {
+        const { data: { session }, error } = await withAuthTimeout(supabase.auth.getSession());
+        if (error) throw error;
+        if (session) {
+          const { data: roleData, error: roleError } = await withAuthTimeout(
+            supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .eq("role", "admin")
+              .maybeSingle(),
+          );
 
-        if (roleData) {
-          navigate("/admin/dashboard");
+          if (!roleError && roleData) navigate("/admin/dashboard");
         }
+      } catch {
+        // Keep the login form available if session restoration is unavailable.
       }
     };
     checkAdminSession();
@@ -40,24 +45,27 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error } = await withAuthTimeout(supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
-      });
+      }));
 
       if (error) throw error;
+      if (!data.user) throw new Error("Login succeeded, but no user session was returned. Please try again.");
 
       // Verify admin role from user_roles table
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+      const { data: roleData, error: roleError } = await withAuthTimeout(
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .eq("role", "admin")
+          .maybeSingle(),
+      );
 
       if (roleError) {
         await supabase.auth.signOut();
-        throw new Error("Failed to verify admin access");
+        throw new Error(`Admin credentials were accepted, but role verification failed: ${roleError.message}`);
       }
 
       if (!roleData) {
@@ -67,8 +75,8 @@ const AdminLogin = () => {
       
       toast.success("Admin access granted");
       navigate("/admin/dashboard");
-    } catch (error: any) {
-      toast.error(error.message || "Admin authentication failed");
+    } catch (error: unknown) {
+      toast.error(getAuthErrorMessage(error, "Admin authentication failed. Please try again."));
     } finally {
       setLoading(false);
     }
