@@ -20,8 +20,19 @@ const BannedGate = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     check();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => check());
-    return () => subscription.unsubscribe();
+    let deferredCheck: number | undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      // Do not call getSession() from inside Supabase's auth event callback.
+      // The callback runs while the auth lock is notifying subscribers, so a
+      // nested session read can block sign-in until the caller times out.
+      deferredCheck = window.setTimeout(() => {
+        void check();
+      }, 0);
+    });
+    return () => {
+      subscription.unsubscribe();
+      if (deferredCheck !== undefined) window.clearTimeout(deferredCheck);
+    };
   }, []);
 
   if (!ban) return <>{children}</>;
