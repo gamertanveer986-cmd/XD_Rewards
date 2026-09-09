@@ -10,7 +10,8 @@ import SplashScreen from "@/components/SplashScreen";
 import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
-import { Shield, ArrowLeft, Mail, Eye } from "lucide-react";
+import { Shield, ArrowLeft, Mail, Eye, Chrome } from "lucide-react";
+import { lovable } from "@/integrations/lovable";
 import { useGuest } from "@/contexts/GuestContext";
 import { checkAndRegisterDevice } from "@/lib/deviceCheck";
 import DeviceLockedDialog, { type DeviceLockCode } from "@/components/DeviceLockedDialog";
@@ -64,6 +65,48 @@ const Auth = () => {
   }, [navigate]);
 
   const [signupSuccess, setSignupSuccess] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+
+      if (result.error) throw result.error;
+      if (result.redirected) return;
+
+      const { data: { user } } = await withAuthTimeout(supabase.auth.getUser());
+      if (!user) throw new Error("Google sign-in did not return a user session.");
+
+      const deviceCheck = await withAuthTimeout(checkAndRegisterDevice());
+      if (!deviceCheck.success) {
+        await supabase.auth.signOut();
+        setDeviceLock({
+          open: true,
+          code: (deviceCheck.code as DeviceLockCode) || "UNKNOWN",
+          message: deviceCheck.message,
+        });
+        return;
+      }
+
+      await supabase.from("admin_auth_reports").insert({
+        user_id: user.id,
+        provider: "google",
+        email: user.email ?? null,
+        action: "sign_in",
+      });
+
+      exitGuestMode();
+      toast.success("Signed in with Google");
+      navigate(nextTarget());
+    } catch (error: unknown) {
+      toast.error(getAuthErrorMessage(error, "Google sign-in failed. Please try again."));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Where to go after auth: honours a same-origin relative ?next= (used by the
   // OAuth consent flow for agent integrations), otherwise the dashboard.
@@ -432,99 +475,24 @@ const Auth = () => {
             </div>
 
 
-            <form onSubmit={handleAuth} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
-                  }}
-                  className={`bg-muted border-border h-12 ${errors.email ? 'border-destructive' : ''}`}
-                />
-                {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
-                  }}
-                  className={`bg-muted border-border h-12 ${errors.password ? 'border-destructive' : ''}`}
-                />
-                {errors.password && (
-                  <p className="text-xs text-destructive">{errors.password}</p>
-                )}
-                {!isLogin && !errors.password && (
-                  <p className="text-xs text-muted-foreground">
-                    Min 8 chars with uppercase, lowercase & number
-                  </p>
-                )}
-                {isLogin && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForgotPassword(true);
-                      setErrors({});
-                    }}
-                    className="text-xs text-primary hover:underline mt-1"
-                  >
-                    Forgot Password?
-                  </button>
-                )}
-              </div>
-
-              {/* Referral Code Field - Only show for signup */}
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="referralCode" className="text-sm">Referral Code (Optional)</Label>
-                  <Input
-                    id="referralCode"
-                    type="text"
-                    placeholder="Enter referral code"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    className="bg-muted border-border h-12 uppercase tracking-widest"
-                    maxLength={8}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Your referrer earns 500 XD Coins after your first successful redemption
-                  </p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 text-base"
-                disabled={loading}
-              >
-                {loading ? "Processing..." : isLogin ? "Login" : "Sign Up"}
-              </Button>
-            </form>
-
-            <button
+            <Button
               type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-                setReferralCode("");
-              }}
-              className="w-full text-sm text-muted-foreground hover:text-primary transition-colors py-2"
+              variant="outline"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full h-12 border-border font-semibold"
             >
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
-            </button>
+              <Chrome className="w-4 h-4" />
+              {loading ? "Connecting..." : "Sign in with Google"}
+            </Button>
+
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              <span>Google account required</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+
           </div>
         </Card>
 
@@ -553,7 +521,7 @@ const Auth = () => {
 
         {/* Policy Agreement Note */}
         <p className="text-[10px] text-muted-foreground text-center px-4">
-          By signing up, you agree to our{" "}
+          By continuing, you agree to our{" "}
           <button 
             onClick={() => setShowPolicyModal(true)}
             className="text-primary-readable underline"
