@@ -894,7 +894,6 @@ export type Database = {
         Args: { p_ad_duration: number; p_user_id: string }
         Returns: Json
       }
-      record_google_sign_in_report: { Args: never; Returns: Json }
       redeem_gift_card: {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
