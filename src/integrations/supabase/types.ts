@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_auth_reports: {
+        Row: {
+          action: string
+          created_at: string
+          email: string | null
+          id: string
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          provider: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           user_id: string

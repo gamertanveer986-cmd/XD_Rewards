@@ -88,6 +88,7 @@ const AdminDashboard = () => {
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [googleReports, setGoogleReports] = useState<Array<{ id: string; user_id: string; email: string | null; provider: string; action: string; created_at: string }>>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [txFilter, setTxFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState(false);
@@ -171,7 +172,7 @@ const AdminDashboard = () => {
   }, []);
 
   const loadAllDataInternal = async () => {
-    await Promise.all([loadData(), loadDailyRewards(), loadGiftCardsData()]);
+    await Promise.all([loadData(), loadDailyRewards(), loadGiftCardsData(), loadGoogleReports()]);
   };
 
   const loadAllData = async () => {
@@ -199,6 +200,16 @@ const AdminDashboard = () => {
     setStats({ totalUsers: profilesData?.length || 0, totalEarnings, totalWithdrawals, totalAdsWatched, pendingPayments, totalPayable });
   };
 
+
+  const loadGoogleReports = async () => {
+    const { data, error } = await supabase
+      .from("admin_auth_reports")
+      .select("id, user_id, email, provider, action, created_at")
+      .eq("provider", "google")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (!error) setGoogleReports(data || []);
+  };
 
   const loadDailyRewards = async () => {
     const { data } = await supabase.from("daily_rewards").select("*").order("total_claimed", { ascending: false });
@@ -927,7 +938,31 @@ const AdminDashboard = () => {
         {/* Notifications */}
         {activeTab === "notifications" && (
           <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground uppercase">Send Notification to All Users ({userProfiles.length})</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase">Google Sign-in Report ({googleReports.length})</p>
+            <div className="overflow-x-auto border border-border rounded">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="py-2 px-2 font-medium">Email</th>
+                    <th className="py-2 px-2 font-medium">User</th>
+                    <th className="py-2 px-2 font-medium">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {googleReports.length === 0 ? (
+                    <tr><td colSpan={3} className="py-4 px-2 text-center text-muted-foreground">No Google sign-ins reported yet.</td></tr>
+                  ) : googleReports.map((report) => (
+                    <tr key={report.id} className="border-b border-border/50">
+                      <td className="py-2 px-2">{report.email || "-"}</td>
+                      <td className="py-2 px-2 font-mono">{report.user_id.slice(0, 8)}</td>
+                      <td className="py-2 px-2 text-muted-foreground">{new Date(report.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs font-medium text-muted-foreground uppercase pt-3">Send Notification to All Users ({userProfiles.length})</p>
             <Input placeholder="Title" value={notificationTitle} onChange={(e) => setNotificationTitle(e.target.value)} className="h-8 text-xs" />
             <Textarea placeholder="Message..." value={notificationMessage} onChange={(e) => setNotificationMessage(e.target.value)} rows={4} className="text-xs resize-none" />
             <button onClick={handleSendNotification} disabled={actionLoading || !notificationTitle.trim() || !notificationMessage.trim()} className="w-full py-2 bg-primary text-primary-foreground text-xs rounded disabled:opacity-50">

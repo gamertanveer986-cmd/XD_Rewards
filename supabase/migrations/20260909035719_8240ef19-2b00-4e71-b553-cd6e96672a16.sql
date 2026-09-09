@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.record_google_sign_in_report();
