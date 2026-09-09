@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_auth_reports: {
+        Row: {
+          action: string
+          created_at: string
+          email: string | null
+          id: string
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          provider: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          provider?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           user_id: string
@@ -867,6 +894,7 @@ export type Database = {
         Args: { p_ad_duration: number; p_user_id: string }
         Returns: Json
       }
+      record_google_sign_in_report: { Args: never; Returns: Json }
       redeem_gift_card: {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
