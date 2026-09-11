@@ -1,0 +1,14 @@
+REVOKE EXECUTE ON FUNCTION private.admin_lift_ban(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.admin_unlink_device(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.apply_referral_code(uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.approve_social_task(uuid, boolean, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.check_and_award_badges(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.check_and_register_device(text, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.claim_daily_reward(uuid) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.get_public_leaderboard(integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.has_role(uuid, public.app_role) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.is_current_user_banned() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.purchase_gift_card(uuid, uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.record_ad_completion(uuid, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.redeem_gift_card(uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.spin_wheel(uuid) FROM PUBLIC, anon, authenticated;
