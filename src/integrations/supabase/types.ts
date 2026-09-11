@@ -898,6 +898,80 @@ export type Database = {
         Args: { p_code: string; p_user_id: string }
         Returns: Json
       }
+      secure_admin_lift_ban: {
+        Args: { p_actor_id: string; p_ban_id: string }
+        Returns: Json
+      }
+      secure_admin_unlink_device: {
+        Args: { p_actor_id: string; p_registration_id: string }
+        Returns: Json
+      }
+      secure_apply_referral_code: {
+        Args: { p_actor_id: string; p_referral_code: string; p_user_id: string }
+        Returns: Json
+      }
+      secure_approve_social_task: {
+        Args: {
+          p_actor_id: string
+          p_admin_notes?: string
+          p_approved: boolean
+          p_submission_id: string
+        }
+        Returns: Json
+      }
+      secure_check_and_award_badges: {
+        Args: { p_actor_id: string; p_user_id: string }
+        Returns: Json
+      }
+      secure_check_and_register_device: {
+        Args: {
+          p_actor_id: string
+          p_device_id_hash: string
+          p_platform?: string
+        }
+        Returns: Json
+      }
+      secure_claim_daily_reward: {
+        Args: { p_actor_id: string; p_user_id: string }
+        Returns: Json
+      }
+      secure_get_public_leaderboard: {
+        Args: { limit_count?: number; p_actor_id: string }
+        Returns: {
+          ads_watched: number
+          avatar_url: string
+          display_name: string
+          is_current_user: boolean
+          rank_position: number
+          referrals_count: number
+          total_earnings: number
+        }[]
+      }
+      secure_is_current_user_banned: {
+        Args: { p_actor_id: string }
+        Returns: Json
+      }
+      secure_purchase_gift_card: {
+        Args: {
+          p_actor_id: string
+          p_email?: string
+          p_product_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      secure_record_ad_completion: {
+        Args: { p_actor_id: string; p_ad_duration: number; p_user_id: string }
+        Returns: Json
+      }
+      secure_redeem_gift_card: {
+        Args: { p_actor_id: string; p_code: string; p_user_id: string }
+        Returns: Json
+      }
+      secure_spin_wheel: {
+        Args: { p_actor_id: string; p_user_id: string }
+        Returns: Json
+      }
       spin_wheel: { Args: { p_user_id: string }; Returns: Json }
       verify_admin_access: { Args: never; Returns: boolean }
     }
