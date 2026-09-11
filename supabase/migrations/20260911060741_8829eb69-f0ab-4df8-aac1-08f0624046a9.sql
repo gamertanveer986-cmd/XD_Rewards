@@ -1,0 +1,14 @@
+GRANT EXECUTE ON FUNCTION public.admin_lift_ban(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_unlink_device(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_referral_code(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.approve_social_task(uuid, boolean, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_and_award_badges(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_and_register_device(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_daily_reward(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_public_leaderboard(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_current_user_banned() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.purchase_gift_card(uuid, uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_ad_completion(uuid, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.redeem_gift_card(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.spin_wheel(uuid) TO authenticated;
