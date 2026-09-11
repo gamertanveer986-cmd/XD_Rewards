@@ -17,8 +17,15 @@ import { checkAndRegisterDevice } from "@/lib/deviceCheck";
 import DeviceLockedDialog, { type DeviceLockCode } from "@/components/DeviceLockedDialog";
 import { getAuthErrorMessage, withAuthTimeout } from "@/lib/authTimeout";
 
-
-
+const getSafeNextTarget = (): string => {
+  try {
+    const raw = new URLSearchParams(window.location.search).get("next");
+    if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  } catch {
+    // Fall back to the dashboard when the query string is malformed.
+  }
+  return "/dashboard";
+};
 const Auth = () => {
   const navigate = useNavigate();
   const { enterGuestMode, exitGuestMode } = useGuest();
@@ -38,8 +45,23 @@ const Auth = () => {
     code: "UNKNOWN",
   });
 
-  // Check if user is already logged in — but NOT during a password recovery flow.
+  // Subscribe before reading the current session so an OAuth callback cannot
+  // complete between the initial read and listener registration.
   useEffect(() => {
+    let active = true;
+
+    const redirectAuthenticatedUser = (hasSession: boolean) => {
+      if (!active || !hasSession) return false;
+      exitGuestMode();
+      navigate(getSafeNextTarget(), { replace: true });
+      return true;
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (redirectAuthenticatedUser(Boolean(session))) return;
+      if (active) setCheckingSession(false);
+    });
+
     const checkSession = async () => {
       try {
         const hash = window.location.hash || "";
@@ -51,17 +73,22 @@ const Auth = () => {
 
         const { data: { session }, error } = await withAuthTimeout(supabase.auth.getSession());
         if (error) throw error;
-        if (session) {
-          const raw = new URLSearchParams(window.location.search).get("next");
-          navigate(raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard");
-        }
+        redirectAuthenticatedUser(Boolean(session));
       } catch (error) {
-        toast.error(getAuthErrorMessage(error, "Could not check your session. Please try again."));
+        if (active) toast.error(getAuthErrorMessage(error, "Could not check your session. Please try again."));
       } finally {
-        setCheckingSession(false);
+        if (active) setCheckingSession(false);
       }
     };
-    checkSession();
+    void checkSession();
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  // `exitGuestMode` is intentionally omitted because the context currently
+  // recreates it on render; including it would restart OAuth detection.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const [signupSuccess, setSignupSuccess] = useState(false);
@@ -69,8 +96,12 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      const next = getSafeNextTarget();
+      const callbackUrl = new URL("/auth", window.location.origin);
+      if (next !== "/dashboard") callbackUrl.searchParams.set("next", next);
+
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: callbackUrl.toString(),
         extraParams: { prompt: "select_account" },
       });
 
@@ -100,22 +131,12 @@ const Auth = () => {
 
       exitGuestMode();
       toast.success("Signed in with Google");
-      navigate(nextTarget());
+      navigate(getSafeNextTarget());
     } catch (error: unknown) {
       toast.error(getAuthErrorMessage(error, "Google sign-in failed. Please try again."));
     } finally {
       setLoading(false);
     }
-  };
-
-  // Where to go after auth: honours a same-origin relative ?next= (used by the
-  // OAuth consent flow for agent integrations), otherwise the dashboard.
-  const nextTarget = (): string => {
-    try {
-      const raw = new URLSearchParams(window.location.search).get("next");
-      if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
-    } catch {/* ignore */}
-    return "/dashboard";
   };
 
   const validateForm = (): boolean => {
@@ -171,14 +192,14 @@ const Auth = () => {
 
         exitGuestMode();
         toast.success("Welcome back!");
-        navigate(nextTarget());
+        navigate(getSafeNextTarget());
       } else {
         // Sign up — auto-confirm is enabled server-side, so a session should be returned.
         const { data: signUpData, error } = await withAuthTimeout(supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}${nextTarget()}`,
+            emailRedirectTo: `${window.location.origin}${getSafeNextTarget()}`,
             data: {
               referral_code: referralCode.trim().toUpperCase() || null,
             },
@@ -234,7 +255,7 @@ const Auth = () => {
 
         exitGuestMode();
         toast.success("Account created! Welcome to XD Rewards.");
-        navigate(nextTarget());
+        navigate(getSafeNextTarget());
       }
     } catch (error: unknown) {
       toast.error(getAuthErrorMessage(error, "Authentication failed. Please try again."));
