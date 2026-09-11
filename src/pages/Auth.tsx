@@ -86,7 +86,10 @@ const Auth = () => {
       active = false;
       subscription.unsubscribe();
     };
-  }, [exitGuestMode, navigate]);
+  // `exitGuestMode` is intentionally omitted because the context currently
+  // recreates it on render; including it would restart OAuth detection.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   const [signupSuccess, setSignupSuccess] = useState(false);
 
