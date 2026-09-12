@@ -10,12 +10,17 @@ import SplashScreen from "@/components/SplashScreen";
 import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
-import { Shield, ArrowLeft, Mail, Eye, Chrome } from "lucide-react";
+import { Shield, ArrowLeft, Mail, Eye, EyeOff, Chrome, LockKeyhole, UserPlus, ArrowRight } from "lucide-react";
 import { lovable } from "@/integrations/lovable";
 import { useGuest } from "@/contexts/GuestContext";
 import { checkAndRegisterDevice } from "@/lib/deviceCheck";
 import DeviceLockedDialog, { type DeviceLockCode } from "@/components/DeviceLockedDialog";
 import { getAuthErrorMessage, withAuthTimeout } from "@/lib/authTimeout";
+import "@fontsource/sora/600.css";
+import "@fontsource/sora/700.css";
+import "@fontsource/manrope/400.css";
+import "@fontsource/manrope/500.css";
+import "@fontsource/manrope/600.css";
 
 const getSafeNextTarget = (): string => {
   try {
@@ -40,6 +45,7 @@ const Auth = () => {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [deviceLock, setDeviceLock] = useState<{ open: boolean; code: DeviceLockCode; message?: string }>({
     open: false,
     code: "UNKNOWN",
@@ -463,101 +469,180 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col safe-area-top safe-area-bottom">
-      {/* Background glow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/20 rounded-full blur-[80px]"></div>
+    <main className="relative min-h-[100dvh] overflow-x-hidden bg-background safe-area-top safe-area-bottom [font-family:Manrope,sans-serif]">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-[90px]" />
+        <div className="absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-[100px]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
       </div>
 
-      <div className="flex-1 flex flex-col px-6 py-8 relative z-10">
-        {/* Header */}
-        <div className="text-center mb-8 pt-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-[hsl(0_70%_38%)] rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-[0_0_28px_hsl(0_65%_51%/0.5)]">
-            <span className="text-2xl font-black text-primary-foreground tracking-tight">XD</span>
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col justify-center px-4 py-4 min-[380px]:px-5 min-[380px]:py-5 landscape:justify-start">
+        <header className="mb-3.5 flex shrink-0 flex-col items-center text-center min-[380px]:mb-5">
+          <div className="relative mb-2.5 flex h-12 w-12 items-center justify-center rounded-xl border border-primary/60 bg-card shadow-[0_0_24px_hsl(var(--primary)/0.26)] min-[380px]:h-14 min-[380px]:w-14">
+            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text font-[Sora] text-xl font-bold text-transparent min-[380px]:text-2xl">XD</span>
+            <div className="absolute inset-x-2 bottom-0 h-px bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
           </div>
-          <h1 className="text-2xl font-bold tracking-[0.22em] text-foreground">
-            XD&nbsp;REWARDS
+          <h1 className="font-[Sora] text-xl font-bold text-foreground min-[380px]:text-2xl">
+            <span className="text-primary">XD</span> REWARDS
           </h1>
-          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground mt-1.5">
+          <p className="mt-0.5 text-[10px] uppercase tracking-[0.24em] text-muted-foreground min-[380px]:text-[11px]">
             Premium Rewards Platform
           </p>
-        </div>
+        </header>
 
-        {/* Auth Card */}
-        <Card className="p-6 surface-elevated border-border">
-          <div className="space-y-5">
-            <div className="text-center">
-              <h2 className="text-xl font-bold mb-1">
-                {isLogin ? "Welcome Back" : "Create Account"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {isLogin ? "Sign in to continue" : "Join XD Rewards in seconds"}
-              </p>
-            </div>
-
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="w-full h-12 border-border font-semibold"
-            >
-              <Chrome className="w-4 h-4" />
-              {loading ? "Connecting..." : "Sign in with Google"}
-            </Button>
-
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="h-px flex-1 bg-border" />
-              <span>Google account required</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
-
+        <Card className="shrink-0 border-primary/35 bg-card/75 p-4 shadow-[0_18px_50px_hsl(0_0%_0%/0.48),0_0_32px_hsl(var(--primary)/0.08)] backdrop-blur-xl min-[380px]:p-5">
+          <div className="mb-3 min-[380px]:mb-4">
+            <h2 className="font-[Sora] text-lg font-semibold text-foreground min-[380px]:text-xl">
+              {isLogin ? "Welcome Back" : "Create Account"}
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isLogin ? "Sign in securely to continue" : "Create your XD Rewards account"}
+            </p>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="h-11 w-full rounded-lg border-border bg-secondary/70 font-semibold hover:border-primary/50 hover:bg-secondary"
+          >
+            <Chrome className="h-4 w-4 text-primary" />
+            {loading ? "Connecting..." : "Continue with Google"}
+            <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
+          </Button>
+
+          <div className="my-3 flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground min-[380px]:my-4">
+            <div className="h-px flex-1 bg-border" />
+            <span>Or use email</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-2.5 min-[380px]:space-y-3">
+            <div>
+              <Label htmlFor="auth-email" className="sr-only">Email address</Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="auth-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
+                  }}
+                  aria-invalid={Boolean(errors.email)}
+                  className="h-11 rounded-lg border-border bg-secondary/55 pl-10 text-sm focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                />
+              </div>
+              {errors.email && <p className="mt-1 text-[11px] text-destructive">{errors.email}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="auth-password" className="sr-only">Password</Label>
+              <div className="relative">
+                <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="auth-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (errors.password) setErrors((current) => ({ ...current, password: undefined }));
+                  }}
+                  aria-invalid={Boolean(errors.password)}
+                  className="h-11 rounded-lg border-border bg-secondary/55 px-10 text-sm focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-0.5 top-1/2 h-10 w-10 -translate-y-1/2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </Button>
+              </div>
+              <div className="mt-1 flex min-h-4 items-start justify-between gap-2">
+                {errors.password ? <p className="text-[11px] text-destructive">{errors.password}</p> : <span />}
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="shrink-0 text-[11px] font-semibold text-primary-readable transition-colors hover:text-primary"
+                  >
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {!isLogin && (
+              <div>
+                <Label htmlFor="referral-code" className="sr-only">Referral code</Label>
+                <Input
+                  id="referral-code"
+                  type="text"
+                  placeholder="Referral code (optional)"
+                  value={referralCode}
+                  onChange={(event) => setReferralCode(event.target.value)}
+                  className="h-11 rounded-lg border-border bg-secondary/55 text-sm uppercase focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                />
+              </div>
+            )}
+
+            <Button type="submit" disabled={loading} className="h-11 w-full rounded-lg bg-primary font-semibold shadow-[0_10px_24px_hsl(var(--primary)/0.22)]">
+              {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+              {!loading && <ArrowRight className="h-4 w-4" />}
+            </Button>
+          </form>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setIsLogin((current) => !current);
+              setErrors({});
+            }}
+            className="mt-2.5 h-10 w-full rounded-lg border-border bg-transparent text-xs font-semibold hover:border-primary/40 hover:bg-secondary/60 min-[380px]:mt-3"
+          >
+            <UserPlus className="h-4 w-4" />
+            {isLogin ? "Create New Account" : "Already have an account? Sign In"}
+          </Button>
+
+          <p className="mt-2.5 text-center text-[10px] text-muted-foreground min-[380px]:mt-3">
+            By continuing, you agree to our{" "}
+            <button type="button" onClick={() => setShowPolicyModal(true)} className="font-semibold text-primary-readable underline underline-offset-2">
+              Privacy & Safety Policy
+            </button>
+          </p>
         </Card>
 
-        {/* Continue as Guest */}
         <Button
           variant="ghost"
           onClick={() => {
             enterGuestMode();
             navigate("/dashboard");
           }}
-          className="w-full text-muted-foreground hover:text-foreground gap-2 h-11"
+          className="mt-1.5 h-9 w-full text-xs text-muted-foreground hover:bg-transparent hover:text-foreground min-[380px]:mt-2"
         >
-          <Eye className="w-4 h-4" />
+          <Eye className="h-4 w-4" />
           Continue as Guest
         </Button>
 
-        <Button
+        <button
+          type="button"
           onClick={() => setShowPolicyModal(true)}
-          variant="outline"
-          size="sm"
-          className="w-full mb-3 text-xs gap-2"
+          className="mx-auto flex items-center gap-1.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          <Shield className="w-3 h-3" />
-          Transparency & Safety Policy
-        </Button>
-
-        {/* Policy Agreement Note */}
-        <p className="text-[10px] text-muted-foreground text-center px-4">
-          By continuing, you agree to our{" "}
-          <button 
-            onClick={() => setShowPolicyModal(true)}
-            className="text-primary-readable underline"
-          >
-            Policy
-          </button>
-        </p>
-
-        {/* Trust note */}
-        <p className="text-[10px] text-muted-foreground text-center mt-2 px-4">
-          XD Rewards is a 100% transparent and verified entertainment rewards platform. 1000 XD Coins = ₹10 INR.
-        </p>
-
-        {/* Bottom safe area spacer */}
-        <div className="h-6" />
+          <Shield className="h-3 w-3 text-primary" />
+          100% transparent and verified
+        </button>
       </div>
 
       {/* Policy Modal */}
