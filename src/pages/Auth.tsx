@@ -655,7 +655,7 @@ const Auth = () => {
         message={deviceLock.message}
         email={email}
       />
-    </div>
+    </main>
   );
 };
 
