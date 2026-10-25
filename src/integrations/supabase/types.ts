@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -538,6 +538,80 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_completions: {
+        Row: {
+          answers: Json | null
+          completed_at: string
+          id: string
+          reward_coins: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          completed_at?: string
+          id?: string
+          reward_coins: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          completed_at?: string
+          id?: string
+          reward_coins?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "survey_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          questions: Json
+          reward_coins: number
+          task_type: string
+          time_limit_seconds: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          questions?: Json
+          reward_coins?: number
+          task_type?: string
+          time_limit_seconds?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          questions?: Json
+          reward_coins?: number
+          task_type?: string
+          time_limit_seconds?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       task_progress: {
         Row: {
           id: string
@@ -854,6 +928,10 @@ export type Database = {
         Returns: boolean
       }
       claim_daily_reward: { Args: { p_user_id: string }; Returns: Json }
+      complete_survey: {
+        Args: { p_answers?: Json; p_task_id: string; p_user_id: string }
+        Returns: Json
+      }
       get_public_leaderboard: {
         Args: { limit_count?: number }
         Returns: {
