@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import AdminGamification from "@/components/AdminGamification";
 import AdminDeviceRegistrations from "@/components/AdminDeviceRegistrations";
 import AdminAIBot from "@/components/AdminAIBot";
+import AdminSurveys from "@/components/AdminSurveys";
 
 
 interface UserProfile {
@@ -78,7 +79,7 @@ interface GiftCardPurchase {
   product?: GiftCardProduct;
 }
 
-type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "support" | "gamification" | "devices" | "aibot";
+type TabType = "overview" | "users" | "leaderboard" | "transactions" | "payments" | "daily" | "giftcards" | "roles" | "notifications" | "support" | "gamification" | "devices" | "aibot" | "surveys";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -406,6 +407,7 @@ const AdminDashboard = () => {
     { key: "daily", label: "Daily" },
     { key: "giftcards", label: "Cards" },
     { key: "gamification", label: "Games" },
+    { key: "surveys", label: "Tasks" },
     { key: "roles", label: "Roles" },
     { key: "notifications", label: "Notify" },
     { key: "support", label: "Support" },
@@ -1012,6 +1014,10 @@ const AdminDashboard = () => {
 
         {activeTab === "aibot" && (
           <AdminAIBot />
+        )}
+
+        {activeTab === "surveys" && (
+          <AdminSurveys />
         )}
       </div>
     </div>

@@ -16,6 +16,7 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Earn = lazy(() => import("./pages/Earn"));
+const Survey = lazy(() => import("./pages/Survey"));
 const DailyBonus = lazy(() => import("./pages/DailyBonus"));
 const Referral = lazy(() => import("./pages/Referral"));
 const Wallet = lazy(() => import("./pages/Wallet"));
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/earn" element={<Earn />} />
+              <Route path="/survey" element={<Survey />} />
               <Route path="/daily-bonus" element={<DailyBonus />} />
               <Route path="/referral" element={<Referral />} />
               <Route path="/wallet" element={<Wallet />} />

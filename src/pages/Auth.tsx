@@ -10,7 +10,7 @@ import SplashScreen from "@/components/SplashScreen";
 import PolicyModal from "@/components/PolicyModal";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 import { z } from "zod";
-import { Shield, ArrowLeft, Mail, Eye, EyeOff, Chrome, LockKeyhole, UserPlus, ArrowRight } from "lucide-react";
+import { Shield, ArrowLeft, Mail, Eye, EyeOff, LockKeyhole, UserPlus, ArrowRight } from "lucide-react";
 import { lovable } from "@/integrations/lovable";
 import { useGuest } from "@/contexts/GuestContext";
 import { checkAndRegisterDevice } from "@/lib/deviceCheck";
@@ -507,7 +507,7 @@ const Auth = () => {
             disabled={loading}
             className="h-11 w-full rounded-lg border-border bg-secondary/70 font-semibold hover:border-primary/50 hover:bg-secondary"
           >
-            <Chrome className="h-4 w-4 text-primary" />
+            <GoogleLogo className="h-4 w-4 text-primary" />
             {loading ? "Connecting..." : "Continue with Google"}
             <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
           </Button>
