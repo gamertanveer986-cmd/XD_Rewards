@@ -10,7 +10,7 @@ import NotificationPermission from "@/components/NotificationPermission";
 import UserLevelBadge from "@/components/UserLevelBadge";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
-import { Zap, Gift, Users, Award, ChevronRight, TrendingUp } from "lucide-react";
+import { Zap, Gift, Users, Award, ChevronRight, TrendingUp, ClipboardList } from "lucide-react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -99,6 +99,7 @@ const Dashboard = () => {
     { title: "Daily Bonus", desc: "Claim streak", icon: Gift, path: "/daily-bonus", color: "text-warning", bg: "from-warning/20 to-warning/5", border: "border-warning/20" },
     { title: "Referrals", desc: "Invite friends", icon: Users, path: "/referral", color: "text-success", bg: "from-success/20 to-success/5", border: "border-success/20" },
     { title: "Redeem", desc: "Get rewards", icon: Award, path: "/gift-cards", color: "text-accent", bg: "from-accent/20 to-accent/5", border: "border-accent/20" },
+    { title: "Surveys", desc: "Answer & earn", icon: ClipboardList, path: "/survey", color: "text-accent", bg: "from-accent/20 to-accent/5", border: "border-accent/20" },
   ];
 
 
