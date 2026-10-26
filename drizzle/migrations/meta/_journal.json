@@ -8,6 +8,13 @@
       "when": 1792908380722,
       "tag": "0000_create_survey_earning_system",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792991848136,
+      "tag": "0001_restore_has_role_execute",
+      "breakpoints": true
     }
   ]
 }
