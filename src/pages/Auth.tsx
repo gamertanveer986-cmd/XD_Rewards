@@ -22,6 +22,15 @@ import "@fontsource/manrope/400.css";
 import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
 
+const GoogleLogo = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M23.06 12.25c0-.85-.08-1.67-.22-2.45H12v4.63h6.16a5.27 5.27 0 0 1-2.29 3.46v2.88h3.7c2.17-2 3.42-4.94 3.42-8.52Z" fill="#4285F4" />
+    <path d="M12 23.5c3.1 0 5.71-1.03 7.61-2.78l-3.7-2.87c-1.03.69-2.34 1.1-3.91 1.1-3 0-5.54-2.02-6.45-4.74H1.72v2.97A11.5 11.5 0 0 0 12 23.5Z" fill="#34A853" />
+    <path d="M5.55 14.21a6.9 6.9 0 0 1 0-4.4V6.85H1.72a11.5 11.5 0 0 0 0 10.33l3.83-2.97Z" fill="#FBBC05" />
+    <path d="M12 5.02c1.69 0 3.2.58 4.4 1.72l3.3-3.3A11.5 11.5 0 0 0 1.72 6.85l3.83 2.96c.91-2.71 3.45-4.79 6.45-4.79Z" fill="#EA4335" />
+  </svg>
+);
+
 const getSafeNextTarget = (): string => {
   try {
     const raw = new URLSearchParams(window.location.search).get("next");
