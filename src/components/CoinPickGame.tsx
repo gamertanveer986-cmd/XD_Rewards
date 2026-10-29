@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useGuest } from "@/contexts/GuestContext";
-import { XDCoin } from "@/components/XDCoin";
+import XDCoin from "@/components/XDCoin";
 import { CheckCircle, Gamepad2, Sparkles, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
