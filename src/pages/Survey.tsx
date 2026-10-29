@@ -197,7 +197,7 @@ const Survey = () => {
   };
 
   const quickLinks = [
-    { icon: Zap, label: "Watch Ads", path: "/earn", color: "text-primary" },
+    { icon: Zap, label: "Play Game", path: "/earn", color: "text-primary" },
     { icon: Gift, label: "Daily Bonus", path: "/daily-bonus", color: "text-warning" },
     { icon: Users, label: "Referrals", path: "/referral", color: "text-success" },
   ];

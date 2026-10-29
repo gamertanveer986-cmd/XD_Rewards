@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AppLayout from "@/components/AppLayout";
-import WatchAdModal from "@/components/WatchAdModal";
+import CoinPickGame from "@/components/CoinPickGame";
 import TaskProgress from "@/components/TaskProgress";
 import XDCoin from "@/components/XDCoin";
 import GuestBanner from "@/components/GuestBanner";
 import { useGuest } from "@/contexts/GuestContext";
 import { toast } from "sonner";
-import { Zap, Clock, CheckCircle, Target, TrendingUp, Info } from "lucide-react";
+import { Zap, Clock, CheckCircle, Target, TrendingUp, Info, Gamepad2 } from "lucide-react";
 
 interface TaskConfig {
   id: string;
@@ -25,11 +25,11 @@ interface TaskConfig {
 
 const TASKS: TaskConfig[] = [
   {
-    id: "watch_ad",
-    title: "Watch Ad",
-    description: "Watch a short ad to earn coins",
+    id: "play_game",
+    title: "Play Game",
+    description: "Find the XD Coin hidden in one of the boxes",
     reward: 10,
-    icon: Zap,
+    icon: Gamepad2,
     color: "text-primary",
     bg: "bg-primary/20",
     cooldown: 15,
@@ -41,7 +41,7 @@ const Earn = () => {
   const { isGuest, guestCoins } = useGuest();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showAdModal, setShowAdModal] = useState(false);
+  const [showGameModal, setShowGameModal] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -88,11 +88,11 @@ const Earn = () => {
       toast.error(`Please wait ${cooldowns[task.id]}s before trying again`);
       return;
     }
-    setShowAdModal(true);
+    setShowGameModal(true);
   };
 
-  const handleAdComplete = (_coins: number) => {
-    setCooldowns(prev => ({ ...prev, watch_ad: 15 }));
+  const handleGameComplete = (_coins: number) => {
+    setCooldowns(prev => ({ ...prev, play_game: 15 }));
     if (isGuest) {
       setGuestTasksToday(n => n + 1);
       return;
@@ -209,7 +209,7 @@ const Earn = () => {
             <div>
               <h4 className="font-medium text-sm">How earning works</h4>
               <ul className="text-xs text-muted-foreground mt-1 space-y-1 leading-relaxed">
-                <li>• Watch the full ad without skipping to receive your reward.</li>
+                <li>• Find the XD Coin in the game boxes to earn your reward instantly.</li>
                 <li>• Coins are credited instantly and verified server-side.</li>
                 <li>• 1000 XD Coins = ₹10 INR · Minimum withdrawal ₹50 INR (5000 XD Coins).</li>
                 <li>• Payouts are processed within 48 hours after manual verification.</li>
@@ -261,11 +261,11 @@ const Earn = () => {
       </div>
 
 
-      <WatchAdModal
-        isOpen={showAdModal}
-        onClose={() => setShowAdModal(false)}
+      <CoinPickGame
+        isOpen={showGameModal}
+        onClose={() => setShowGameModal(false)}
         userId={user?.id ?? null}
-        onAdComplete={handleAdComplete}
+        onGameComplete={handleGameComplete}
       />
     </AppLayout>
   );
